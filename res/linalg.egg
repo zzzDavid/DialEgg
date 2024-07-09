@@ -1,0 +1,32 @@
+(datatype Op
+	(tensor_empty String)
+    (linalg_abs Op Op String)
+    (linalg_transpose Op Op String)
+	(linalg_add Op Op Op String)
+	(linalg_matmul Op Op Op String)
+)
+
+; rules
+(rewrite
+    (linalg_add ?x ?y ?o ?t)
+    (linalg_add ?y ?x ?o ?t)
+)
+
+(rewrite
+    (linalg_transpose (linalg_transpose ?x ?o1 ?t1) ?o2 ?t2)
+    ?x
+)
+
+; lets here
+
+
+(let op_0 (tensor_empty "tensor<3x2xf32>"))
+(let op_1 (tensor_empty "tensor<2x3xf32>"))
+(let op_transposed (linalg_transpose op_0 op_1 "tensor<2x3xf32>"))
+(let op_transposed_0 (linalg_transpose op_transposed op_0 "tensor<3x2xf32>"))
+
+(run 100000)
+(extract op_0)
+(extract op_1)
+(extract op_transposed)
+(extract op_transposed_0)
