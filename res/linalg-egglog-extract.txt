@@ -1,4 +1,0 @@
-(tensor_empty "tensor<3x2xf32>")
-(tensor_empty "tensor<2x3xf32>")
-(linalg_transpose (tensor_empty "tensor<3x2xf32>") (tensor_empty "tensor<2x3xf32>") "tensor<2x3xf32>")
-(tensor_empty "tensor<3x2xf32>")

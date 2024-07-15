@@ -67,15 +67,27 @@ int main() {
 
     llvm::outs() << "\n--------------------------------\n";
 
+    mlir::OperationState state(mlir::UnknownLoc::get(&context), "linalg.add");
+
     // build a simple linalg operation
     mlir::OpBuilder builder(&context);
     llvm::SmallVector<mlir::Value, 4> dynamicDims;
-    mlir::Value tensor1 = builder.create<mlir::tensor::EmptyOp>(mlir::UnknownLoc::get(&context), mlir::RankedTensorType::get({2, 3}, builder.getF32Type()), dynamicDims);
-    mlir::Value tensor2 = builder.create<mlir::tensor::EmptyOp>(mlir::UnknownLoc::get(&context), mlir::RankedTensorType::get({3, 2}, builder.getF32Type()), dynamicDims);
+    mlir::tensor::EmptyOp tensor1 = builder.create<mlir::tensor::EmptyOp>(mlir::UnknownLoc::get(&context), mlir::RankedTensorType::get({2, 3}, builder.getF32Type()), dynamicDims);
+    mlir::tensor::EmptyOp tensor2 = builder.create<mlir::tensor::EmptyOp>(mlir::UnknownLoc::get(&context), mlir::RankedTensorType::get({3, 2}, builder.getF32Type()), dynamicDims);
 
-    llvm::ArrayRef<int64_t> permutation = {1, 0};
+    mlir::linalg::TransposeOp tensor3 = builder.create<mlir::linalg::TransposeOp>(mlir::UnknownLoc::get(&context), tensor1, tensor2, llvm::ArrayRef<int64_t> {1, 0});
 
-    mlir::linalg::TransposeOp tensor3 = builder.create<mlir::linalg::TransposeOp>(mlir::UnknownLoc::get(&context), tensor1, tensor2, permutation);
+    tensor1->print(llvm::outs());
+    llvm::outs() << "\n";
+    tensor2->print(llvm::outs());
+    llvm::outs() << "\n";
+    tensor3->print(llvm::outs());
+    llvm::outs() << "\n";
 
-    op->print(llvm::outs());
+    tensor1->print(llvm::outs(), mlir::OpPrintingFlags().printGenericOpForm());
+    llvm::outs() << "\n";
+    tensor2->print(llvm::outs(), mlir::OpPrintingFlags().printGenericOpForm());
+    llvm::outs() << "\n";
+    tensor3->print(llvm::outs(), mlir::OpPrintingFlags().printGenericOpForm());
+    llvm::outs() << "\n";
 }

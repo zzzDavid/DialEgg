@@ -1,0 +1,5 @@
+(arith_constant (FloatAttr 1.5 "f64") "f64")
+(arith_constant (FloatAttr 2.0 "f64") "f64")
+(arith_constant (FloatAttr 3.5 "f64") "f64")
+(arith_subf (arith_constant (FloatAttr 2.0 "f64") "f64") (arith_constant (FloatAttr 1.5 "f64") "f64") (OtherAttr "#arith.fastmath<none>") "f64")
+(arith_constant (FloatAttr 0.0 "f32") "f32")

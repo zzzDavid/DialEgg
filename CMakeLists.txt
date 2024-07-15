@@ -48,3 +48,11 @@ target_link_libraries(eq-sat-opt PRIVATE ${OPT_LIBS})
 add_llvm_executable(linalg src/linalg.cpp)
 llvm_update_compile_flags(linalg)
 target_link_libraries(linalg PRIVATE ${OPT_LIBS})
+
+add_llvm_executable(attr src/attr.cpp)
+llvm_update_compile_flags(attr)
+target_link_libraries(attr PRIVATE ${OPT_LIBS})
+
+add_llvm_executable(tester src/tester.cpp)
+llvm_update_compile_flags(tester)
+target_link_libraries(tester PRIVATE ${OPT_LIBS})

@@ -1,0 +1,60 @@
+(sort Attr)
+(sort AttrDict (Map String Attr))
+(sort AttrVec (Vec Attr))
+; (sort AttrPair (Tuple String Attr)) ; ERROR: "Presort Tuple not found."
+
+(function IntegerAttr (i64 String) Attr)
+(function FloatAttr (f64 String) Attr)
+(function StringAttr (String) Attr)
+(function OtherAttr (String) Attr) ; Attribute is simply printed in full
+
+(datatype Op
+    (NamedOp String)
+
+	(arith_constant Attr String)
+
+	(arith_addf Op Op Attr String)
+	(arith_subf Op Op Attr String)
+	(arith_divf Op Op Attr String)
+	(arith_mulf Op Op Attr String)
+	(arith_negf Op Attr String)
+
+	(arith_maximumf Op Op Attr String)
+   	(arith_minimumf Op Op Attr String)
+)
+
+; rules
+(rewrite ; constant fold for addf
+	(arith_addf (arith_constant (FloatAttr ?x ?t) ?t) (arith_constant (FloatAttr ?y ?t) ?t) ?a ?t)
+ 	(arith_constant (FloatAttr (+ ?x ?y) ?t) ?t)
+)
+
+(rewrite ; constant fold for mulf
+	(arith_mulf (arith_constant (FloatAttr ?x ?t) ?t) (arith_constant (FloatAttr ?y ?t) ?t) ?a ?t)
+ 	(arith_constant (FloatAttr (* ?x ?y) ?t) ?t)
+)
+
+(rewrite ; constant fold for negf
+	(arith_negf (arith_constant (FloatAttr ?x ?t) ?t) ?a ?t)
+ 	(arith_constant (FloatAttr (neg ?x) ?t) ?t)
+)
+
+(rewrite ; commute
+	(arith_addf ?x ?y ?a ?t)
+	(arith_addf ?y ?x ?a ?t)
+)
+
+; lets here
+
+(let op_cst (arith_constant (FloatAttr 1.500000e+00 "f64") "f64"))
+(let op_cst_0 (arith_constant (FloatAttr 2.000000e+00 "f64") "f64"))
+(let op_0 (arith_addf op_cst_0 op_cst (OtherAttr "#arith.fastmath<none>") "f64"))
+(let op_1 (arith_subf op_cst_0 op_cst (OtherAttr "#arith.fastmath<none>") "f64"))
+(let op_cst_1 (arith_constant (FloatAttr 0.000000e+00 "f32") "f32"))
+
+(run 100000)
+(extract op_cst)
+(extract op_cst_0)
+(extract op_0)
+(extract op_1)
+(extract op_cst_1)

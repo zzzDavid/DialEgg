@@ -1,4 +1,5 @@
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <iostream>
 #include <sstream>
@@ -45,16 +46,17 @@ std::string getSSAValueId(const mlir::Value& value, const mlir::OpPrintingFlags 
     return "op_" + ssaName.substr(1);  // remove the % prefix
 }
 
-std::ifstream extractOps(const std::map<std::string, const EqSatOp*>& ops) {
-    std::string eggFilename = "../res/linalg.egg";
-    std::string stdOutFilename = "../res/linalg-egglog-extract.txt";
-    std::string stdErrFilename = "../res/linalg-egglog-stderr.txt";
+std::ifstream extractOps(const EqSatOpGraph& ops) {
+    std::string eggFilename = "../res/egg.egg";
+    std::string stdOutFilename = "../res/egglog-extract.txt";
+    std::string stdErrFilename = "../res/egglog-stderr.txt";
+
     std::ofstream eggFile(eggFilename, std::ios::app);
 
     // print egglog
     eggFile << std::endl;
-    for (const auto& [resultId, eqSatOp]: ops) {
-        eggFile << eqSatOp->egglogLet() << std::endl;
+    for (const std::string& resultId : ops.opResultIds) {
+        eggFile << ops.getOp(resultId)->egglogLet() << std::endl;
     }
 
     // run egglog
@@ -62,7 +64,7 @@ std::ifstream extractOps(const std::map<std::string, const EqSatOp*>& ops) {
     eggFile << "(run 100000)" << std::endl;
 
     // Extract the results of the egglog run
-    for (const auto& [resultId, eqSatOp]: ops) {
+    for (const std::string& resultId : ops.opResultIds) {
         eggFile << "(extract " << resultId << ")" << std::endl;
     }
 
@@ -115,6 +117,38 @@ std::vector<std::string> splitOperation(std::string opStr) {
     return result;
 }
 
+/** Parses the given type string into an MLIR type */
+mlir::Type parseType(std::string typeStr, mlir::MLIRContext& context) {
+    if (typeStr.front() == '"' && typeStr.back() == '"') { // Remove surrounding quotes
+        typeStr = typeStr.substr(1, typeStr.size() - 2);
+    }
+
+    return mlir::parseType(typeStr, &context);
+}
+
+/** Parses the given attribute string into an MLIR attribute. Form (<type> <ins>) */
+mlir::Attribute parseAttribute(const std::string& attrStr, mlir::MLIRContext& context) {
+    std::vector<std::string> split = splitOperation(attrStr);
+
+    std::string attrType = split[0];
+    if (attrType == "IntegerAttr") {
+        int64_t value = std::stoll(split[1]);
+        mlir::Type type = parseType(split[2], context);
+        return mlir::IntegerAttr::get(type, value);
+    } else if (attrType == "FloatAttr") {
+        double value = std::stod(split[1]);
+        mlir::Type type = parseType(split[2], context);
+        return mlir::FloatAttr::get(type, value);
+    } else if (attrType == "StringAttr") {
+        return mlir::parseAttribute(split[1], &context);
+    } else if (attrType == "OtherAttr") {
+        return mlir::parseAttribute(split[1], &context);
+    } else {
+        std::cerr << "Unsupported attribute type: " << attrType << "\n";
+        exit(1);
+    }
+}
+
 /**
  * Parses the given operation string into a list of MLIR operations, in order or dependency.
  * Example:
@@ -124,60 +158,43 @@ std::vector<std::string> splitOperation(std::string opStr) {
  *      %1 = tensor.empty() : tensor<2x3xf32>
  *      %2 = linalg.transpose %0, %1 : tensor<3x2xf32>, tensor<2x3xf32>
  */
-mlir::Value parseOperation(const EqSatOp* originalOp, const std::string& newOpStr, mlir::MLIRContext& context) {
+mlir::Operation* createOperation(const std::string& newOpStr, mlir::MLIRContext& context, mlir::OpBuilder& builder) {
     std::vector<std::string> split = splitOperation(newOpStr);
 
     std::string opName = split[0];
     std::replace(opName.begin(), opName.end(), '_', '.'); // Replace underscores with dots
-    mlir::OperationState state(mlir::UnknownLoc::get(&context), opName);
+    mlir::OperationName mlirOpName = mlir::OperationName(opName, &context);
 
     // Operands
     std::vector<mlir::Value> operands;
-    for (size_t i = 1; i < split.size() - 1; i++) {
-        const std::string& operandStr = split[i];
-        mlir::Value nestedOperand = parseOperation(nullptr, operandStr, context);
-        operands.push_back(nestedOperand);
+    for (size_t i = 1; i < split.size() - 2; i++) {
+        mlir::Operation* nestedOperand = createOperation(split[i], context, builder);
+        mlir::Value operand = nestedOperand->getResult(0); // TODO support multiple results?
+        operands.push_back(operand);
     }
-    state.addOperands(operands);
+
+    // attr
+    llvm::StringRef attrName = mlirOpName.getAttributeNames()[0];
+    mlir::Attribute attr = parseAttribute(split[split.size() - 2], context); // TODO make it named? It's easier
+    llvm::outs() << "ATTR " << attrName << " = " << attr << "\n";
 
     // Return type
-    std::string returnType = split.back();
-
-    if (returnType.front() == '"' && returnType.back() == '"') { // Remove surrounding quotes
-        returnType = returnType.substr(1, returnType.size() - 2);
-    }
-
-    mlir::Type type = mlir::parseType(returnType, &context);
-    state.addTypes(type);
-
-    // copy attributes if the operation is the same
-    if (state.name.getStringRef() == opName) {
-        llvm::outs() << "Copying attributes from " << state.name << " to " << opName << "\n";
-        mlir::DictionaryAttr attrs = originalOp->mlirOp.getAttrDictionary();
-        for (const mlir::NamedAttribute& attr : attrs) {
-            state.addAttribute(attr.getName(), attrs.get(attr.getName()));
-        }
-    }
-
-    // copy regions if the operation is the same
-    if (state.name.getStringRef() == opName && !originalOp->mlirOp.getRegions().empty()) {
-        llvm::outs() << "Copying region from " << state.name << " to " << opName << "\n";
-        mlir::Region* region = state.addRegion();
-        mlir::IRMapping mapping = mlir::IRMapping();
-        originalOp->mlirOp.getRegion(0).cloneInto(region, mapping);
-    }
+    mlir::Type type = parseType(split.back(), context);
+    llvm::outs() << "TYPE: " << type << "\n";
 
     // Create the operation
-    mlir::OpBuilder builder2(&originalOp->mlirOp);
-    mlir::Operation* newOp = builder2.create(state);
+    mlir::OperationState state(mlir::UnknownLoc::get(&context), opName);
+    state.addOperands(operands);
+    state.addAttribute(attrName, attr); // TODO support multiple attributes
+    state.addTypes(type);
+
+    mlir::Operation* newOp = builder.create(state);
 
     llvm::outs() << "OPERATION: ";
     newOp->print(llvm::outs());
     llvm::outs() << "\n";
 
-    originalOp->mlirOp.replaceAllUsesWith(newOp);
-
-    return newOp->getResult(0);
+    return newOp;
 }
 
 void EqSatPass::runOnOperation() {
@@ -188,57 +205,51 @@ void EqSatPass::runOnOperation() {
     // Re-create the MLIR operations in this block according to the optimization.
     for (mlir::Block& block: rootOp.getRegion().getBlocks()) {
 
-        std::map<std::string, const EqSatOp*> ops; // Map of result SSA value id to EqSatOp for all operations in the block
+        EqSatOpGraph ops; // Map of result SSA value id to EqSatOp for all operations in the block
         for (mlir::Operation& op: block.getOperations()) {
             if (op.getNumResults() == 0) {  // continue if this op has no results
                 continue;
             }
 
-            // print attributes and their values
-//            llvm::outs() << "Attributes: ";
-//            mlir::DictionaryAttr attrs = op.getAttrDictionary();
-//            for (const mlir::NamedAttribute& attr : attrs) {
-//                llvm::outs() << attr.getName() << " = " << attrs.get(attr.getName()) << "  ";
-//            }
-//            llvm::outs() << "\n";
-
-            // print region
-//            if (!op.getRegions().empty()) {
-//                llvm::outs() << "Region: ";
-//                std::for_each(op.getRegion(0).begin(), op.getRegion(0).end(), [](mlir::Block& block) {
-//                    block.print(llvm::outs());
-//                });
-//                llvm::outs() << "\n\n\n";
-//            }
-
             std::vector<const EqSatOp*> operands;
             for (const mlir::Value& operand: op.getOperands()) {
                 std::string operandId = getSSAValueId(operand, mlir::OpPrintingFlags().enableDebugInfo());
-                operands.push_back(ops.at(operandId));
+                operands.push_back(ops.getOp(operandId)); // TODO support use of ops from other blocks, so we don't have the value (this is easy)
             }
 
-            mlir::Value result0 = op.getResult(0);
+            mlir::Value result0 = op.getResult(0); // TODO support multiple results (this is hard)
 
             std::string opId = getSSAValueId(result0);
             std::string opName = op.getName().getStringRef().str();
             std::string opType = getTypeName(result0);
 
             EqSatOp* eqSatOp = new EqSatOp(opId, opName, opType, operands, op);
-            ops.emplace(opId, eqSatOp);
+            ops.addOp(opId, eqSatOp);
 
             eqSatOp->print(std::cout);
         }
 
         std::ifstream file = extractOps(ops); // Prep egg file
 
-        for (const auto& [resultId, eqSatOp]: ops) {
+        for (const std::string& resultId : ops.opResultIds) {
             std::string line;
             std::getline(file, line);
 
             std::cout << resultId << " = " << line << std::endl;
 
-            parseOperation(eqSatOp, line, context); // breakdown the line into operations
+            mlir::Operation& prevOp = ops.getOp(resultId)->mlirOp;
+            mlir::OpBuilder builder(&prevOp);
+            mlir::Operation* newOp = createOperation(line, context, builder);
+
+            mlir::Value result = newOp->getResult(0);
+            mlir::Value replaced = prevOp.getResult(0);
+
+            if (replaced != result) {
+                llvm::outs() << "REPLACING: " << replaced << " WITH " << result << "\n";
+                replaced.replaceAllUsesWith(result);
+            }
         }
 
+        // TODO cleanup
     }
 }

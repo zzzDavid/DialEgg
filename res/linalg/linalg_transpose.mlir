@@ -1,4 +1,4 @@
-func.func @transpose() -> tensor<2x3xf32> {
+func.func @transpose() -> tensor<3x2xf32> {
     %a = tensor.empty() : tensor<3x2xf32>
     %b = tensor.empty() : tensor<2x3xf32>
 
@@ -10,5 +10,5 @@ func.func @transpose() -> tensor<2x3xf32> {
                           outs(%a : tensor<3x2xf32>)
                           permutation = [1, 0]
 
-    func.return %c : tensor<2x3xf32>
+    func.return %d : tensor<3x2xf32>
 }
