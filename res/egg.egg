@@ -7,6 +7,7 @@
 (function FloatAttr (f64 String) Attr)
 (function StringAttr (String) Attr)
 (function OtherAttr (String) Attr) ; Attribute is simply printed in full
+(function NoAttr () Attr)
 
 (datatype Op
     (NamedOp String)
@@ -21,40 +22,32 @@
 
 	(arith_maximumf Op Op Attr String)
    	(arith_minimumf Op Op Attr String)
+
+    (math_sin Op Attr String)
+    (math_cos Op Attr String)
+    (math_powf Op Op Attr String)
+
+    (linalg_transpose Op Op Attr String)
 )
 
 ; rules
-(rewrite ; constant fold for addf
-	(arith_addf (arith_constant (FloatAttr ?x ?t) ?t) (arith_constant (FloatAttr ?y ?t) ?t) ?a ?t)
- 	(arith_constant (FloatAttr (+ ?x ?y) ?t) ?t)
-)
-
-(rewrite ; constant fold for mulf
-	(arith_mulf (arith_constant (FloatAttr ?x ?t) ?t) (arith_constant (FloatAttr ?y ?t) ?t) ?a ?t)
- 	(arith_constant (FloatAttr (* ?x ?y) ?t) ?t)
-)
-
-(rewrite ; constant fold for negf
-	(arith_negf (arith_constant (FloatAttr ?x ?t) ?t) ?a ?t)
- 	(arith_constant (FloatAttr (neg ?x) ?t) ?t)
-)
-
-(rewrite ; commute
-	(arith_addf ?x ?y ?a ?t)
-	(arith_addf ?y ?x ?a ?t)
+(rewrite
+	(linalg_transpose (linalg_transpose ?x ?y (OtherAttr "array<i64: 1, 0>") ?t1) ?z (OtherAttr "array<i64: 1, 0>") ?t2)
+ 	?x
 )
 
 ; lets here
 
-(let op_cst (arith_constant (FloatAttr 1.500000e+00 "f64") "f64"))
-(let op_cst_0 (arith_constant (FloatAttr 2.000000e+00 "f64") "f64"))
-(let op_0 (arith_addf op_cst_0 op_cst (OtherAttr "#arith.fastmath<none>") "f64"))
-(let op_1 (arith_subf op_cst_0 op_cst (OtherAttr "#arith.fastmath<none>") "f64"))
-(let op_cst_1 (arith_constant (FloatAttr 0.000000e+00 "f32") "f32"))
+
+(let op_cst (arith_constant (OtherAttr "dense<[[1., 2., 3.], [4., 5., 6.]]> : tensor<2x3xf64>") "tensor<2x3xf64>"))
+(let op_cst_0 (arith_constant (OtherAttr "dense<0.> : tensor<3x2xf64>") "tensor<3x2xf64>"))
+(let op_cst_1 (arith_constant (OtherAttr "dense<0.> : tensor<2x3xf64>") "tensor<2x3xf64>"))
+(let op_transposed (linalg_transpose op_cst op_cst_0 (OtherAttr "array<i64: 1, 0>") "tensor<3x2xf64>"))
+(let op_transposed_2 (linalg_transpose op_transposed op_cst_1 (OtherAttr "array<i64: 1, 0>") "tensor<2x3xf64>"))
 
 (run 100000)
 (extract op_cst)
 (extract op_cst_0)
-(extract op_0)
-(extract op_1)
 (extract op_cst_1)
+(extract op_transposed)
+(extract op_transposed_2)

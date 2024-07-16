@@ -50,10 +50,10 @@ struct EqSatOpGraph {
 struct EqSatOpType { // TODO use
     std::string name;
 
-    size_t ins;
+    size_t ins = -1;
     std::vector<std::string> inTypes;
 
-    size_t outs;
+    size_t outs = -1;
     std::vector<std::string> outTypes;
 
     std::string attrName;

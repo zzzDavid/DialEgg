@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <string>
+#include <string_view>
 
 #include <mlir/IR/Value.h>
 #include <llvm/IR/Module.h>
@@ -90,15 +92,15 @@ std::vector<std::string> splitOperation(std::string opStr) {
         opStr = opStr.substr(1, opStr.size() - 2);
     }
 
-    // split by whitespace that is not inside parentheses
+    // split by whitespace that is not inside parentheses, sqaure brackets, or quotes
     std::vector<std::string> result;
     std::stringstream ss;
 
     int openParentheses = 0;
     for (char c: opStr) {
-        if (c == '(') {
+        if (c == '(' || c == '[') {
             openParentheses++;
-        } else if (c == ')') {
+        } else if (c == ')' || c == ']') {
             openParentheses--;
         }
 
@@ -115,6 +117,13 @@ std::vector<std::string> splitOperation(std::string opStr) {
     }
 
     return result;
+}
+
+std::string stripOf(const std::string& str, char c) {
+    if (str.front() == c && str.back() == c) {
+        return str.substr(1, str.size() - 2);
+    }
+    return str;
 }
 
 /** Parses the given type string into an MLIR type */
@@ -140,9 +149,12 @@ mlir::Attribute parseAttribute(const std::string& attrStr, mlir::MLIRContext& co
         mlir::Type type = parseType(split[2], context);
         return mlir::FloatAttr::get(type, value);
     } else if (attrType == "StringAttr") {
-        return mlir::parseAttribute(split[1], &context);
+        std::string pAttrStr = split[1] + (split.size() > 2 ? split[2] : "") + (split.size() > 3 ? split[3] : "");
+        return mlir::parseAttribute(pAttrStr, &context);
     } else if (attrType == "OtherAttr") {
-        return mlir::parseAttribute(split[1], &context);
+        std::string pAttrStr = split[1] + (split.size() > 2 ? split[2] : "") + (split.size() > 3 ? split[3] : "");
+        pAttrStr = stripOf(pAttrStr, '"');
+        return mlir::parseAttribute(pAttrStr, &context);
     } else {
         std::cerr << "Unsupported attribute type: " << attrType << "\n";
         exit(1);
@@ -174,8 +186,9 @@ mlir::Operation* createOperation(const std::string& newOpStr, mlir::MLIRContext&
     }
 
     // attr
+    std::string attrStr = split[split.size() - 2];
     llvm::StringRef attrName = mlirOpName.getAttributeNames()[0];
-    mlir::Attribute attr = parseAttribute(split[split.size() - 2], context); // TODO make it named? It's easier
+    mlir::Attribute attr = parseAttribute(attrStr, context); // TODO make it named? It's easier
     llvm::outs() << "ATTR " << attrName << " = " << attr << "\n";
 
     // Return type
@@ -183,12 +196,22 @@ mlir::Operation* createOperation(const std::string& newOpStr, mlir::MLIRContext&
     llvm::outs() << "TYPE: " << type << "\n";
 
     // Create the operation
-    mlir::OperationState state(mlir::UnknownLoc::get(&context), opName);
-    state.addOperands(operands);
-    state.addAttribute(attrName, attr); // TODO support multiple attributes
-    state.addTypes(type);
+    mlir::Operation* newOp = nullptr;
 
-    mlir::Operation* newOp = builder.create(state);
+    // custom ops
+    if (opName.find("linalg.") == 0) {
+        std::string op = opName.substr(7);
+        if (op == "transpose") {
+            newOp = builder.create<mlir::linalg::TransposeOp>(mlir::UnknownLoc::get(&context), operands[0], operands[1], attr.cast<mlir::DenseI64ArrayAttr>());
+        }
+    } else {
+        mlir::OperationState state(mlir::UnknownLoc::get(&context), opName);
+        state.addOperands(operands);
+        state.addAttribute(attrName, attr); // TODO support multiple attributes
+        state.addTypes(type);
+
+        newOp = builder.create(state);
+    }
 
     llvm::outs() << "OPERATION: ";
     newOp->print(llvm::outs());
@@ -244,10 +267,10 @@ void EqSatPass::runOnOperation() {
             mlir::Value result = newOp->getResult(0);
             mlir::Value replaced = prevOp.getResult(0);
 
-            if (replaced != result) {
-                llvm::outs() << "REPLACING: " << replaced << " WITH " << result << "\n";
-                replaced.replaceAllUsesWith(result);
-            }
+            llvm::outs() << "REPLACING: " << replaced << " WITH " << result << "\n";
+            replaced.replaceAllUsesWith(result);
+
+            prevOp.erase(); // remove the old op so no clutter
         }
 
         // TODO cleanup

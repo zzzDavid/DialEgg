@@ -45,7 +45,7 @@ int main() {
 
     mlir::Attribute parsedAttr2 = mlir::parseAttribute("array<f64: 1., 2., 3.>", &context);
     mlir::DenseArrayAttr denseAttr2 = parsedAttr2.cast<mlir::DenseArrayAttr>();
-    llvm::outs() << "Parsed dense int or fp attribute: " << denseAttr2 << "\n";
+    llvm::outs() << "Parsed dense array attribute: " << denseAttr2 << "\n";
 
     mlir::Attribute parsedAttr3 = mlir::parseAttribute("dense<[[1., 2., 3.], [4., 5., 6.]]> : tensor<2x3xf64>", &context);
     mlir::DenseIntOrFPElementsAttr denseIntOrFPAttr3 = parsedAttr3.cast<mlir::DenseIntOrFPElementsAttr>();
@@ -67,6 +67,9 @@ int main() {
 
     mlir::Attribute parsedAttr7 = mlir::parseAttribute("[f16, 3.14, 5, i32, \"string attribute\"]", &context);
     llvm::outs() << "Parsed type attribute: " << parsedAttr7 << "\n";
+
+    mlir::Attribute parsedAttr8 = mlir::parseAttribute("dense<[[0., 0., 0.], [0., 0., 0.]]> : tensor<2x3xf64>", &context);
+    llvm::outs() << "Parsed type attribute: " << parsedAttr8 << "\n";
 
     return 0;
 }

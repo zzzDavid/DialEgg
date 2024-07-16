@@ -5,6 +5,7 @@
 [INFO ] Declared function FloatAttr.
 [INFO ] Declared function StringAttr.
 [INFO ] Declared function OtherAttr.
+[INFO ] Declared function NoAttr.
 [INFO ] Declared sort Op.
 [INFO ] Declared function NamedOp.
 [INFO ] Declared function arith_constant.
@@ -15,24 +16,22 @@
 [INFO ] Declared function arith_negf.
 [INFO ] Declared function arith_maximumf.
 [INFO ] Declared function arith_minimumf.
-[INFO ] Declared rule (rewrite (arith_addf (arith_constant (FloatAttr ?x ?t) ?t) (arith_constant (FloatAttr ?y ?t) ?t) ?a ?t) (arith_constant (FloatAttr (+ ?x ?y) ?t) ?t)).
-[INFO ] Declared rule (rewrite (arith_mulf (arith_constant (FloatAttr ?x ?t) ?t) (arith_constant (FloatAttr ?y ?t) ?t) ?a ?t) (arith_constant (FloatAttr (* ?x ?y) ?t) ?t)).
-[INFO ] Declared rule (rewrite (arith_negf (arith_constant (FloatAttr ?x ?t) ?t) ?a ?t) (arith_constant (FloatAttr (neg ?x) ?t) ?t)).
-[INFO ] Declared rule (rewrite (arith_addf ?x ?y ?a ?t) (arith_addf ?y ?x ?a ?t)).
+[INFO ] Declared function math_sin.
+[INFO ] Declared function math_cos.
+[INFO ] Declared function math_powf.
+[INFO ] Declared function linalg_transpose.
+[INFO ] Declared rule (rewrite (linalg_transpose (linalg_transpose ?x ?y (OtherAttr 'array<i64: 1, 0>') ?t1) ?z (OtherAttr 'array<i64: 1, 0>') ?t2) ?x).
 [INFO ] Declared function op_cst.
 [INFO ] Declared function op_cst_0.
-[INFO ] Declared function op_0.
-[INFO ] Declared function op_1.
 [INFO ] Declared function op_cst_1.
+[INFO ] Declared function op_transposed.
+[INFO ] Declared function op_transposed_2.
 [INFO ] Ran schedule (repeat 100000 (run)).
-[INFO ] Report: Rule (rule ((= rewrite_var__ (arith_addf (arith_constant (FloatAttr ?x ?t) ?t) (arith...: search 0.001s, apply 0.000s, num matches 2
-    Rule (rule ((= rewrite_var__ (arith_mulf (arith_constant (FloatAttr ?x ?t) ?t) (arith...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= rewrite_var__ (arith_negf (arith_constant (FloatAttr ?x ?t) ?t) ?a ?t)...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= rewrite_var__ (arith_addf ?x ?y ?a ?t)))       ((union rewrite_var__ (...: search 0.000s, apply 0.000s, num matches 2
-    Ruleset : search 0.001s, apply 0.000s, rebuild 0.000s
+[INFO ] Report: Rule (rule ((= rewrite_var__ (linalg_transpose (linalg_transpose ?x ?y (OtherAttr "ar...: search 0.000s, apply 0.000s, num matches 3
+    Ruleset : search 0.000s, apply 0.000s, rebuild 0.000s
     
-[INFO ] extracted with cost 5: (arith_constant (FloatAttr 1.5 "f64") "f64")
-[INFO ] extracted with cost 5: (arith_constant (FloatAttr 2.0 "f64") "f64")
-[INFO ] extracted with cost 5: (arith_constant (FloatAttr 3.5 "f64") "f64")
-[INFO ] extracted with cost 14: (arith_subf (arith_constant (FloatAttr 2.0 "f64") "f64") (arith_constant (FloatAttr 1.5 "f64") "f64") (OtherAttr "#arith.fastmath<none>") "f64")
-[INFO ] extracted with cost 5: (arith_constant (FloatAttr 0.0 "f32") "f32")
+[INFO ] extracted with cost 4: (arith_constant (OtherAttr "dense<[[1.000000e+00, 2.000000e+00, 3.000000e+00], [4.000000e+00, 5.000000e+00, 6.000000e+00]]> : tensor<2x3xf64>") "tensor<2x3xf64>")
+[INFO ] extracted with cost 4: (arith_constant (OtherAttr "dense<0.000000e+00> : tensor<3x2xf64>") "tensor<3x2xf64>")
+[INFO ] extracted with cost 4: (arith_constant (OtherAttr "dense<0.000000e+00> : tensor<2x3xf64>") "tensor<2x3xf64>")
+[INFO ] extracted with cost 12: (linalg_transpose (arith_constant (OtherAttr "dense<[[1.000000e+00, 2.000000e+00, 3.000000e+00], [4.000000e+00, 5.000000e+00, 6.000000e+00]]> : tensor<2x3xf64>") "tensor<2x3xf64>") (arith_constant (OtherAttr "dense<0.000000e+00> : tensor<3x2xf64>") "tensor<3x2xf64>") (OtherAttr "array<i64: 1, 0>") "tensor<3x2xf64>")
+[INFO ] extracted with cost 4: (arith_constant (OtherAttr "dense<[[1.000000e+00, 2.000000e+00, 3.000000e+00], [4.000000e+00, 5.000000e+00, 6.000000e+00]]> : tensor<2x3xf64>") "tensor<2x3xf64>")

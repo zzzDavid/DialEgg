@@ -24,35 +24,6 @@ func.func @main() -> f32 {
     %four_f = arith.constant 4.0 : f64
     %five_f = arith.constant 5.0 : f64
 
-    // Add two ints
-    %c = arith.addi %one, %two : i64 // TODO eqsat constant folding
-    func.call @printI64(%c) : (i64) -> () // 3
-    func.call @printNewline() : () -> ()
-
-    // Subtract two ints
-    %d = arith.subi %five, %two : i64 // TODO eqsat constant folding
-    func.call @printI64(%d) : (i64) -> () // 3
-    func.call @printNewline() : () -> ()
-
-    // add two floats
-    %e = arith.addf %two_f, %one_point_five : f64
-    func.call @printF64(%e) : (f64) -> () // 3.5
-    func.call @printNewline() : () -> ()
-
-    // subtract two floats
-    %f = arith.subf %two_f, %one_point_five : f64
-    func.call @printF64(%f) : (f64) -> () // 0.5
-    func.call @printNewline() : () -> ()
-
-    // And and Or
-    %and = arith.andi %zero, %one : i64
-    %or = arith.ori %zero, %one : i64 // TODO eqsat constant folding
-
-    func.call @printI64(%and) : (i64) -> () // 0
-    func.call @printComma() : () -> ()
-    func.call @printI64(%or) : (i64) -> () // 1
-    func.call @printNewline() : () -> ()
-
     // ceildivsi
     %ceildivsi = arith.ceildivsi %five, %two : i64
     func.call @printI64(%ceildivsi) : (i64) -> () // 3
@@ -66,21 +37,6 @@ func.func @main() -> f32 {
     // divf
     %divf = arith.divf %five_f, %two_f : f64
     func.call @printF64(%divf) : (f64) -> () // 2.5
-    func.call @printNewline() : () -> ()
-
-    // max
-    %max = arith.maximumf %two_f, %three_f : f64
-    func.call @printF64(%max) : (f64) -> () // 3
-    func.call @printNewline() : () -> ()
-
-    // min
-    %min = arith.minimumf %two_f, %three_f : f64
-    func.call @printF64(%min) : (f64) -> () // 2
-    func.call @printNewline() : () -> ()
-
-    // neg
-    %neg = arith.negf %two_f : f64
-    func.call @printF64(%neg) : (f64) -> () // -2
     func.call @printNewline() : () -> ()
 
     %zero_f32 = arith.constant 0.0 : f32
