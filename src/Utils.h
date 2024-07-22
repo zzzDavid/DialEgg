@@ -7,7 +7,7 @@
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/Value.h"
 
-std::string getSSAValueName(const mlir::Value& value, const mlir::OpPrintingFlags opPrintingFlags = mlir::OpPrintingFlags()) {
+std::string getSSAName(const mlir::Value& value, const mlir::OpPrintingFlags opPrintingFlags = mlir::OpPrintingFlags()) {
     std::string ssaName;
     llvm::raw_string_ostream ssaNameStream(ssaName);
     value.printAsOperand(ssaNameStream, opPrintingFlags);
@@ -21,11 +21,6 @@ std::string getTypeName(const mlir::Value& value) {
     value.getType().print(typeStream);
     typeStream.flush();
     return type;
-}
-
-std::string getSSAValueId(const mlir::Value& value, const mlir::OpPrintingFlags opPrintingFlags = mlir::OpPrintingFlags()) {
-    std::string ssaName = getSSAValueName(value, opPrintingFlags);
-    return "op_" + ssaName.substr(1);  // remove the % prefix
 }
 
 std::string opToString(const mlir::Operation& op) {

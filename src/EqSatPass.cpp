@@ -80,9 +80,14 @@ void EqSatPass::runOnOperation() {
     // Perform equality saturation on all operations of a block.
     // Re-create the MLIR operations in this block according to the optimization.
     for (mlir::Block& block: rootOp.getRegion().getBlocks()) {
-        size_t id = 0;
-        EqSatOpGraph ops;                               // Map of result SSA value id to EqSatOp for all operations in the block
+        size_t opId = 0;
+        size_t valueId = 0;
+
+        std::vector<EqSatOp*> blockOps; // All operations in the block, index = op id
+        std::vector<EqSatOp*> opaqueValues; // All values from outside the block, index = value id
+        std::map<std::string, EqSatOp*> ssaNameToBlockOp; // Map of SSA name to EqSatOp
         std::map<std::string, EqSatOpInfo> opRegistry;  // Map of operation name to EqSatOpInfo
+
         for (mlir::Operation& op: block.getOperations()) {
             std::string opName = op.getName().getStringRef().str();
             bool isSupported = supportedOps.find(opName) != supportedOps.end();
@@ -96,27 +101,41 @@ void EqSatPass::runOnOperation() {
 
             // Regsiter the operation
             EqSatOpInfo opInfo(op, context);
-            opRegistry.emplace(op.getName().getStringRef().str(), opInfo);
+            opRegistry.emplace(opName, opInfo);
 
             // Get the operands
             std::vector<EqSatOp*> operands;
-            for (const mlir::Value& operand: op.getOperands()) {
-                std::string operandId = getSSAValueId(operand, mlir::OpPrintingFlags().enableDebugInfo());
-                EqSatOp* eqSatOperand = ops.getOp(operandId);  // TODO support use of ops from other blocks, so we don't have the value (this is easy)
+            for (mlir::Value operand: op.getOperands()) {
+                std::string operandSSAName = getSSAName(operand);
+                EqSatOp* eqSatOperand = nullptr;
+
+                if (ssaNameToBlockOp.find(operandSSAName) != ssaNameToBlockOp.end()) {
+                    eqSatOperand = ssaNameToBlockOp.at(operandSSAName);
+                } else { // Create opaque value
+                    eqSatOperand = new EqSatOp(valueId++, "", getTypeName(operand), {}, operand.getDefiningOp(), operand, true);
+
+                    opaqueValues.push_back(eqSatOperand);
+                    ssaNameToBlockOp.emplace(operandSSAName, eqSatOperand);
+
+                    eqSatOperand->print(std::cout);
+                }
+
+                // Add the operand to the operation
                 operands.push_back(eqSatOperand);
             }
 
-            // Get the result
-            mlir::Value result0 = op.getResult(0);  // TODO support multiple results (this is hard)
-
-            // Create the EqSatOp node
-            std::string opId = getSSAValueId(result0);
+            mlir::Value result0 = op.getResult(0); // TODO support multiple results
             std::string opType = getTypeName(result0);
 
-            EqSatOp* eqSatOp = new EqSatOp(id++, opId, opName, opType, operands, &op, result0);
-            eqSatOp->opaque = !isSupported;
+            size_t id = isSupported ? opId++ : valueId++;
+            EqSatOp* eqSatOp = new EqSatOp(id, opName, opType, operands, &op, result0, !isSupported);
 
-            ops.addOp(opId, eqSatOp);
+            if (eqSatOp->opaque) {
+                opaqueValues.push_back(eqSatOp);
+            } else {
+                blockOps.push_back(eqSatOp);
+            }
+            ssaNameToBlockOp.emplace(eqSatOp->resultSSAName, eqSatOp);
 
             eqSatOp->print(std::cout);
         }
@@ -135,8 +154,13 @@ void EqSatPass::runOnOperation() {
         eggFile << "(include \"res/egg/op.egg\")" << std::endl;
         eggFile << "(include \"res/egg/rules.egg\")" << std::endl;
         eggFile << std::endl;
-        for (const std::string& resultId: ops.opResultIds) {
-            eggFile << ops.getOp(resultId)->egglogLet() << std::endl;
+
+        for (const EqSatOp* value: opaqueValues) {
+            eggFile << value->egglogLet() << " ; " << valueToString(value->resultValue) << std::endl;
+        }
+
+        for (const EqSatOp* op: blockOps) {
+            eggFile << op->egglogLet() << " ; " << opToString(*op->mlirOp) << std::endl;
         }
 
         // run egglog
@@ -144,8 +168,8 @@ void EqSatPass::runOnOperation() {
         eggFile << "(run 100000)" << std::endl;
 
         // Extract the results of the egglog run
-        for (const std::string& resultId: ops.opResultIds) {
-            eggFile << "(extract " << resultId << ")" << std::endl;
+        for (const EqSatOp* op: blockOps) {
+            eggFile << "(extract " << op->getPrintId() << ")" << std::endl;
         }
 
         eggFile.close();
@@ -156,31 +180,50 @@ void EqSatPass::runOnOperation() {
 
         std::system(egglogCmd.c_str());
 
-        std::ifstream file(egglogExtractedFilename);
-        EgglogParser parser(context, ops, opRegistry);
-        std::map<std::string, mlir::Value&> results;
+        // dump all opaques
+        for (EqSatOp* value: opaqueValues) {
+            llvm::outs() << "id " << value->id << "\n";
+            llvm::outs() << "Opaque value: " << value->resultSSAName << " = " << value->resultValue << "\n";
+            if (value->mlirOp != nullptr)
+                value->mlirOp->print(llvm::outs());
+            llvm::outs() << "\n";
+        }
 
-        for (const std::string& resultId: ops.opResultIds) {
+        llvm::outs() << "\n";
+
+        for (EqSatOp* value: blockOps) {
+            llvm::outs() << "id " << value->id << "\n";
+            llvm::outs() << "Block value: " << value->resultSSAName << " = " << value->resultValue << "\n";
+            llvm::outs() << "Op ";
+            value->mlirOp->print(llvm::outs());
+            llvm::outs() << "\n\n";
+        }
+
+        std::ifstream file(egglogExtractedFilename);
+        EgglogParser parser(context, blockOps, opaqueValues, ssaNameToBlockOp, opRegistry);
+
+        for (EqSatOp* eqSatOp: blockOps) {
             std::string line;
             std::getline(file, line);
 
-            std::cout << resultId << " = " << line << std::endl;
+            std::cout << eqSatOp->getPrintId() << " = " << line << std::endl;
 
-            EqSatOp* eqSatOp = ops.getOp(resultId);
             mlir::Operation* prevOp = eqSatOp->mlirOp;
+
             mlir::OpBuilder builder(prevOp);
+            size_t newOpId = parser.nextOperationId(line);
             mlir::Operation* newOp = parser.parseOperation(line, builder);
 
-            llvm::outs() << "NEW OPERATION: ";
+            llvm::outs() << "NEW OPERATION " << newOpId << " : ";
             newOp->print(llvm::outs());
             llvm::outs() << "\n";
 
-            llvm::outs() << "OLD OPERATION: ";
+            llvm::outs() << "OLD OPERATION " << eqSatOp->id << " : ";
             prevOp->print(llvm::outs());
             llvm::outs() << "\n";
 
             // Check if the whole operation is different, if so, replace it
-            eqSatOp->replacement = newOp;
+            eqSatOp->replacementOp = newOp;
 
             llvm::outs() << "REPLACING: (" << *prevOp << ") WITH (" << *newOp << ")\n";
             prevOp->replaceAllUsesWith(newOp);

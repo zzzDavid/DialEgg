@@ -63,8 +63,8 @@ std::vector<std::string> splitEgglogExpression(std::string opStr) {
  */
 class EgglogParser {
 public:
-    EgglogParser(mlir::MLIRContext& context, const EqSatOpGraph& graph, const std::map<std::string, EqSatOpInfo>& opRegistry)
-        : context(context), graph(graph), opRegistry(opRegistry) {}
+    EgglogParser(mlir::MLIRContext& context, std::vector<EqSatOp*>& blockOps, std::vector<EqSatOp*>& opaqueValues, std::map<std::string, EqSatOp*>& ssaNameToBlockOp, std::map<std::string, EqSatOpInfo>& opRegistry)
+        : context(context), blockOps(blockOps), opaqueValues(opaqueValues), ssaNameToBlockOp(ssaNameToBlockOp), opRegistry(opRegistry) {}
 
     /** Parses the given type string into an MLIR type */
     mlir::Type parseType(std::string typeStr) {
@@ -100,6 +100,11 @@ public:
         }
     }
 
+    ssize_t nextOperationId(const std::string& newOpStr) {
+        std::vector<std::string> split = splitEgglogExpression(newOpStr);
+        return std::stoll(split[1]);
+    }
+
     /**
      * Parses the given operation string into a list of MLIR operations, in order or dependency.
      * Example:
@@ -113,26 +118,37 @@ public:
         std::vector<std::string> split = splitEgglogExpression(newOpStr);
 
         std::string opName = split[0];
-
-        if (opName == "NamedOp") {
-            return nullptr;
-        }
-
         std::replace(opName.begin(), opName.end(), '_', '.');  // Replace underscores with dots
         EqSatOpInfo opInfo = opRegistry.at(opName);
 
         // Operands
         std::vector<mlir::Value> operands;
         for (ssize_t i = 0; i < opInfo.nOperands; i++) {
-            mlir::Operation* nestedOperand = parseOperation(split[i + 1], builder);
-            mlir::Value operand = nestedOperand->getResult(0);  // TODO support multiple results?
-            operands.push_back(operand);
+            std::string operandStr = split[i + 2];
+            if (operandStr.find("(NamedOp ") == 0) {
+                std::vector<std::string> operandSplit = splitEgglogExpression(operandStr);
+                int64_t id = std::stoll(operandSplit[1]);
+                EqSatOp* eqSatOperand = opaqueValues[id];
+                llvm::outs() << "Found opaque value id " << id << " with SSA name " << eqSatOperand->resultSSAName << " = " << eqSatOperand->resultValue << "\n";
+                operands.push_back(eqSatOperand->resultValue);
+            } else {
+                ssize_t operandId = nextOperationId(operandStr);
+
+                if (operandId < 0) {
+                    mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
+                    mlir::Value operand = nestedOperand->getResult(0);  // TODO support multiple results?
+                    operands.push_back(operand);
+                } else {
+                    mlir::Value operandReplacement = blockOps[operandId]->replacementOp->getResult(0);
+                    operands.push_back(operandReplacement);
+                }
+            }
         }
 
         // attr
         std::vector<mlir::NamedAttribute> attributes;
         for (size_t i = 0; i < opInfo.attributes.size(); i++) {
-            mlir::NamedAttribute attr = parseNamedAttribute(split[i + opInfo.nOperands + 1]);
+            mlir::NamedAttribute attr = parseNamedAttribute(split[i + opInfo.nOperands + 2]);
             attributes.push_back(attr);
         }
 
@@ -142,13 +158,13 @@ public:
         // Create the operation
         mlir::Operation* newOp = nullptr;
 
-        if (opName.find("linalg.") == 0) { // custom ops
+        if (opName.find("linalg.") == 0) {  // custom ops
             std::string op = opName.substr(7);
             if (op == "transpose") {
                 mlir::Attribute attr = attributes[0].getValue();
                 newOp = builder.create<mlir::linalg::TransposeOp>(mlir::UnknownLoc::get(&context), operands[0], operands[1], attr.cast<mlir::DenseI64ArrayAttr>());
             }
-        } else { // other ops that have no hidden region, thus are easy to create with OperationState
+        } else {  // other ops that have no hidden region, thus are easy to create with OperationState
             mlir::OperationState state(mlir::UnknownLoc::get(&context), opName);
             state.addOperands(operands);
             state.addAttributes(attributes);
@@ -163,8 +179,10 @@ public:
 public:
     mlir::MLIRContext& context;
 
-    const EqSatOpGraph& graph;
-    const std::map<std::string, EqSatOpInfo>& opRegistry;
+    std::vector<EqSatOp*>& blockOps;                    // All operations in the block, index = op id
+    std::vector<EqSatOp*>& opaqueValues;                // All values from outside the block, index = value id
+    std::map<std::string, EqSatOp*>& ssaNameToBlockOp;  // Map of SSA name to EqSatOp
+    std::map<std::string, EqSatOpInfo>& opRegistry;     // Map of operation name to EqSatOpInfo
 };
 
 #endif  //S_EXPRESSION_PARSER_H

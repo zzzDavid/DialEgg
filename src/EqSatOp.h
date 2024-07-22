@@ -9,14 +9,16 @@
 #include "mlir/IR/Operation.h"
 #include "llvm/Support/raw_os_ostream.h"
 
+#include "Utils.h"
+
 /**
  * The Operation name, and the number of operands it takes and results it returns. Also, the attributes it has.
  * e.g. "linalg.add" takes 3 operands and returns 1 result, and has no attributes.
  */
 struct EqSatOpInfo {
     std::string name;
-    ssize_t nOperands; // not stable
-    ssize_t nResults; // not stable
+    ssize_t nOperands;  // not stable
+    ssize_t nResults;   // not stable
     std::vector<std::string> attributes;
 
     EqSatOpInfo(const std::string& name, ssize_t nOperands, ssize_t nResults, const std::vector<std::string>& attributes)
@@ -33,7 +35,7 @@ struct EqSatOpInfo {
 
         this->attributes = attributes;
     }
-    EqSatOpInfo(const std::string& name, mlir::MLIRContext& context) : EqSatOpInfo(name, SIZE_T_MAX, -1, context) {}
+    EqSatOpInfo(const std::string& name, mlir::MLIRContext& context) : EqSatOpInfo(name, -1, -1, context) {}
     EqSatOpInfo(mlir::Operation& op, mlir::MLIRContext& context) : EqSatOpInfo(op.getName().getStringRef().str(), op.getNumOperands(), op.getNumResults(), context) {}
 
     void print(std::ostream& os = std::cout) const {
@@ -67,45 +69,52 @@ struct EqSatOpInfo {
 struct EqSatOp {
     size_t id;
 
-    bool opaque = false;
-    std::string resultId;
-    std::string name;                        // name of the operation
-    std::string type;                        // type of the operation
-    std::vector<EqSatOp*> operands;          // 0 or more operands
+    bool opaque;                     // If the operation is only needed for it's result value, thus the details should be hidden
+    std::string name;                // name of the operation
+    std::string type;                // type of the operation
+    std::vector<EqSatOp*> operands;  // 0 or more operands
 
-    mlir::Operation* mlirOp;                 // Reference to op
-    mlir::Value& resultValue;                // Reference to result value
-    mlir::Operation* replacement = nullptr;  // Replacement operation
+    mlir::Operation* mlirOp;                   // Reference to op - can be nullptr
+    mlir::Operation* replacementOp = nullptr;  // Replacement operation - can be nullptr
 
-    EqSatOp(size_t id, const std::string& resultId, const std::string& name, const std::string& type, const std::vector<EqSatOp*>& operands, mlir::Operation* mlirOp, mlir::Value& resultValue)
-        : id(id), resultId(resultId), name(name), type(type), operands(operands), mlirOp(mlirOp), resultValue(resultValue) {}
+    mlir::Value resultValue;    // result value
+    std::string resultSSAName;  // SSA name of the result value
+
+    EqSatOp(size_t id, const std::string& name, const std::string& type, const std::vector<EqSatOp*>& operands, mlir::Operation* mlirOp, mlir::Value resultValue, bool opaque = false)
+        : id(id), opaque(opaque), name(name), type(type), operands(operands), mlirOp(mlirOp), resultValue(resultValue), resultSSAName(getSSAName(resultValue)) {}
+
+    std::string getPrintId() const {
+        return (opaque ? "arg" : "op") + std::to_string(id);
+    }
 
     /** Prints the EqSatOp to the given output stream */
     void print(std::ostream& os = std::cout) const {
         llvm::raw_os_ostream ros(os);
 
-        os << "EqSatOp " << resultId << " = ";
+        os << "EqSatOp " << getPrintId() << " = ";
 
         if (!name.empty()) {
             os << name;
         } else {
-            os << "UnknownOp";
+            os << resultSSAName;
         }
 
         // attrs
-        os << " (";
-        for (const mlir::NamedAttribute& attr: mlirOp->getAttrs()) {
-            os << attr.getName().str() << " = ";
-            attr.getValue().print(ros);
-            ros.flush();
-            os << "  ";
+        os << " ( ";
+        if (mlirOp != nullptr) {
+            for (const mlir::NamedAttribute& attr: mlirOp->getAttrs()) {
+                os << attr.getName().str() << " = ";
+                attr.getValue().print(ros);
+                ros.flush();
+                os << " ";
+            }
         }
         os << ")";
 
         // operands
-        os << " [";
+        os << " [ ";
         for (const EqSatOp* operand: operands) {
-            os << operand->resultId << " ";
+            os << operand->getPrintId() << " ";
         }
         os << "]";
 
@@ -115,31 +124,33 @@ struct EqSatOp {
 
     /** Returns the egglog s-expression with "let" for the given EqSatOp */
     std::string egglog() const {
-        // (<op> <operand1> <operand2> ... <operandN> <attr1> <attr2> ... <attrM> "<type>")
+        // (<op> <id> <operand1> <operand2> ... <operandN> <attr1> <attr2> ... <attrM> "<type>")
 
         std::stringstream ss;
 
         if (opaque) {
-            ss << "(NamedOp \"" << resultId << "\" \"" << type << "\")";
+            ss << "(NamedOp " << id << " \"" << type << "\")";
             return ss.str();
         }
 
         std::string cleanName = name;
         std::replace(cleanName.begin(), cleanName.end(), '.', '_');
-        
+
         ss << "(";
 
-        // Operation <op>
-        ss << cleanName;
+        // Operation <op> <id>
+        ss << cleanName << " " << id;
 
         // Operands <operand1> <operand2> ... <operandN>
         for (const EqSatOp* operand: operands) {
-            ss << " " << operand->resultId;
+            ss << " " << operand->getPrintId();
         }
 
         // Attributes <attr1> <attr2> ... <attrM>
-        for (const mlir::NamedAttribute& attr: mlirOp->getAttrs()) {
-            ss << " " << egglogAttr(attr);
+        if (mlirOp != nullptr) {
+            for (const mlir::NamedAttribute& attr: mlirOp->getAttrs()) {
+                ss << " " << egglogAttr(attr);
+            }
         }
 
         // Type "<type>"
@@ -159,15 +170,15 @@ struct EqSatOp {
 
         // Name "<name>"
         ss << namedAttr.getName();
-    
+
         // Attribute <attr>
         mlir::Attribute attr = namedAttr.getValue();
         mlir::TypeID typeId = attr.getTypeID();
-        if (typeId == mlir::TypeID::get<mlir::IntegerAttr>()) { // (IntegerAttr <int> <type>)
+        if (typeId == mlir::TypeID::get<mlir::IntegerAttr>()) {  // (IntegerAttr <int> <type>)
             mlir::IntegerAttr integerAttr = attr.cast<mlir::IntegerAttr>();
             int64_t value = integerAttr.getInt();
             ss << " (IntegerAttr " << value << " \"" << integerAttr.getType() << "\")";
-        } else if (typeId == mlir::TypeID::get<mlir::FloatAttr>()) { // (FloatAttr <float> <type>)
+        } else if (typeId == mlir::TypeID::get<mlir::FloatAttr>()) {  // (FloatAttr <float> <type>)
             mlir::FloatAttr floatAttr = attr.cast<mlir::FloatAttr>();
             double value = floatAttr.getValueAsDouble();
             ss << " (FloatAttr " << value << " \"" << floatAttr.getType() << "\")";
@@ -175,7 +186,7 @@ struct EqSatOp {
             mlir::StringAttr stringAttr = attr.cast<mlir::StringAttr>();
             std::string value = stringAttr.getValue().str();
             ss << " (StringAttr \"" << value << "\")";
-        } else { // (OtherAttr "<attr>" "<type-name>")
+        } else {  // (OtherAttr "<attr>" "<type-name>")
             ss << " (OtherAttr \"" << attr << "\" \"" << attr.getAbstractAttribute().getName() << "\")";
         }
 
@@ -190,31 +201,8 @@ struct EqSatOp {
     std::string egglogLet() const {
         // (let <resultId> <egglog>)
         std::stringstream ss;
-        ss << "(let " << resultId << " " << egglog() << ")";
+        ss << "(let " << getPrintId() << " " << egglog() << ")";
         return ss.str();
-    }
-};
-
-/**
- * Represents a graph of EqSat operations, where each operation is a node.
- */
-struct EqSatOpGraph {
-    std::vector<std::string> opResultIds;
-    std::unordered_map<std::string, EqSatOp*> ops;
-
-    EqSatOpGraph() = default;
-
-    EqSatOp* getOp(const std::string& resultId) const {
-        return ops.at(resultId);
-    }
-
-    void setOp(const std::string& resultId, EqSatOp* op) {
-        ops[resultId] = op;
-    }
-
-    void addOp(const std::string& resultId, EqSatOp* op) {
-        opResultIds.push_back(resultId);
-        ops.emplace(resultId, op);
     }
 };
 

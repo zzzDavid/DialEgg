@@ -1,21 +1,22 @@
 (datatype Op
-    (NamedOp String String) ; (NamedOp <name> <type>)
+    (NamedOp i64 String) ; (NamedOp <id> <type>)
 
-    (arith_constant AttrPair String)
-    (arith_addf Op Op AttrPair String)
-    (arith_addi Op Op AttrPair String)
-    (arith_divf Op Op AttrPair String)
-    (arith_mulf Op Op AttrPair String)
-    (arith_negf Op AttrPair String)
-    (arith_maximumf Op Op AttrPair String)
-    (arith_minimumf Op Op AttrPair String)
-    (arith_andi Op Op String)
-    (arith_cmpf Op Op AttrPair AttrPair String)
+    (arith_constant i64 AttrPair String)
+    (arith_addf i64 Op Op AttrPair String)
+    (arith_addi i64 Op Op AttrPair String)
+    (arith_divf i64 Op Op AttrPair String)
+    (arith_mulf i64 Op Op AttrPair String)
+    (arith_negf i64 Op AttrPair String)
+    (arith_maximumf i64 Op Op AttrPair String)
+    (arith_minimumf i64 Op Op AttrPair String)
+    (arith_andi i64 Op Op String)
+    (arith_cmpf i64 Op Op AttrPair AttrPair String)
 
-    (math_sin Op AttrPair String)
-    (math_cos Op AttrPair String)
-    (math_powf Op Op AttrPair String)
+    (math_sin i64 Op AttrPair String)
+    (math_cos i64 Op AttrPair String)
+    (math_powf i64 Op Op AttrPair String)
 
-    (linalg_transpose Op Op Op AttrPair String)
+    (linalg_transpose i64 Op Op Op AttrPair String)
+
     ; Very easy to extend for dialect authors
 )

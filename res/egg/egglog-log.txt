@@ -28,18 +28,20 @@
 [INFO ] Declared function math_cos.
 [INFO ] Declared function math_powf.
 [INFO ] Declared function linalg_transpose.
-[INFO ] Declared function op_cst.
-[INFO ] Declared function op_cst_0.
-[INFO ] Declared function op_0.
-[INFO ] Declared function op_1.
-[INFO ] Declared function op_2.
-[INFO ] Declared function op_cst_1.
+[INFO ] Declared rule (rewrite (arith_addf ?i0 (arith_constant ?i1 (NamedAttr 'value' (FloatAttr ?x ?t)) ?t) (arith_constant ? (NamedAttr 'value' (FloatAttr ?y ?t)) ?t) ?a ?t) (arith_constant -1 (NamedAttr 'value' (FloatAttr (+ ?x ?y) ?t)) ?t)).
+[INFO ] Declared rule (rewrite (arith_addf ? ?x ?y ?a ?t) (arith_addf -1 ?y ?x ?a ?t)).
+[INFO ] Declared function arg0.
+[INFO ] Declared function arg1.
+[INFO ] Declared function op0.
+[INFO ] Declared function op1.
+[INFO ] Declared function op2.
+[INFO ] Declared function op3.
 [INFO ] Ran schedule (repeat 100000 (run)).
-[INFO ] Report: Ruleset : search 0.000s, apply 0.000s, rebuild 0.000s
+[INFO ] Report: Rule (rule ((= rewrite_var__ (arith_addf ? ?x ?y ?a ?t)))       ((union rewrite_var__...: search 0.000s, apply 0.000s, num matches 5
+    Rule (rule ((= rewrite_var__ (arith_addf ?i0 (arith_constant ?i1 (NamedAttr "value" (...: search 0.002s, apply 0.000s, num matches 2
+    Ruleset : search 0.002s, apply 0.000s, rebuild 0.000s
     
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64")
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64")
-[INFO ] extracted with cost 21: (arith_addf (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
-[INFO ] extracted with cost 3: (NamedOp "op_1" "f64")
-[INFO ] extracted with cost 31: (arith_addf (arith_addf (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64") (NamedOp "op_1" "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 0.0 "f32")) "f32")
+[INFO ] extracted with cost 8: (arith_constant 0 (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64")
+[INFO ] extracted with cost 8: (arith_constant -1 (NamedAttr "value" (FloatAttr 4.0 "f64")) "f64")
+[INFO ] extracted with cost 19: (arith_addf 2 (arith_constant -1 (NamedAttr "value" (FloatAttr 4.0 "f64")) "f64") (NamedOp 1 "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
+[INFO ] extracted with cost 8: (arith_constant 3 (NamedAttr "value" (FloatAttr 0.0 "f32")) "f32")

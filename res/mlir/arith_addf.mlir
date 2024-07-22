@@ -1,18 +1,17 @@
 func.func private @printF64(f64)
 func.func private @printNewline()
 
-func.func @main() -> f32 {
+func.func @main(%cst : f64) -> f32 {
     // float constants
-    %one_point_five = arith.constant 1.5 : f64
     %two_f = arith.constant 2.0 : f64
 
     // add two floats
-    %e = arith.addf %two_f, %one_point_five : f64
+    %e = arith.addf %two_f, %two_f : f64
     func.call @printF64(%e) : (f64) -> () // 3.5
     func.call @printNewline() : () -> ()
 
     // subtract two floats
-    %f = arith.subf %two_f, %one_point_five : f64
+    %f = arith.subf %two_f, %cst : f64
     func.call @printF64(%f) : (f64) -> () // 0.5
     func.call @printNewline() : () -> ()
 

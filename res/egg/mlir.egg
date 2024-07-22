@@ -2,17 +2,15 @@
 (include "res/egg/op.egg")
 (include "res/egg/rules.egg")
 
-(let op_cst (arith_constant (NamedAttr "value" (FloatAttr 1.500000e+00 "f64")) "f64"))
-(let op_cst_0 (arith_constant (NamedAttr "value" (FloatAttr 2.000000e+00 "f64")) "f64"))
-(let op_0 (arith_addf op_cst_0 op_cst (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64"))
-(let op_1 (NamedOp "op_1" "f64"))
-(let op_2 (arith_addf op_0 op_1 (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64"))
-(let op_cst_1 (arith_constant (NamedAttr "value" (FloatAttr 0.000000e+00 "f32")) "f32"))
+(let arg0 (NamedOp 0 "f64")) ; <block argument> of type 'f64' at index: 0
+(let arg1 (NamedOp 1 "f64")) ; %1 = arith.subf %cst, %arg0 : f64
+(let op0 (arith_constant 0 (NamedAttr "value" (FloatAttr 2.000000e+00 "f64")) "f64")) ; %cst = arith.constant 2.000000e+00 : f64
+(let op1 (arith_addf 1 op0 op0 (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")) ; %0 = arith.addf %cst, %cst : f64
+(let op2 (arith_addf 2 op1 arg1 (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")) ; %2 = arith.addf %0, %1 : f64
+(let op3 (arith_constant 3 (NamedAttr "value" (FloatAttr 0.000000e+00 "f32")) "f32")) ; %cst_0 = arith.constant 0.000000e+00 : f32
 
 (run 100000)
-(extract op_cst)
-(extract op_cst_0)
-(extract op_0)
-(extract op_1)
-(extract op_2)
-(extract op_cst_1)
+(extract op0)
+(extract op1)
+(extract op2)
+(extract op3)
