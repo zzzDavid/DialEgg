@@ -53,6 +53,10 @@ add_llvm_executable(attr src/attr.cpp)
 llvm_update_compile_flags(attr)
 target_link_libraries(attr PRIVATE ${OPT_LIBS})
 
+add_llvm_executable(ops src/ops.cpp)
+llvm_update_compile_flags(ops)
+target_link_libraries(ops PRIVATE ${OPT_LIBS})
+
 add_llvm_executable(tester src/tester.cpp)
 llvm_update_compile_flags(tester)
 target_link_libraries(tester PRIVATE ${OPT_LIBS})

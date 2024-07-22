@@ -1,0 +1,6 @@
+(arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64")
+(arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64")
+(arith_addf (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
+(NamedOp "op_1" "f64")
+(arith_addf (arith_addf (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64") (NamedOp "op_1" "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
+(arith_constant (NamedAttr "value" (FloatAttr 0.0 "f32")) "f32")

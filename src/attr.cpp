@@ -70,6 +70,10 @@ int main() {
 
     mlir::Attribute parsedAttr8 = mlir::parseAttribute("dense<[[0., 0., 0.], [0., 0., 0.]]> : tensor<2x3xf64>", &context);
     llvm::outs() << "Parsed type attribute: " << parsedAttr8 << "\n";
+    llvm::outs() << "Parsed type attribute: " << parsedAttr8 << " " << parsedAttr8.getAbstractAttribute().getName() << "\n";
+
+    mlir::Attribute parsedAttr9 = mlir::parseAttribute("#arith.fastmath<none>", &context);
+    llvm::outs() << "Parsed type attribute: " << parsedAttr9 << " " << parsedAttr9.getAbstractAttribute().getName() << "\n";
 
     return 0;
 }

@@ -1,0 +1,17 @@
+(sort Attr)
+(sort AttrDict (Map String Attr))
+(sort AttrVec (Vec Attr))
+(datatype AttrPair (NamedAttr String Attr))
+
+(function IntegerAttr (i64 String) Attr)
+(function FloatAttr (f64 String) Attr)
+(function StringAttr (String) Attr)
+(function ArrayAttr (AttrVec) Attr)
+(function DictionaryAttr (AttrDict) Attr)
+(function TypeAttr (String) Attr) ; TODO change type from string to real type
+(function UnitAttr () Attr)
+(function OtherAttr (String String) Attr) ; (<attr> <type-name>)
+; DenseArrayAttr
+; DenseIntOrFPElementsAttr
+(function NoAttr () Attr)
+; Very easy to extend for dialect authors

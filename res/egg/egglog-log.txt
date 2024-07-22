@@ -1,0 +1,45 @@
+[INFO ] Declared sort Attr.
+[INFO ] Declared sort AttrDict.
+[INFO ] Declared sort AttrVec.
+[INFO ] Declared sort AttrPair.
+[INFO ] Declared function NamedAttr.
+[INFO ] Declared function IntegerAttr.
+[INFO ] Declared function FloatAttr.
+[INFO ] Declared function StringAttr.
+[INFO ] Declared function ArrayAttr.
+[INFO ] Declared function DictionaryAttr.
+[INFO ] Declared function TypeAttr.
+[INFO ] Declared function UnitAttr.
+[INFO ] Declared function OtherAttr.
+[INFO ] Declared function NoAttr.
+[INFO ] Declared sort Op.
+[INFO ] Declared function NamedOp.
+[INFO ] Declared function arith_constant.
+[INFO ] Declared function arith_addf.
+[INFO ] Declared function arith_addi.
+[INFO ] Declared function arith_divf.
+[INFO ] Declared function arith_mulf.
+[INFO ] Declared function arith_negf.
+[INFO ] Declared function arith_maximumf.
+[INFO ] Declared function arith_minimumf.
+[INFO ] Declared function arith_andi.
+[INFO ] Declared function arith_cmpf.
+[INFO ] Declared function math_sin.
+[INFO ] Declared function math_cos.
+[INFO ] Declared function math_powf.
+[INFO ] Declared function linalg_transpose.
+[INFO ] Declared function op_cst.
+[INFO ] Declared function op_cst_0.
+[INFO ] Declared function op_0.
+[INFO ] Declared function op_1.
+[INFO ] Declared function op_2.
+[INFO ] Declared function op_cst_1.
+[INFO ] Ran schedule (repeat 100000 (run)).
+[INFO ] Report: Ruleset : search 0.000s, apply 0.000s, rebuild 0.000s
+    
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64")
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64")
+[INFO ] extracted with cost 21: (arith_addf (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
+[INFO ] extracted with cost 3: (NamedOp "op_1" "f64")
+[INFO ] extracted with cost 31: (arith_addf (arith_addf (arith_constant (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64") (NamedOp "op_1" "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 0.0 "f32")) "f32")

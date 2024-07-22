@@ -1,0 +1,49 @@
+(sort Attr)
+(sort AttrDict (Map String Attr))
+(sort AttrVec (Vec Attr))
+
+
+(function IntegerAttr (i64) Attr)
+(function FloatAttr (f64) Attr)
+(function ArrayAttr (AttrVec) Attr)
+(function DictionaryAttr (AttrDict) Attr)
+
+(datatype Expr
+    (Num AttrDict)
+    (Add Expr Expr)
+    (Mul Expr Expr)
+)
+
+(let attr1 (map-insert (map-insert (map-empty) "int_value" (IntegerAttr 5)) "float_value" (FloatAttr 5.0)))
+(let attr12 (map-insert (map-insert (map-empty) "float_value" (FloatAttr 5.0)) "int_value" (IntegerAttr 5)))
+(let attr2 (map-insert (map-insert (map-empty) "int_value" (IntegerAttr 6)) "float_value" (FloatAttr 6.0)))
+
+(check (= attr1 attr12))
+(check (= (map-get attr1 "int_value") (IntegerAttr 5)))
+(check (= (map-get attr1 "float_value") (FloatAttr 5.0)))
+
+(let rand (rebuild attr1))
+
+(let e1 (Num attr1))
+(let e2 (Num attr2))
+(let sum (Add e1 e2))
+
+(let x1 (map-get attr1 "int_value"))
+
+(rewrite 
+    (Add (Num (map-insert (map-insert (map-empty) "int_value" (IntegerAttr ?x1)) "float_value" (FloatAttr ?y1))) (Num ?a2))
+    (Num (map-empty))
+)
+
+;(rule
+;	(
+;     (= ?lhs (Add (Num ?a1) (Num ?a2)))
+;     (map-contains ?a1 "int_value")
+;     (= ?xi map-get ?a1 "int_value")
+;    )
+;	(
+;     (union ?lhs (Num (map-insert (map-empty) "int_value" (IntegerAttr 3))))
+;    )
+;)
+
+(run 10)

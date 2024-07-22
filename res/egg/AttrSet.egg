@@ -1,0 +1,46 @@
+(sort Attr)
+(sort AttrDict (Map String Attr))
+(sort AttrVec (Vec Attr))
+(datatype AttrPair (NamedAttr String Attr))
+(sort AttrPairSet (Set AttrPair))
+
+(function IntegerAttr (i64) Attr)
+(function FloatAttr (f64) Attr)
+(function ArrayAttr (AttrVec) Attr)
+(function DictionaryAttr (AttrDict) Attr)
+
+(datatype Expr
+    (Num AttrPairSet)
+    (Add Expr Expr)
+    (Mul Expr Expr)
+)
+
+(let attr1 (set-of (NamedAttr "int_value" (IntegerAttr 5)) (NamedAttr "float_value" (FloatAttr 5.0))))
+(let attr12 (set-of (NamedAttr "float_value" (FloatAttr 5.0)) (NamedAttr "int_value" (IntegerAttr 5))))
+(check (= attr1 attr12))
+(let attr2 (set-of (NamedAttr "int_value" (IntegerAttr 6)) (NamedAttr "float_value" (FloatAttr 6.0))))
+
+(extract (set-get attr1 0))
+(extract (set-get attr1 1))
+
+(let e1 (Num attr1))
+(let e2 (Num attr2))
+(let e3 (Add e1 e2))
+
+;(rewrite
+;	(Add 
+;    	(Num (set-of (NamedAttr "int_value" (IntegerAttr ?x1)) (NamedAttr "float_value" (FloatAttr ?y1)))) 
+;     	(Num (set-of (NamedAttr "int_value" (IntegerAttr ?x2)) (NamedAttr "float_value" (FloatAttr ?y2))))
+;    )
+;	(Num (set-of (NamedAttr "int_value" (IntegerAttr (+ ?x1 ?x2))) (NamedAttr "float_value" (FloatAttr (+ ?y1 ?y2)))))
+;)
+
+(rewrite
+	(Add 
+    	(Num (set-of ?s (NamedAttr "float_value" (FloatAttr ?y1)))) 
+     	(Num (set-of (NamedAttr "int_value" (IntegerAttr ?x2)) (NamedAttr "float_value" (FloatAttr ?y2))))
+    )
+	(Num (set-of))
+)
+
+(run 10)
