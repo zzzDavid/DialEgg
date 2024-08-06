@@ -1,0 +1,4 @@
+;; Ops
+(function math_sin (i64 Op AttrPair Type) Op)
+(function math_cos (i64 Op AttrPair Type) Op)
+(function math_powf (i64 Op Op AttrPair Type) Op)

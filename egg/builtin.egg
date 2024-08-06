@@ -1,0 +1,39 @@
+;; Types
+(datatype Type
+    (I64)
+    (F64)
+)
+
+;; Attrs
+(sort Attr)
+(sort AttrDict (Map String Attr))
+(sort AttrVec (Vec Attr))
+
+(datatype AttrPair (NamedAttr String Attr))
+(sort AttrPairVec (Vec AttrPair))
+
+(function NoAttr () Attr)
+(function IntegerAttr (i64 String) Attr)
+(function FloatAttr (f64 String) Attr)
+(function StringAttr (String) Attr)
+(function ArrayAttr (AttrVec) Attr)
+(function TypeAttr (String) Attr) ; TODO change type from string to real type
+(function UnitAttr () Attr)
+(function OtherAttr (String String) Attr) ; (<attr> <type-name>)
+
+; DenseArrayAttr
+; DenseIntOrFPElementsAttr
+; DenseResourceElementsAttr
+; DenseStringElementsAttr
+; DictionaryAttr
+; IntegerSetAttr
+; OpaqueAttr
+; SparseElementsAttr
+; SymbolRefAttr
+; StridedLayoutAttr
+
+
+;; Ops
+(datatype Op
+    (NamedOp i64 String) ; (NamedOp <id> <type>)
+)

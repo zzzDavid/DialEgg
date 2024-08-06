@@ -1,0 +1,47 @@
+(datatype Dimension
+    (Unknown)
+    (Dim i64)
+)
+
+(sort DimVec (Vec Dimension))
+
+(datatype Shape
+   (Shape1D Dimension)
+   (Shape2D Dimension Dimension)
+   (ShapeND DimVec)
+)
+
+(function nrows (Shape) Dimension)
+(function ncols (Shape) Dimension)
+(function dimN (Shape i64) Dimension)
+
+(let sa (Shape1D (Dim 10)))
+(let sar (nrows sa))
+(let sad0 (dimN sa 0))
+
+(let sb (Shape2D (Dim 10) (Dim 15)))
+(let sbr (nrows sb))
+(let sbc (ncols sb))
+(let sbd0 (dimN sb 0))
+(let sbd1 (dimN sb 1))
+
+(let sc (ShapeND (vec-of (Dim 10) (Dim 15) (Dim 20))))
+(let scr (nrows sc))
+(let scc (ncols sc))
+(let scd0 (dimN sc 0))
+(let scd1 (dimN sc 1))
+(let scd2 (dimN sc 2))
+
+(rewrite (nrows (Shape1D ?d)) ?d)
+(rewrite (dimN (Shape1D ?d) 0) ?d)
+
+(rewrite (nrows (Shape2D ?r ?c)) ?r)
+(rewrite (ncols (Shape2D ?r ?c)) ?c)
+(rewrite (dimN (Shape2D ?r ?c) 0) ?r)
+(rewrite (dimN (Shape2D ?r ?c) 1) ?c)
+
+(rewrite (nrows (ShapeND ?dvec)) (dimN (ShapeND ?dvec) 0))
+(rewrite (ncols (ShapeND ?dvec)) (dimN (ShapeND ?dvec) 1))
+(rewrite (dimN (ShapeND ?dvec) ?i) (vec-get ?dvec ?i))
+
+(run 1)

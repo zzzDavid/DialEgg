@@ -1,0 +1,19 @@
+;; arith
+;(rewrite ; constant fold for arith.addf
+;    (arith_addf ?i0
+;        (arith_constant ?i1 (NamedAttr "value" (FloatAttr ?x ?t)) ?t)
+;        (arith_constant ?i2 (NamedAttr "value" (FloatAttr ?y ?t)) ?t)
+;        ?a ?t)
+;    (arith_constant -1 (NamedAttr "value" (FloatAttr (+ ?x ?y) ?t)) ?t)
+;)
+    
+(rewrite ; commute for arith.addf
+    (arith_addf ? ?x ?y ?a ?t)
+    (arith_addf -1 ?y ?x ?a ?t)
+)
+
+;; linalg
+(rewrite
+    (linalg_transpose ?i0 (linalg_transpose ?i1 ?x ?y ?a ?t1) ?z ?a ?t2)
+    ?x
+)

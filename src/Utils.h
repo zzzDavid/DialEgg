@@ -39,6 +39,22 @@ std::string valueToString(const mlir::Value& value) {
     return str;
 }
 
+std::string typeToString(const mlir::Type& type) {
+    std::string str;
+    llvm::raw_string_ostream stream(str);
+    stream << type;
+    stream.flush();
+    return str;
+}
+
+std::string locationToString(const mlir::Location& loc) {
+    std::string str;
+    llvm::raw_string_ostream stream(str);
+    stream << loc;
+    stream.flush();
+    return str;
+}
+
 bool opDeepEqual(mlir::Operation& a, mlir::Operation& b) {
     if (a.getName() != b.getName()) {
         return false;

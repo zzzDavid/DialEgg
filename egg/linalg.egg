@@ -1,0 +1,2 @@
+;; Ops
+(function linalg_transpose (i64 Op Op AttrPair Type) Op)

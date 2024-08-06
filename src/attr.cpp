@@ -3,8 +3,11 @@
 #include "mlir/InitAllDialects.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Operation.h"
+#include "mlir/IR/Attributes.h"
+#include "mlir/IR/AttributeSupport.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/OpDefinition.h"
 #include "mlir/IR/Types.h"
@@ -16,6 +19,8 @@ int main() {
 
     mlir::MLIRContext context(registry);
     context.loadAllAvailableDialects();
+
+    mlir::OpBuilder builder(&context);
 
     mlir::Type floatType = mlir::FloatType::getF64(&context);
 
@@ -74,6 +79,19 @@ int main() {
 
     mlir::Attribute parsedAttr9 = mlir::parseAttribute("#arith.fastmath<none>", &context);
     llvm::outs() << "Parsed type attribute: " << parsedAttr9 << " " << parsedAttr9.getAbstractAttribute().getName() << "\n";
+    llvm::outs() << "Parsed type attribute: " << parsedAttr9 << " " << parsedAttr9.getImpl() << "\n";
+
+    auto attrType = mlir::parseType("arith.fastmath", &context);
+    llvm::outs() << "Parsed type: " << attrType << "\n";
+
+    auto attrType2 = mlir::parseAttribute("arith.fastmath", &context);
+    llvm::outs() << "Parsed type: " << attrType2 << "\n";
+
+    attrType = mlir::parseType("#arith.fastmath", &context);
+    llvm::outs() << "Parsed type: " << attrType << "\n";
+
+    attrType2 = mlir::parseAttribute("#arith.fastmath", &context);
+    llvm::outs() << "Parsed type: " << attrType2 << "\n";
 
     return 0;
 }

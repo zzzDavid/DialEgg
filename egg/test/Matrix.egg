@@ -1,0 +1,115 @@
+(datatype Dimension
+    (UnknownDim)
+    (Dim i64)
+)
+
+(function idim (Dimension) i64)
+
+(rule
+	((Dim i))
+ 	((set (idim (Dim i)) i))
+)
+
+(sort DimVec (Vec Dimension))
+
+(datatype Shape
+   (Shape1D Dimension)
+   (Shape2D Dimension Dimension)
+   (ShapeND DimVec)
+)
+
+(function nrows (Shape) Dimension)
+(function ncols (Shape) Dimension)
+(function dimN (Shape i64) Dimension)
+
+(rewrite (nrows (Shape1D ?d)) ?d)
+(rewrite (dimN (Shape1D ?d) 0) ?d)
+
+(rewrite (nrows (Shape2D ?r ?z)) ?r)
+(rewrite (ncols (Shape2D ?r ?z)) ?z)
+(rewrite (dimN (Shape2D ?r ?z) 0) ?r)
+(rewrite (dimN (Shape2D ?r ?z) 1) ?z)
+
+(rewrite (nrows (ShapeND ?dvec)) (dimN (ShapeND ?dvec) 0))
+(rewrite (ncols (ShapeND ?dvec)) (dimN (ShapeND ?dvec) 1))
+(rewrite (dimN (ShapeND ?dvec) ?i) (vec-get ?dvec ?i))
+
+(datatype MatOp
+   (Mat String Shape)
+   (MatMul MatOp MatOp Shape)
+)
+
+(function get_shape (MatOp) Shape)
+
+(rewrite (get_shape (Mat ?n ?s)) ?s)
+(rewrite (get_shape (MatMul ?x ?y ?s)) ?s)
+
+(function Cost (MatOp) i64 :merge (max old new))
+
+(rule ((= ?lhs (Mat ?n ?s))) ((set (Cost ?lhs) 0)))
+
+(rule
+    ((= ?lhs (MatMul ?x ?y (Shape2D ?a ?c))) (= ?b (idim (ncols (get_shape ?y)))))
+    ((set (Cost ?lhs) (+ (+ (Cost ?x) (Cost ?y)) (* (* (idim ?a) (idim ?b)) (idim ?c)))))
+)
+    
+(let mx (Mat "x" (Shape2D (Dim 5) (Dim 10)))) ; a*b = 5*10
+(let my (Mat "y" (Shape2D (Dim 10) (Dim 15)))) ; b*c = 10*15
+(let mz (Mat "z" (Shape2D (Dim 15) (Dim 2)))) ; c*d = 15*2
+
+(let sx (get_shape mx))
+(let sy (get_shape my))
+(let sz (get_shape mz))
+
+(let mxy (MatMul mx my (Shape2D (Dim 5) (Dim 15))))
+(let myz (MatMul my mz (Shape2D (Dim 10) (Dim 2))))
+
+(let sxy (get_shape mxy))
+(let syz (get_shape myz))
+
+(let xy_z (MatMul mxy mz (Shape2D (Dim 5) (Dim 2)))) ; cost abc + acd = 5*10*15 + 5*15*2 = 750 + 150 = 900
+(let x_yz (MatMul mx myz (Shape2D (Dim 5) (Dim 2)))) ; cost bcd + abd = 10*15*2 + 5*10*2 = 300 + 100 = 400
+
+; (rewrite ; rewrite only 
+;     (MatMul (MatMul ?x ?y (Shape2D ?a ?c)) ?z (Shape2D ?a ?d))
+;     (MatMul ?x (MatMul ?y ?z (Shape2D (nrows (get_shape ?y)) ?d)) (Shape2D ?a ?d))
+;     :subsume
+; )
+
+(rule ((= ?m (MatMul (MatMul ?x ?y (Shape2D ?a ?c)) ?z (Shape2D ?a ?d)))
+       (= ?b (ncols (get_shape ?x)))
+       [> (* (* (idim ?b) (idim ?d)) (+ (idim ?a) (idim ?c))) (* (* (idim ?a) (idim ?c)) (+ (idim ?b) (idim ?d)))]) ; if 400 > 900
+      ((union ?m (MatMul ?x (MatMul ?y ?z (Shape2D ?b ?d)) (Shape2D ?a ?d)))))
+
+; (rewrite ; rewrite only 
+;     (MatMul ?x (MatMul ?y ?z (Shape2D ?b ?d)) (Shape2D ?a ?d))
+;     (MatMul (MatMul ?x ?y (Shape2D ?a (ncols (get_shape ?y)))) ?z (Shape2D ?a ?d))
+;     :subsume
+; )
+
+(rule (
+        (= ?m (MatMul ?x (MatMul ?y ?z (Shape2D ?b ?d)) (Shape2D ?a ?d)))
+        (= ?c (ncols (get_shape ?y)))
+        [< (* (* (idim ?b) (idim ?d)) (+ (idim ?a) (idim ?c))) (* (* (idim ?a) (idim ?c)) (+ (idim ?b) (idim ?d)))] ; if 400 < 900
+    )
+    (
+        (union ?m (MatMul (MatMul ?x ?y (Shape2D ?a ?c)) ?z (Shape2D ?a ?d)))
+        (subsume (MatMul ?x (MatMul ?y ?z (Shape2D ?b ?d)) (Shape2D ?a ?d)))
+    )
+)
+
+(extract mx)
+(extract my)
+(extract mz)
+
+(extract xy_z)
+(extract x_yz)
+
+(run 100)
+
+(extract mx)
+(extract my)
+(extract mz)
+
+(extract xy_z)
+(extract x_yz)

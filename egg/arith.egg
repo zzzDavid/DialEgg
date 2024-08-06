@@ -1,0 +1,15 @@
+;; Attrs
+(datatype FastMathFlags (none) (reassoc) (nnan))
+(function arith_fastmath (FastMathFlags) Attr)
+
+;; Ops
+(function arith_constant (i64 AttrPair Type) Op)
+(function arith_addf (i64 Op Op AttrPair Type) Op)
+(function arith_addi (i64 Op Op AttrPair Type) Op)
+(function arith_divf (i64 Op Op AttrPair Type) Op)
+(function arith_mulf (i64 Op Op AttrPair Type) Op)
+(function arith_negf (i64 Op AttrPair Type) Op)
+(function arith_maximumf (i64 Op Op AttrPair Type) Op)
+(function arith_minimumf (i64 Op Op AttrPair Type) Op)
+(function arith_andi (i64 Op Op Type) Op)
+(function arith_cmpf (i64 Op Op AttrPair AttrPair Type) Op)

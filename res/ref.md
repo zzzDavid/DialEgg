@@ -101,3 +101,90 @@ if (!op.getRegions().empty()) {
 (extract one_mulf_two)
 (extract negf_two)
 ```
+
+## Temp
+```llvm
+(datatype MatOp
+   (Mat String Shape)  ; (<name> <nrows> <ncols>)
+   (MatMul MatOp MatOp Shape)
+)
+
+(let ma (Mat "a" (Shape2D 5 10)))
+(let mb (Mat "b" (Shape2D 10 15)))
+(let mc (Mat "c" (Shape2D 15 2)))
+
+(let ab_c (MatMul (MatMul ma mb (Shape2D 5 15)) mc (Shape2D 5 2)))
+(let a_bc (MatMul ma (MatMul mb mc (Shape2D 10 2)) (Shape2D 5 2)))
+
+(function get-shape (MatOp) Shape)
+(function calc-shape (MatOp) Shape)
+
+(let sa (get-shape ma))
+(let sb (get-shape mb))
+(let sc (get-shape mc))
+
+(let sab_c (get-shape ab_c))
+(let sa_bc (get-shape a_bc))
+
+(rewrite
+ (get-shape (Mat ?n ?s))
+ ?s
+)
+
+(rewrite
+ (get-shape (MatMul ?a ?b ?s))
+ ?s
+)
+
+(run 100)
+
+(extract sa)
+(extract sb)
+(extract sc)
+
+(extract sab_c)
+(extract sa_bc)
+
+(let csa (calc-shape ma))
+(let csb (calc-shape mb))
+(let csc (calc-shape mc))
+
+(let csab_c (calc-shape ab_c))
+(let csa_bc (calc-shape a_bc))
+
+(rewrite
+ (calc-shape (Mat ?n ?s))
+ ?s
+)
+
+(rule
+ (
+  (= lhs (MatMul ?a ?b ?s))
+ )
+ (
+  (union (calc-shape lhs) (Shape2D (get-nrows (calc-shape ?a)) (get-ncols (calc-shape ?b))))
+ )
+)
+
+(run 100)
+
+(extract csa)
+(extract csb)
+(extract csc)
+
+(extract csab_c)
+(extract csa_bc)
+
+;(birewrite
+;    (MatMul (MatMul ?a ?b (Shape2D i64 i64)) ?c)
+;    (MatMul ?a (MatMul ?b ?c ) (Shape2D i64 i64))
+;)
+;
+;(extract ma)
+;(extract mb)
+;(extract mc)
+;
+;(extract ab_c)
+;(extract a_bc)
+;
+```

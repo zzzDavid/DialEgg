@@ -1,0 +1,15 @@
+(include "egg/attr.egg")
+(include "egg/op.egg")
+(include "egg/rules.egg")
+
+(let op0 (arith_constant 0 (NamedAttr "value" (FloatAttr 1.500000e+00 "f64")) "f64")) ; %cst = arith.constant 1.500000e+00 : f64
+(let op1 (arith_constant 1 (NamedAttr "value" (FloatAttr 2.000000e+00 "f64")) "f64")) ; %cst_0 = arith.constant 2.000000e+00 : f64
+(let op2 (arith_addf 2 op1 op0 (NamedAttr "fastmath" (arith_fastmath (reassoc))) "f64")) ; %0 = arith.addf %cst_0, %cst fastmath<reassoc> : f64
+(let op3 (NamedOp 3 "f64")) ; %1 = arith.subf %cst_0, %cst : f64
+(let op4 (arith_constant 4 (NamedAttr "value" (FloatAttr 0.000000e+00 "f32")) "f32")) ; %cst_1 = arith.constant 0.000000e+00 : f32
+
+(run 100000)
+(extract op0)
+(extract op1)
+(extract op2)
+(extract op4)

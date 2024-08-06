@@ -63,8 +63,12 @@ std::vector<std::string> splitEgglogExpression(std::string opStr) {
  */
 class EgglogParser {
 public:
-    EgglogParser(mlir::MLIRContext& context, std::vector<EqSatOp*>& blockOps, std::vector<EqSatOp*>& opaqueValues, std::map<std::string, EqSatOp*>& ssaNameToBlockOp, std::map<std::string, EqSatOpInfo>& opRegistry)
-        : context(context), blockOps(blockOps), opaqueValues(opaqueValues), ssaNameToBlockOp(ssaNameToBlockOp), opRegistry(opRegistry) {}
+    EgglogParser(mlir::MLIRContext& context,
+                 std::vector<EqSatOp*>& ops,
+                 std::map<std::string, EqSatOp*>& ssaNameToBlockOp,
+                 std::map<std::string, EqSatOpInfo>& opRegistry,
+                 EqSatPassCustomFunctions& customFunctions)
+        : context(context), ops(ops), ssaNameToBlockOp(ssaNameToBlockOp), opRegistry(opRegistry), customFunctions(customFunctions) {}
 
     /** Parses the given type string into an MLIR type */
     mlir::Type parseType(std::string typeStr) {
@@ -94,8 +98,11 @@ public:
             return mlir::parseAttribute(split[1], &context);
         } else if (attrType == "OtherAttr") {
             return mlir::parseAttribute(unwrap(split[1], '"'), &context);
-        } else {
-            std::cerr << "Unsupported attribute type: " << attrType << "\n";
+        } else if (customFunctions.attrParsers.find(attrType) != customFunctions.attrParsers.end()) {
+            AttrParseFunction parseFunc = customFunctions.attrParsers.at(attrType);
+            return parseFunc(split, context);
+        } else {  // TODO custom attr here
+            std::cerr << "Unsupported attribute type: " << attrType << std::endl;
             exit(1);
         }
     }
@@ -118,6 +125,17 @@ public:
         std::vector<std::string> split = splitEgglogExpression(newOpStr);
 
         std::string opName = split[0];
+        ssize_t opId = std::stoll(split[1]);
+
+        if (opId >= 0) {
+            mlir::Operation* rep = ops[opId]->replacementOp;
+            if (rep != nullptr) {
+                return rep;
+            } else {
+                return ops[opId]->mlirOp;
+            }
+        }
+
         std::replace(opName.begin(), opName.end(), '_', '.');  // Replace underscores with dots
         EqSatOpInfo opInfo = opRegistry.at(opName);
 
@@ -125,23 +143,20 @@ public:
         std::vector<mlir::Value> operands;
         for (ssize_t i = 0; i < opInfo.nOperands; i++) {
             std::string operandStr = split[i + 2];
-            if (operandStr.find("(NamedOp ") == 0) {
-                std::vector<std::string> operandSplit = splitEgglogExpression(operandStr);
-                int64_t id = std::stoll(operandSplit[1]);
-                EqSatOp* eqSatOperand = opaqueValues[id];
-                llvm::outs() << "Found opaque value id " << id << " with SSA name " << eqSatOperand->resultSSAName << " = " << eqSatOperand->resultValue << "\n";
-                operands.push_back(eqSatOperand->resultValue);
-            } else {
-                ssize_t operandId = nextOperationId(operandStr);
+            ssize_t operandId = nextOperationId(operandStr);
 
-                if (operandId < 0) {
-                    mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
-                    mlir::Value operand = nestedOperand->getResult(0);  // TODO support multiple results?
-                    operands.push_back(operand);
-                } else {
-                    mlir::Value operandReplacement = blockOps[operandId]->replacementOp->getResult(0);
-                    operands.push_back(operandReplacement);
-                }
+            llvm::outs() << "PARSING OPERAND: " << operandStr << " ID: " << operandId << "\n";
+
+            if (operandStr.find("(NamedOp ") == 0) {
+                EqSatOp* eqSatOperand = ops[operandId];
+                operands.push_back(eqSatOperand->resultValue);
+            } else if (operandId < 0) {  // new operation
+                mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
+                mlir::Value operand = nestedOperand->getResult(0);  // TODO support multiple results?
+                operands.push_back(operand);
+            } else {  // existing operation, refered to by id
+                mlir::Value operandReplacement = ops[operandId]->replacementOp->getResult(0);
+                operands.push_back(operandReplacement);
             }
         }
 
@@ -179,10 +194,10 @@ public:
 public:
     mlir::MLIRContext& context;
 
-    std::vector<EqSatOp*>& blockOps;                    // All operations in the block, index = op id
-    std::vector<EqSatOp*>& opaqueValues;                // All values from outside the block, index = value id
+    std::vector<EqSatOp*>& ops;                         // All operations in the block, index = op id
     std::map<std::string, EqSatOp*>& ssaNameToBlockOp;  // Map of SSA name to EqSatOp
     std::map<std::string, EqSatOpInfo>& opRegistry;     // Map of operation name to EqSatOpInfo
+    EqSatPassCustomFunctions& customFunctions;
 };
 
 #endif  //S_EXPRESSION_PARSER_H

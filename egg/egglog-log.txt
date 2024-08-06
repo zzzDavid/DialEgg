@@ -3,15 +3,20 @@
 [INFO ] Declared sort AttrVec.
 [INFO ] Declared sort AttrPair.
 [INFO ] Declared function NamedAttr.
+[INFO ] Declared sort AttrPairVec.
 [INFO ] Declared function IntegerAttr.
 [INFO ] Declared function FloatAttr.
 [INFO ] Declared function StringAttr.
 [INFO ] Declared function ArrayAttr.
-[INFO ] Declared function DictionaryAttr.
 [INFO ] Declared function TypeAttr.
 [INFO ] Declared function UnitAttr.
 [INFO ] Declared function OtherAttr.
 [INFO ] Declared function NoAttr.
+[INFO ] Declared sort FastMathFlags.
+[INFO ] Declared function none.
+[INFO ] Declared function reassoc.
+[INFO ] Declared function nnan.
+[INFO ] Declared function arith_fastmath.
 [INFO ] Declared sort Op.
 [INFO ] Declared function NamedOp.
 [INFO ] Declared function arith_constant.
@@ -28,20 +33,19 @@
 [INFO ] Declared function math_cos.
 [INFO ] Declared function math_powf.
 [INFO ] Declared function linalg_transpose.
-[INFO ] Declared rule (rewrite (arith_addf ?i0 (arith_constant ?i1 (NamedAttr 'value' (FloatAttr ?x ?t)) ?t) (arith_constant ? (NamedAttr 'value' (FloatAttr ?y ?t)) ?t) ?a ?t) (arith_constant -1 (NamedAttr 'value' (FloatAttr (+ ?x ?y) ?t)) ?t)).
 [INFO ] Declared rule (rewrite (arith_addf ? ?x ?y ?a ?t) (arith_addf -1 ?y ?x ?a ?t)).
-[INFO ] Declared function arg0.
-[INFO ] Declared function arg1.
+[INFO ] Declared rule (rewrite (linalg_transpose ?i0 (linalg_transpose ?i1 ?x ?y ?a ?t1) ?z ?a ?t2) ?x).
 [INFO ] Declared function op0.
 [INFO ] Declared function op1.
 [INFO ] Declared function op2.
 [INFO ] Declared function op3.
+[INFO ] Declared function op4.
 [INFO ] Ran schedule (repeat 100000 (run)).
-[INFO ] Report: Rule (rule ((= rewrite_var__ (arith_addf ? ?x ?y ?a ?t)))       ((union rewrite_var__...: search 0.000s, apply 0.000s, num matches 5
-    Rule (rule ((= rewrite_var__ (arith_addf ?i0 (arith_constant ?i1 (NamedAttr "value" (...: search 0.002s, apply 0.000s, num matches 2
-    Ruleset : search 0.002s, apply 0.000s, rebuild 0.000s
+[INFO ] Report: Rule (rule ((= rewrite_var__ (linalg_transpose ?i0 (linalg_transpose ?i1 ?x ?y ?a ?t1...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (arith_addf ? ?x ?y ?a ?t)))       ((union rewrite_var__...: search 0.001s, apply 0.000s, num matches 3
+    Ruleset : search 0.001s, apply 0.000s, rebuild 0.000s
     
-[INFO ] extracted with cost 8: (arith_constant 0 (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64")
-[INFO ] extracted with cost 8: (arith_constant -1 (NamedAttr "value" (FloatAttr 4.0 "f64")) "f64")
-[INFO ] extracted with cost 19: (arith_addf 2 (arith_constant -1 (NamedAttr "value" (FloatAttr 4.0 "f64")) "f64") (NamedOp 1 "f64") (NamedAttr "fastmath" (OtherAttr "#arith.fastmath<none>" "arith.fastmath")) "f64")
-[INFO ] extracted with cost 8: (arith_constant 3 (NamedAttr "value" (FloatAttr 0.0 "f32")) "f32")
+[INFO ] extracted with cost 8: (arith_constant 0 (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64")
+[INFO ] extracted with cost 8: (arith_constant 1 (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64")
+[INFO ] extracted with cost 23: (arith_addf 2 (arith_constant 1 (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant 0 (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (arith_fastmath (reassoc))) "f64")
+[INFO ] extracted with cost 8: (arith_constant 4 (NamedAttr "value" (FloatAttr 0.0 "f32")) "f32")

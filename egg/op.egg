@@ -16,7 +16,7 @@
     (math_cos i64 Op AttrPair String)
     (math_powf i64 Op Op AttrPair String)
 
-    (linalg_transpose i64 Op Op Op AttrPair String)
+    (linalg_transpose i64 Op Op AttrPair String)
 
     ; Very easy to extend for dialect authors
 )
