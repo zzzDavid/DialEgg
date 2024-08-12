@@ -1,8 +1,43 @@
+;; Utils
+(sort IntVec (Vec i64))
+(sort FloatVec (Vec f64))
+
 ;; Types
-(datatype Type
-    (I64)
-    (F64)
-)
+(sort Type)
+(sort TypeVec (Vec Type))
+
+(function F16 () Type)
+(function F32 () Type)
+(function F64 () Type)
+(function F80 () Type)
+(function F128 () Type)
+(function I1 () Type)
+(function I4 () Type)
+(function I8 () Type)
+(function I16 () Type)
+(function I32 () Type)
+(function I64 () Type)
+(function Int (i64) Type)
+(function SInt (i64) Type)
+(function UInt (i64) Type)
+(function OtherInt (String) Type)
+(function Index () Type)
+(function None () Type)
+(function Complex (Type) Type)
+(function Tuple (TypeVec) Type)
+
+(function RankedTensor (IntVec Type) Type)
+(function UnrankedTensor (Type) Type)
+
+(function OtherType (String String) Type)
+
+; Dynamic RankedTensor type
+; (datatype Dimension
+;     (Dyn)
+;     (D i64)
+; )
+; (sort DimVec (Vec Dimension))
+; (function DynRankedTensor (DimVec Type) Type)
 
 ;; Attrs
 (sort Attr)
@@ -13,16 +48,20 @@
 (sort AttrPairVec (Vec AttrPair))
 
 (function NoAttr () Attr)
-(function IntegerAttr (i64 String) Attr)
-(function FloatAttr (f64 String) Attr)
+(function IntegerAttr (i64 Type) Attr)
+(function FloatAttr (f64 Type) Attr)
 (function StringAttr (String) Attr)
-(function ArrayAttr (AttrVec) Attr)
-(function TypeAttr (String) Attr) ; TODO change type from string to real type
 (function UnitAttr () Attr)
+(function TypeAttr (Type) Attr)
+
+(function ArrayAttr (AttrVec) Attr)
+(function DenseIntArrayAttr (i64 IntVec Type) Attr)
+(function DenseFloatArrayAttr (f64 FloatVec Type) Attr)
+(function DenseIntElementsAttr (FloatVec Type) Attr)
+(function DenseFPElementsAttr (FloatVec Type) Attr)
+
 (function OtherAttr (String String) Attr) ; (<attr> <type-name>)
 
-; DenseArrayAttr
-; DenseIntOrFPElementsAttr
 ; DenseResourceElementsAttr
 ; DenseStringElementsAttr
 ; DictionaryAttr
@@ -32,8 +71,7 @@
 ; SymbolRefAttr
 ; StridedLayoutAttr
 
-
 ;; Ops
 (datatype Op
-    (NamedOp i64 String) ; (NamedOp <id> <type>)
+    (NamedOp i64 Type) ; (NamedOp <id> <type>)
 )

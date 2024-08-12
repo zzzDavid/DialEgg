@@ -9,7 +9,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/eq-sat-opt",
-            "args": ["--eq-sat", "mlir/arith_addf.mlir"],  // change the file path here
+            "args": ["--mlir-disable-threading", "--eq-sat", "mlir/linalg_assoc.mlir"],  // change the file path here
             "cwd": "${workspaceFolder}",
         }
     ]

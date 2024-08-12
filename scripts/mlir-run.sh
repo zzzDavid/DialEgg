@@ -35,21 +35,35 @@ FLAGS="
 "
 
 # Lower the MLIR code to LLVM IR
-mlir_ll_file=$MLIR_FILE_PATH/$MLIR_FILE_NAME.ll.mlir
+mlir_ll_file=$MLIR_FILE_PATH/run/$MLIR_FILE_NAME.ll.mlir
 echo "Creating $mlir_ll_file"
 mlir-opt $FLAGS $MLIR_FILE -o $mlir_ll_file
 
 # Translate the MLIR code to LLVM IR
-ll_file=$MLIR_FILE_PATH/$MLIR_FILE_NAME.ll
+ll_file=$MLIR_FILE_PATH/run/$MLIR_FILE_NAME.ll
 echo "Creating $ll_file"
 mlir-translate --mlir-to-llvmir $mlir_ll_file -o $ll_file
 
 # Translate the MLIR code to CPP
-# cpp_file=$MLIR_FILE_PATH/$MLIR_FILE_NAME.cpp
+# cpp_file=$MLIR_FILE_PATH/run/$MLIR_FILE_NAME.cpp
 # echo "Creating $cpp_file"
 # mlir-translate --mlir-to-cpp $mlir_ll_file -o $cpp_file
 
-# Run the LLVM IR code
-echo "Running $ll_file"
+# Interpret the LLVM IR code
+# echo "Running $ll_file"
+# echo
+# lli --dlopen=/Users/aziz/dev/lib/llvm/build/lib/libmlir_c_runner_utils.dylib $ll_file
+
+# Create executable from the LLVM IR code
+o_file=$MLIR_FILE_PATH/run/$MLIR_FILE_NAME.o
+echo "Creating $o_file"
+llc -filetype=obj $ll_file -o $o_file
+
+exe_file=$MLIR_FILE_PATH/run/$MLIR_FILE_NAME
+echo "Creating $exe_file"
+clang $o_file -o $exe_file -L/Users/aziz/dev/lib/llvm/build/lib -lmlir_c_runner_utils -Wl,-rpath,/Users/aziz/dev/lib/llvm/build/lib
+
+# Run the executable
+echo "Running $exe_file"
 echo
-lli --dlopen=/Users/aziz/dev/lib/llvm/build/lib/libmlir_c_runner_utils.dylib $ll_file
+time $exe_file

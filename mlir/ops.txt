@@ -1,3 +1,4 @@
-arith.addf, 2 operands, 1 results, 1 attributes: [fastmath]
 arith.constant, 0 operands, 1 results, 1 attributes: [value]
-arith.subf, 2 operands, 1 results, 1 attributes: [fastmath]
+func.call, 1 operands, 1 results, 1 attributes: [callee]
+tensor.cast, 1 operands, 1 results, 0 attributes: []
+tensor.empty, 0 operands, 1 results, 0 attributes: []

@@ -1,4 +1,1 @@
-(arith_constant 0 (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64")
-(arith_constant 1 (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64")
-(arith_addf 2 (arith_constant 1 (NamedAttr "value" (FloatAttr 2.0 "f64")) "f64") (arith_constant 0 (NamedAttr "value" (FloatAttr 1.5 "f64")) "f64") (NamedAttr "fastmath" (arith_fastmath (reassoc))) "f64")
-(arith_constant 4 (NamedAttr "value" (FloatAttr 0.0 "f32")) "f32")
+(arith_constant 13 (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32))

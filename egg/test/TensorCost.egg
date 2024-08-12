@@ -1,0 +1,54 @@
+(sort IntVec (Vec i64))
+
+(sort Type)
+(function F64 () Type)
+(function I64 () Type)
+(function RankedTensor (IntVec Type) Type)
+
+(datatype Op
+    (Tensor String Type) ; (<name> <nrows> <ncols>)
+    (Add Op Op Type)
+    (MatMul Op Op Type)
+)
+
+(let mx (Tensor "x" (RankedTensor (vec-of 5 10) (F64))))
+(let my (Tensor "y" (RankedTensor (vec-of 10 15) (F64))))
+(let mz (Tensor "z" (RankedTensor (vec-of 15 2) (F64))))
+
+(let mxy (MatMul mx my (RankedTensor (vec-of 5 15) (F64)))) ; cost a*b*c = 5*10*15=750
+(let myz (MatMul my mz (RankedTensor (vec-of 10 2) (F64)))) ; cost b*c*d = 10*15*2=300
+
+(let xy_z (MatMul mxy mz (RankedTensor (vec-of 5 2) (F64)))) ; cost abc + acd = 5*10*15 + 5*15*2 = 750 + 150 = 900
+(let x_yz (MatMul mx myz (RankedTensor (vec-of 5 2) (F64)))) ; cost abd + bcd = 5*10*2 + 10*15*2 = 100 + 300 = 400
+
+(function nrows (Op) i64)
+(function ncols (Op) i64)
+
+(rule ((= ?m (Tensor ?name (RankedTensor ?dims ?t))))
+       ((set (nrows ?m) (vec-get ?dims 0))
+        (set (ncols ?m) (vec-get ?dims 1))))
+
+(rule ((= ?m (MatMul ?x ?y (RankedTensor ?d ?t)))
+       (= ?a (nrows ?x))
+       (= ?b (ncols ?x))
+       (= ?c (ncols ?y)))
+      ((set (nrows ?m) ?a)
+       (set (ncols ?m) ?c)
+       (unstable-cost (MatMul ?x ?y (RankedTensor ?d ?t)) (* (* ?a ?b) ?c))))
+
+(run 100)
+
+(rewrite
+    (MatMul ?x (MatMul ?y ?z (RankedTensor ?ds1 ?t)) (RankedTensor ?ds2 ?t))
+    (MatMul (MatMul ?x ?y (RankedTensor (vec-of (nrows ?x) (ncols ?y)) ?t)) ?z (RankedTensor ?ds2 ?t))
+)
+
+;(rewrite
+;    (MatMul (MatMul ?x ?y (RankedTensor ?ds1 ?t)) ?z (RankedTensor ?ds2 ?t))
+;    (MatMul ?x (MatMul ?y ?z (RankedTensor (vec-of (nrows ?y) (ncols ?z)) ?t)) (RankedTensor ?ds2 ?t))
+;)
+
+(run 100)
+
+(extract xy_z)
+(extract x_yz)

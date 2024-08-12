@@ -84,6 +84,10 @@
         "chrono": "cpp",
         "future": "cpp",
         "text_encoding": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "format": "cpp",
+        "numeric": "cpp",
+        "random": "cpp",
+        "system_error": "cpp"
     }
 }

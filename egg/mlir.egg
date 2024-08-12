@@ -8,7 +8,6 @@
 (let op3 (NamedOp 3 "f64")) ; %1 = arith.subf %cst_0, %cst : f64
 (let op4 (arith_constant 4 (NamedAttr "value" (FloatAttr 0.000000e+00 "f32")) "f32")) ; %cst_1 = arith.constant 0.000000e+00 : f32
 
-(run 100000)
 (extract op0)
 (extract op1)
 (extract op2)

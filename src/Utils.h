@@ -7,7 +7,7 @@
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/Value.h"
 
-std::string getSSAName(const mlir::Value& value, const mlir::OpPrintingFlags opPrintingFlags = mlir::OpPrintingFlags()) {
+inline std::string getSSAName(const mlir::Value& value, const mlir::OpPrintingFlags opPrintingFlags = mlir::OpPrintingFlags()) {
     std::string ssaName;
     llvm::raw_string_ostream ssaNameStream(ssaName);
     value.printAsOperand(ssaNameStream, opPrintingFlags);
@@ -15,7 +15,7 @@ std::string getSSAName(const mlir::Value& value, const mlir::OpPrintingFlags opP
     return ssaName;
 }
 
-std::string getTypeName(const mlir::Value& value) {
+inline std::string getTypeName(const mlir::Value& value) {
     std::string type;
     llvm::raw_string_ostream typeStream(type);
     value.getType().print(typeStream);
@@ -23,7 +23,7 @@ std::string getTypeName(const mlir::Value& value) {
     return type;
 }
 
-std::string opToString(const mlir::Operation& op) {
+inline std::string opToString(const mlir::Operation& op) {
     std::string str;
     llvm::raw_string_ostream stream(str);
     stream << op;
@@ -31,7 +31,7 @@ std::string opToString(const mlir::Operation& op) {
     return str;
 }
 
-std::string valueToString(const mlir::Value& value) {
+inline std::string valueToString(const mlir::Value& value) {
     std::string str;
     llvm::raw_string_ostream stream(str);
     stream << value;
@@ -39,7 +39,7 @@ std::string valueToString(const mlir::Value& value) {
     return str;
 }
 
-std::string typeToString(const mlir::Type& type) {
+inline std::string typeToString(const mlir::Type& type) {
     std::string str;
     llvm::raw_string_ostream stream(str);
     stream << type;
@@ -47,7 +47,7 @@ std::string typeToString(const mlir::Type& type) {
     return str;
 }
 
-std::string locationToString(const mlir::Location& loc) {
+inline std::string locationToString(const mlir::Location& loc) {
     std::string str;
     llvm::raw_string_ostream stream(str);
     stream << loc;
@@ -55,7 +55,7 @@ std::string locationToString(const mlir::Location& loc) {
     return str;
 }
 
-bool opDeepEqual(mlir::Operation& a, mlir::Operation& b) {
+inline bool opDeepEqual(mlir::Operation& a, mlir::Operation& b) {
     if (a.getName() != b.getName()) {
         return false;
     }
@@ -117,14 +117,14 @@ bool opDeepEqual(mlir::Operation& a, mlir::Operation& b) {
 }
 
 /** Returns the given string without the wrapping character */
-std::string unwrap(const std::string& str, char c = ' ') {
+inline std::string unwrap(const std::string& str, char c = ' ') {
     if (str.front() == c && str.back() == c) {
         return str.substr(1, str.size() - 2);
     }
     return str;
 }
 
-std::string trim(const std::string& str, char c = ' ') {
+inline std::string trim(const std::string& str, char c = ' ') {
     size_t first = str.find_first_not_of(c);
     if (first == std::string::npos) {
         return "";
@@ -134,8 +134,19 @@ std::string trim(const std::string& str, char c = ' ') {
     return str.substr(first, (last - first + 1));
 }
 
-bool isBlank(const std::string& str) {
+inline bool isBlank(const std::string& str) {
     return str.find_first_not_of(' ') == std::string::npos;
+}
+
+inline void printFileContents(const std::string& filename, llvm::raw_ostream& ros = llvm::outs()) {
+    std::ifstream file(filename);
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            ros << line << "\n";
+        }
+        file.close();
+    }
 }
 
 #endif //UTILS_H
