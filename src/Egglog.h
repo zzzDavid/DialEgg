@@ -5,9 +5,76 @@
 #include <vector>
 
 #include "mlir/IR/MLIRContext.h"
+#include "mlir/IR/BuiltinOps.h"
 
-#include "EqSatPass.h"
-#include "EqSatOp.h"
+class Egglog;
+
+using AttrStringifyFunction = std::function<std::vector<std::string>(mlir::Attribute, Egglog&)>;
+using AttrParseFunction = std::function<mlir::Attribute(const std::vector<std::string>&, Egglog&)>;
+
+using TypeStringifyFunction = std::function<std::vector<std::string>(mlir::Type, Egglog&)>;
+using TypeParseFunction = std::function<mlir::Type(const std::vector<std::string>&, Egglog&)>;
+
+/**
+ * Holds the functions for stringifying and parsing custom attributes and types.
+ * To register stringifier: `stringifier[T::name.str()] = stringify<T>;`
+ * To register parser: `parser["<EggT>"] = parse<T>;`
+ */
+struct EgglogCustomDefs {
+    std::map<std::string, AttrStringifyFunction> attrStringifiers;
+    std::map<std::string, AttrParseFunction> attrParsers;
+
+    std::map<std::string, TypeStringifyFunction> typeStringifiers;
+    std::map<std::string, TypeParseFunction> typeParsers;
+};
+
+/** Holds the information about a custom egglog operation */
+struct EgglogOpDef {
+    std::string str;
+    std::string fullName, dialect, name;
+    std::vector<std::string> args;
+
+    size_t nOperands;
+    size_t nAttributes;
+    bool region;
+
+    size_t cost = 1;
+
+    // format: (function [name] ([params]) Op) or (function [name] ([params]) Op :cost [cost])
+    static bool isOpFunction(const std::string& opStr);
+    static EgglogOpDef parseOpFunction(const std::string& opStr);
+};
+
+/** An MLIR op or value that has been eggified */
+struct EggifiedOp {
+    size_t id;
+    bool opaque;
+    std::string egglogOp;
+    std::vector<EggifiedOp> operands;
+
+    // for reference
+    mlir::Value mlirValue;
+    mlir::Operation* mlirOp;
+
+    EggifiedOp(size_t id, std::string egglogOp, const std::vector<EggifiedOp>& operands, mlir::Operation* mlirOp)
+        : id(id), opaque(false), egglogOp(egglogOp), operands(operands), mlirValue(mlirOp->getResult(0)), mlirOp(mlirOp) {}
+    EggifiedOp(size_t id, std::string egglogOp, mlir::Value mlirValue)
+        : id(id), opaque(true), egglogOp(egglogOp), mlirValue(mlirValue), mlirOp(mlirValue.getDefiningOp()) {}
+
+    std::string getPrintId() const {
+        return "op" + std::to_string(id);
+    }
+
+    std::string egglogLet() const {
+        return "(let " + getPrintId() + " " + egglogOp + ")";
+    }
+
+    void print(llvm::raw_ostream& os) const {
+        os << "[" << id << "] " << egglogOp << " FROM OP: " << mlirValue << "\n"; // [<id>] <egglog> <mlir>
+    }
+
+    std::string inlinedEgglogOp() const;
+};
 
 /**
  * Holds all egglog informations and operations.
@@ -16,35 +83,30 @@
  */
 class Egglog {
 public:
-    Egglog(mlir::MLIRContext& context,
-           std::vector<EqSatOp*>& ops,
-           std::map<std::string, EqSatOp*>& ssaNameToBlockOp,
-           std::map<std::string, EqSatOpInfo>& opRegistry,
-           EqSatPassCustomFunctions& customFunctions)
-        : context(context), ops(ops), ssaNameToBlockOp(ssaNameToBlockOp), opRegistry(opRegistry), customFunctions(customFunctions) {}
-
     /**
      * Splits the given egglog expression string into a list of strings: function name and parameters.
      * Example: "(linalg_add (linalg_abs (tensor_empty)) (tensor_empty))" -> ["linalg_add", "(linalg_abs (tensor_empty))", "(tensor_empty)"]
      */
     static std::vector<std::string> splitExpression(std::string opStr);
 
+    Egglog(mlir::MLIRContext& context, const EgglogCustomDefs& egglogCustom, const std::map<std::string, EgglogOpDef>& egglogOps)
+        : context(context), egglogCustom(egglogCustom), egglogOps(egglogOps) {}
+
+    size_t nextId() {
+        return opId++;
+    }
+
     /** Parses the given type string into an MLIR type Form (F16) or (Complex <type>) */
-    mlir::Type parseType(std::string typeStr);
-    std::string eggifyType(mlir::Type type);
+    mlir::Type parseType(std::string);
+    std::string eggifyType(mlir::Type);
 
     /** Parses the given attribute string into an MLIR named attribute. Form (NamedAttr "<name>" <attr>) */
-    mlir::NamedAttribute parseNamedAttribute(const std::string& attrStr);
-    std::string eggifyNamedAttribute(mlir::NamedAttribute namedAttr);
+    mlir::NamedAttribute parseNamedAttribute(const std::string&);
+    std::string eggifyNamedAttribute(mlir::NamedAttribute);
 
     /** Parses the given attribute string into an MLIR attribute. Form (<type> <arg1> <arg2> ... <argN>) */
-    mlir::Attribute parseAttribute(const std::string& attrStr);
-    std::string eggifyAttribute(mlir::Attribute attr);
-
-    ssize_t nextOperationId(const std::string& newOpStr) {
-        std::vector<std::string> split = splitExpression(newOpStr);
-        return std::stoll(split[1]);
-    }
+    mlir::Attribute parseAttribute(const std::string&);
+    std::string eggifyAttribute(mlir::Attribute);
 
     /**
      * Parses the given operation string into a list of MLIR operations, in order or dependency.
@@ -55,19 +117,27 @@ public:
      *      %1 = tensor.empty() : tensor<2x3xf32>
      *      %2 = linalg.transpose %0, %1 : tensor<3x2xf32>, tensor<2x3xf32>
      */
-    mlir::Operation* parseOperation(const std::string& newOpStr, mlir::OpBuilder& builder);  // TODO return EqSatOp
-    /** Returns the egglog s-expression for the given EqSatOp */
-    std::string eggifyOperationWithLet(const EqSatOp& op);
-    /** Returns the egglog s-expression with "let" for the given EqSatOp */
-    std::string eggifyOperation(const EqSatOp& op);
+    mlir::Operation* parseOperation(const std::string&, mlir::OpBuilder&);  // TODO return EqSatOp
+    mlir::Value parseValue(const std::string&);
+
+    EggifiedOp eggifyValue(mlir::Value);
+    EggifiedOp eggifyOperation(mlir::Operation*);
+    std::vector<EggifiedOp> eggifyOperations(const std::vector<mlir::Operation*>&);
+    std::string eggifyBlock(mlir::Block&);
+
+    std::optional<EggifiedOp> findEggifiedOp(mlir::Operation*);
+    std::optional<EggifiedOp> findEggifiedOp(mlir::Value);
+    std::optional<EggifiedOp> findEggifiedOp(size_t);
+    std::optional<EggifiedOp> findEggifiedOp(const std::string&);
 
 public:
+    size_t opId = 0;
     mlir::MLIRContext& context;
+    const EgglogCustomDefs& egglogCustom;
+    const std::map<std::string, EgglogOpDef>& egglogOps;  // Supported operations
 
-    std::vector<EqSatOp*>& ops;                         // All operations in the block, index = op id
-    std::map<std::string, EqSatOp*>& ssaNameToBlockOp;  // Map of SSA name to EqSatOp
-    std::map<std::string, EqSatOpInfo>& opRegistry;     // Map of operation name to EqSatOpInfo
-    EqSatPassCustomFunctions& customFunctions;
+    std::vector<EggifiedOp> eggifiedBlock;
+    std::map<std::string, mlir::Operation*> parsedOps;
 };
 
 #endif  //EGGLOG_H

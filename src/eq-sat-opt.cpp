@@ -4,7 +4,7 @@
 #include "mlir/AsmParser/AsmParser.h"
 
 #include "Egglog.h"
-#include "EqSatPass.h"
+#include "EqualitySaturationPass.h"
 
 /** 
  * Parse the attribute (function arith_fastmath (FastMathFlags) Attr)
@@ -48,6 +48,7 @@ std::vector<std::string> stringifyFastMathFlagsAttr(mlir::Attribute attr, Egglog
     for (const std::string& s: split) {
         llvm::outs() << s << " , ";
     }
+    llvm::outs() << "\n";
 
     return split;
 }
@@ -63,11 +64,11 @@ mlir::Type parseRankedTensorType(const std::vector<std::string>& split, Egglog& 
     // parse dimvec, form (vec-of <N1> <N2> ... <Nn>)
     std::vector<std::string> dimVecSplit = Egglog::splitExpression(dimVec);
     std::vector<int64_t> dims;
-    for (unsigned int i = 1; i < dimVecSplit.size() - 1; i++) {
+    for (unsigned int i = 1; i < dimVecSplit.size(); i++) {
         dims.push_back(std::stoll(dimVecSplit[i]));
     }
-    
-    mlir::Type parsedType = egglog.parseType(type); // parse type
+
+    mlir::Type parsedType = egglog.parseType(type);  // parse type
     return mlir::RankedTensorType::get(dims, parsedType);
 }
 
@@ -102,7 +103,7 @@ int main(int argc, char** argv) {
     mlir::registerAllPasses();
 
     std::string egglogExecutable = "~/dev/lib/egglog/target/debug/egglog";  // Change this to the path of your egglog executable
-    std::string eggFile = "egg/rules.egg";  // Change this to the path of your egg file
+    std::string eggFile = "egg/egg.egg";                                    // Change this to the path of your egg file
 
     std::map<std::string, AttrStringifyFunction> attrStringifiers = {
             {mlir::arith::FastMathFlagsAttr::name.str(), stringifyFastMathFlagsAttr}};
@@ -114,8 +115,8 @@ int main(int argc, char** argv) {
     std::map<std::string, TypeParseFunction> typeParsers = {
             {"RankedTensor", parseRankedTensorType}};
 
-    EqSatPassCustomFunctions funcs = {attrStringifiers, attrParsers, typeStringifiers, typeParsers};
-    mlir::PassRegistration<EqSatPass>([&] { return std::make_unique<EqSatPass>(egglogExecutable, eggFile, funcs); });
+    EgglogCustomDefs funcs = {attrStringifiers, attrParsers, typeStringifiers, typeParsers};
+    mlir::PassRegistration<EqualitySaturationPass>([&] { return std::make_unique<EqualitySaturationPass>(egglogExecutable, eggFile, funcs); });
 
     // Run the main MLIR opt
     mlir::LogicalResult result = mlir::MlirOptMain(argc, argv, "Equality saturated MLIR\n", dialectRegistry);

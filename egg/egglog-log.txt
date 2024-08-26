@@ -2,6 +2,14 @@
 [INFO ] Declared sort FloatVec.
 [INFO ] Declared sort Type.
 [INFO ] Declared sort TypeVec.
+[INFO ] Declared sort Attr.
+[INFO ] Declared sort AttrDict.
+[INFO ] Declared sort AttrVec.
+[INFO ] Declared sort AttrPair.
+[INFO ] Declared function NamedAttr.
+[INFO ] Declared sort Op.
+[INFO ] Declared function Value.
+[INFO ] Declared sort Block.
 [INFO ] Declared function F16.
 [INFO ] Declared function F32.
 [INFO ] Declared function F64.
@@ -24,12 +32,6 @@
 [INFO ] Declared function RankedTensor.
 [INFO ] Declared function UnrankedTensor.
 [INFO ] Declared function OtherType.
-[INFO ] Declared sort Attr.
-[INFO ] Declared sort AttrDict.
-[INFO ] Declared sort AttrVec.
-[INFO ] Declared sort AttrPair.
-[INFO ] Declared function NamedAttr.
-[INFO ] Declared sort AttrPairVec.
 [INFO ] Declared function NoAttr.
 [INFO ] Declared function IntegerAttr.
 [INFO ] Declared function FloatAttr.
@@ -42,8 +44,6 @@
 [INFO ] Declared function DenseIntElementsAttr.
 [INFO ] Declared function DenseFPElementsAttr.
 [INFO ] Declared function OtherAttr.
-[INFO ] Declared sort Op.
-[INFO ] Declared function NamedOp.
 [INFO ] Declared sort FastMathFlags.
 [INFO ] Declared function none.
 [INFO ] Declared function reassoc.
@@ -51,49 +51,15 @@
 [INFO ] Declared function arith_fastmath.
 [INFO ] Declared function arith_constant.
 [INFO ] Declared function arith_addf.
-[INFO ] Declared function arith_addi.
+[INFO ] Declared function arith_subf.
 [INFO ] Declared function arith_divf.
 [INFO ] Declared function arith_mulf.
-[INFO ] Declared function arith_negf.
-[INFO ] Declared function arith_maximumf.
-[INFO ] Declared function arith_minimumf.
-[INFO ] Declared function arith_andi.
-[INFO ] Declared function arith_cmpf.
+[INFO ] Declared function math_sin.
+[INFO ] Declared function math_cos.
+[INFO ] Declared function math_powf.
 [INFO ] Declared function linalg_transpose.
 [INFO ] Declared function linalg_matmul.
-[INFO ] Declared rule (rewrite (arith_addf ?i0 (arith_constant ?i1 (NamedAttr 'value' (FloatAttr ?x ?t)) ?t) (arith_constant ?i2 (NamedAttr 'value' (FloatAttr ?y ?t)) ?t) ?a ?t) (arith_constant -1 (NamedAttr 'value' (FloatAttr (+ ?x ?y) ?t)) ?t)).
-[INFO ] Declared rule (rewrite (arith_addf ? ?x ?y ?a ?t) (arith_addf -1 ?y ?x ?a ?t)).
-[INFO ] Declared rule (rewrite (linalg_transpose ?id (linalg_transpose ?id2 ?x ?y ?perm ?t1) ?z ?perm ?t2) ?x).
-[INFO ] Declared function nrows.
-[INFO ] Declared function ncols.
-[INFO ] Declared rule (rule ((= ?m (arith_constant ?id ?attr (RankedTensor ?dims ?t)))
-           (> (vec-length ?dims) 1))
-          ((set (nrows ?m) (vec-get ?dims 0))
-           (set (ncols ?m) (vec-get ?dims 1)))
-             ).
-[INFO ] Declared rule (rule ((= ?m (arith_constant ?id ?attr (RankedTensor ?dims ?t)))
-           (> (vec-length ?dims) 1))
-          ((set (nrows ?m) (vec-get ?dims 0))
-           (set (ncols ?m) (vec-get ?dims 1)))
-             ).
-[INFO ] Declared rule (rule ((= ?m (NamedOp ?id (RankedTensor ?dims ?t)))
-           (> (vec-length ?dims) 1))
-          ((set (nrows ?m) (vec-get ?dims 0))
-           (set (ncols ?m) (vec-get ?dims 1)))
-             ).
-[INFO ] Declared rule (rule ((= ?m (NamedOp ?id (RankedTensor ?dims ?t)))
-           (> (vec-length ?dims) 1))
-          ((set (nrows ?m) (vec-get ?dims 0))
-           (set (ncols ?m) (vec-get ?dims 1)))
-             ).
-[INFO ] Declared rule (rule ((= ?m (linalg_matmul ?id ?x ?y ?o ?attr1 ?attr2 (RankedTensor ?d ?t)))
-           (= ?a (nrows ?x))
-           (= ?b (ncols ?x))
-           (= ?c (ncols ?y)))
-          ((set (nrows ?m) ?a)
-           (set (ncols ?m) ?c)
-           (unstable-cost (linalg_matmul ?id ?x ?y ?o ?attr1 ?attr2 (RankedTensor ?d ?t)) (* (* ?a ?b) ?c)))
-             ).
+[INFO ] Declared function tensor_empty.
 [INFO ] Declared function op0.
 [INFO ] Declared function op1.
 [INFO ] Declared function op2.
@@ -107,27 +73,11 @@
 [INFO ] Declared function op10.
 [INFO ] Declared function op11.
 [INFO ] Declared function op12.
-[INFO ] Declared function op13.
-[INFO ] Ran schedule (repeat 10000 (run)).
-[INFO ] Report: Rule (rule ((= rewrite_var__ (linalg_transpose ?id (linalg_transpose ?id2 ?x ?y ?perm...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (NamedOp ?id (RankedTensor ?dims ?t)))        (> (vec-length ?dims)...: search 0.000s, apply 0.000s, num matches 13
-    Rule (rule ((= ?m (arith_constant ?id ?attr (RankedTensor ?dims ?t)))        (> (vec-...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (arith_constant ?id ?attr (RankedTensor ?dims ?t)))        (> (vec-...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (linalg_matmul ?id ?x ?y ?o ?attr1 ?attr2 (RankedTensor ?d ?t)))   ...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= rewrite_var__ (arith_addf ?i0 (arith_constant ?i1 (NamedAttr "value" (...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (NamedOp ?id (RankedTensor ?dims ?t)))        (> (vec-length ?dims)...: search 0.000s, apply 0.000s, num matches 13
-    Rule (rule ((= rewrite_var__ (arith_addf ? ?x ?y ?a ?t)))       ((union rewrite_var__...: search 0.000s, apply 0.000s, num matches 0
-    Ruleset : search 0.001s, apply 0.000s, rebuild 0.000s
-    
-[INFO ] Ran schedule (repeat 10000 (run)).
-[INFO ] Report: Rule (rule ((= rewrite_var__ (linalg_transpose ?id (linalg_transpose ?id2 ?x ?y ?perm...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (NamedOp ?id (RankedTensor ?dims ?t)))        (> (vec-length ?dims)...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (arith_constant ?id ?attr (RankedTensor ?dims ?t)))        (> (vec-...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (arith_constant ?id ?attr (RankedTensor ?dims ?t)))        (> (vec-...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (linalg_matmul ?id ?x ?y ?o ?attr1 ?attr2 (RankedTensor ?d ?t)))   ...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= rewrite_var__ (arith_addf ?i0 (arith_constant ?i1 (NamedAttr "value" (...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= ?m (NamedOp ?id (RankedTensor ?dims ?t)))        (> (vec-length ?dims)...: search 0.000s, apply 0.000s, num matches 0
-    Rule (rule ((= rewrite_var__ (arith_addf ? ?x ?y ?a ?t)))       ((union rewrite_var__...: search 0.000s, apply 0.000s, num matches 0
-    Ruleset : search 0.000s, apply 0.000s, rebuild 0.000s
-    
-[INFO ] extracted with cost 8: (arith_constant 13 (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 100 (I64))) (I64))
+[INFO ] extracted with cost 6: (tensor_empty (RankedTensor (vec-of 10000 10000 3) (I64)))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 10000 (Index))) (Index))
+[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 10000 10000) (I64)))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 0 (I64))) (I64))

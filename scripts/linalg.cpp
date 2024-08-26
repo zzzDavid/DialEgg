@@ -90,4 +90,5 @@ int main() {
     llvm::outs() << "\n";
     tensor3->print(llvm::outs(), mlir::OpPrintingFlags().printGenericOpForm());
     llvm::outs() << "\n";
-}
+
+    mlir::linalg::FillRng2DOp

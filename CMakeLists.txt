@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 project(eq-sat-opt LANGUAGES CXX C)
+
 set(CMAKE_CXX_STANDARD 17)
 
 set(LLVM_DIR ~/dev/lib/llvm/build/lib/cmake/llvm)
@@ -39,15 +40,15 @@ add_definitions(${LLVM_DEFINITIONS_LIST})
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
-set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib MLIRSupport LLVMSupport LLVMCore)
+set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib)
 
-add_llvm_executable(eq-sat-opt src/eq-sat-opt.cpp src/EqSatPass.cpp src/Egglog.cpp)
+add_llvm_executable(eq-sat-opt src/eq-sat-opt.cpp src/EqualitySaturationPass.cpp src/Egglog.cpp)
 llvm_update_compile_flags(eq-sat-opt)
 target_link_libraries(eq-sat-opt PRIVATE ${OPT_LIBS})
 
-add_llvm_executable(eggify src/eggify.cpp)
-llvm_update_compile_flags(eggify)
-target_link_libraries(eggify PRIVATE ${OPT_LIBS})
+# add_llvm_executable(eggify src/eggify.cpp)
+# llvm_update_compile_flags(eggify)
+# target_link_libraries(eggify PRIVATE ${OPT_LIBS})
 
 # add_llvm_executable(linalg scripts/linalg.cpp)
 # llvm_update_compile_flags(linalg)
@@ -57,6 +58,6 @@ target_link_libraries(eggify PRIVATE ${OPT_LIBS})
 # llvm_update_compile_flags(attr)
 # target_link_libraries(attr PRIVATE ${OPT_LIBS})
 
-add_llvm_executable(tester scripts/tester.cpp)
-llvm_update_compile_flags(tester)
-target_link_libraries(tester PRIVATE ${OPT_LIBS})
+# add_llvm_executable(tester scripts/tester.cpp)
+# llvm_update_compile_flags(tester)
+# target_link_libraries(tester PRIVATE ${OPT_LIBS})

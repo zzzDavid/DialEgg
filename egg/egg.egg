@@ -1,0 +1,64 @@
+(include "egg/base.egg")
+
+;;;; arith dialect ;;;;
+
+;; Attrs
+(datatype FastMathFlags (none) (reassoc) (nnan))
+(function arith_fastmath (FastMathFlags) Attr)
+
+;; Ops
+(function arith_constant (AttrPair Type) Op)
+(function arith_addf (Op Op AttrPair Type) Op)
+(function arith_subf (Op Op AttrPair Type) Op)
+(function arith_divf (Op Op AttrPair Type) Op)
+(function arith_mulf (Op Op AttrPair Type) Op)
+
+;;;; math dialect ;;;;
+(function math_sin (Op AttrPair Type) Op)
+(function math_cos (Op AttrPair Type) Op)
+(function math_powf (Op Op AttrPair Type) Op)
+
+;;;; linalg dialect ;;;;
+(function linalg_transpose (Op Op AttrPair Type) Op)
+(function linalg_matmul (Op Op Op AttrPair Type) Op)
+
+;;;; tensor dialect ;;;;
+(function tensor_empty (Type) Op)
+
+;; OPS HERE ;;
+(let op0 (arith_constant (NamedAttr "value" (IntegerAttr 100 (I64))) (I64))) ; %c100_i64 = arith.constant 100 : i64
+(let op1 (tensor_empty (RankedTensor (vec-of 10000 10000 3) (I64)))) ; %0 = tensor.empty() : tensor<10000x10000x3xi64>
+(let op2 (Value 2 (RankedTensor (vec-of 10000 10000 3) (I64)))) ; %1 = linalg.fill ins(%c100_i64 : i64) outs(%0 : tensor<10000x10000x3xi64>) -> tensor<10000x10000x3xi64>
+(let op3 (Value 3 (I64))) ; %2 = func.call @clock() : () -> i64
+(let op4 (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index))) ; %c0 = arith.constant 0 : index
+(let op5 (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index))) ; %c1 = arith.constant 1 : index
+(let op6 (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index))) ; %c2 = arith.constant 2 : index
+(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 10000 (Index))) (Index))) ; %c10000 = arith.constant 10000 : index
+(let op8 (tensor_empty (RankedTensor (vec-of 10000 10000) (I64)))) ; %3 = tensor.empty() : tensor<10000x10000xi64>
+(let op9 (Value 9 (RankedTensor (vec-of 10000 10000) (I64)))) ; %4 = scf.for %arg0 = %c0 to %c10000 step %c1 iter_args(%arg1 = %3) -> (tensor<10000x10000xi64>) {
+;   %7 = scf.for %arg2 = %c0 to %c10000 step %c1 iter_args(%arg3 = %arg1) -> (tensor<10000x10000xi64>) {
+;     %extracted = tensor.extract %1[%arg0, %arg2, %c0] : tensor<10000x10000x3xi64>
+;     %extracted_0 = tensor.extract %1[%arg0, %arg2, %c1] : tensor<10000x10000x3xi64>
+;     %extracted_1 = tensor.extract %1[%arg0, %arg2, %c2] : tensor<10000x10000x3xi64>
+;     %8 = func.call @rgb_to_grayscale(%extracted, %extracted_0, %extracted_1) : (i64, i64, i64) -> i64
+;     %inserted = tensor.insert %8 into %arg3[%arg0, %arg2] : tensor<10000x10000xi64>
+;     scf.yield %inserted : tensor<10000x10000xi64>
+;   }
+;   scf.yield %7 : tensor<10000x10000xi64>
+; }
+(let op10 (Value 10 (I64))) ; %5 = func.call @clock() : () -> i64
+(let op11 (Value 11 (RankedTensor (vec-of 10000 10000) (I64)))) ; %6 = func.call @blackhole(%4) : (tensor<10000x10000xi64>) -> tensor<10000x10000xi64>
+(let op12 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I64))) (I64))) ; %c0_i64 = arith.constant 0 : i64
+;; END OPS ;;
+
+;; RULES HERE ;;
+;; END RULES ;;
+
+(extract op0)
+(extract op1)
+(extract op4)
+(extract op5)
+(extract op6)
+(extract op7)
+(extract op8)
+(extract op12)

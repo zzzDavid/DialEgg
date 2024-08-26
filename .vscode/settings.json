@@ -88,6 +88,9 @@
         "format": "cpp",
         "numeric": "cpp",
         "random": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "__availability": "cpp",
+        "__memory": "cpp",
+        "regex": "cpp"
     }
 }

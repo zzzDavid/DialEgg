@@ -1,27 +1,22 @@
-(include "egg/builtin.egg")
-(include "egg/arith.egg")
-(include "egg/linalg.egg")
-(include "egg/tensor.egg")
+;; arith ;;
 
-;; arith
 (rewrite ; constant fold for arith.addf
-   (arith_addf ?i0 
-       (arith_constant ?i1 (NamedAttr "value" (FloatAttr ?x ?t)) ?t)
-       (arith_constant ?i2 (NamedAttr "value" (FloatAttr ?y ?t)) ?t)
-       ?a ?t)
-   (arith_constant -1 (NamedAttr "value" (FloatAttr (+ ?x ?y) ?t)) ?t)
+    (arith_addf
+        (arith_constant (NamedAttr "value" (FloatAttr ?x ?t)) ?t)
+        (arith_constant (NamedAttr "value" (FloatAttr ?y ?t)) ?t)
+        ?a ?t)
+    (arith_constant (NamedAttr "value" (FloatAttr (+ ?x ?y) ?t)) ?t)
 )
-    
+
 (rewrite ; commute for arith.addf
-    (arith_addf ? ?x ?y ?a ?t)
-    (arith_addf -1 ?y ?x ?a ?t)
+    (arith_addf ?x ?y ?a ?t)
+    (arith_addf ?y ?x ?a ?t)
 )
 
-;; linalg
+;; linalg ;;
 
-; double transpose
-(rewrite
-    (linalg_transpose ?id (linalg_transpose ?id2 ?x ?y ?perm ?t1) ?z ?perm ?t2)
+(rewrite ; double transpose
+    (linalg_transpose (linalg_transpose ?x ?y ?perm ?t1) ?z ?perm ?t2)
     ?x
 )
 
@@ -29,41 +24,23 @@
 (function nrows (Op) i64)
 (function ncols (Op) i64)
 
-(rule ((= ?m (arith_constant ?id ?attr (RankedTensor ?dims ?t))) (> (vec-length ?dims) 1))
-       ((set (nrows ?m) (vec-get ?dims 0))
+(rule ((= ?m (Value (RankedTensor ?dims ?t))) (> (vec-length ?dims) 1))
+    ((set (nrows ?m) (vec-get ?dims 0))
         (set (ncols ?m) (vec-get ?dims 1))))
 
-(rule ((= ?m (NamedOp ?id (RankedTensor ?dims ?t))) (> (vec-length ?dims) 1))
-       ((set (nrows ?m) (vec-get ?dims 0))
+(rule ((= ?m (tensor_empty (RankedTensor ?dims ?t))) (> (vec-length ?dims) 1))
+    ((set (nrows ?m) (vec-get ?dims 0))
         (set (ncols ?m) (vec-get ?dims 1))))
 
-(rule ((= ?m (linalg_matmul ?id ?x ?y ?o ?attr1 ?attr2 (RankedTensor ?d ?t)))
-       (= ?a (nrows ?x))
-       (= ?b (ncols ?x))
-       (= ?c (ncols ?y)))
-      ((set (nrows ?m) ?a)
-       (set (ncols ?m) ?c)
-       (unstable-cost (linalg_matmul ?id ?x ?y ?o ?attr1 ?attr2 (RankedTensor ?d ?t)) (* (* ?a ?b) ?c))))
+(rule ((= ?m (linalg_matmul ?x ?y ?o ?attr1 (RankedTensor ?d ?t)))
+        (= ?a (nrows ?x))
+        (= ?b (ncols ?x))
+        (= ?c (ncols ?y)))
+    ((set (nrows ?m) ?a)
+        (set (ncols ?m) ?c)
+        (unstable-cost (linalg_matmul ?x ?y ?o ?attr1 (RankedTensor ?d ?t)) (* (* ?a ?b) ?c))))
 
-;; OPS HERE ;;
-(let op0 (NamedOp 0 (RankedTensor (vec-of 10000 10) (I64)))) ; %0 = tensor.empty() : tensor<10000x10xi64>
-(let op1 (NamedOp 1 (RankedTensor (vec-of -9223372036854775808 -9223372036854775808) (I64)))) ; %cast = tensor.cast %0 : tensor<10000x10xi64> to tensor<?x?xi64>
-(let op2 (NamedOp 2 (RankedTensor (vec-of -9223372036854775808 -9223372036854775808) (I64)))) ; %1 = func.call @fillRandomI64Tensor2D(%cast) : (tensor<?x?xi64>) -> tensor<?x?xi64>
-(let op3 (NamedOp 3 (RankedTensor (vec-of 10000 10) (I64)))) ; %cast_0 = tensor.cast %1 : tensor<?x?xi64> to tensor<10000x10xi64>
-(let op4 (NamedOp 4 (RankedTensor (vec-of 10 15000) (I64)))) ; %2 = tensor.empty() : tensor<10x15000xi64>
-(let op5 (NamedOp 5 (RankedTensor (vec-of -9223372036854775808 -9223372036854775808) (I64)))) ; %cast_1 = tensor.cast %2 : tensor<10x15000xi64> to tensor<?x?xi64>
-(let op6 (NamedOp 6 (RankedTensor (vec-of -9223372036854775808 -9223372036854775808) (I64)))) ; %3 = func.call @fillRandomI64Tensor2D(%cast_1) : (tensor<?x?xi64>) -> tensor<?x?xi64>
-(let op7 (NamedOp 7 (RankedTensor (vec-of 10 15000) (I64)))) ; %cast_2 = tensor.cast %3 : tensor<?x?xi64> to tensor<10x15000xi64>
-(let op8 (NamedOp 8 (RankedTensor (vec-of 15000 8) (I64)))) ; %4 = tensor.empty() : tensor<15000x8xi64>
-(let op9 (NamedOp 9 (RankedTensor (vec-of -9223372036854775808 -9223372036854775808) (I64)))) ; %cast_3 = tensor.cast %4 : tensor<15000x8xi64> to tensor<?x?xi64>
-(let op10 (NamedOp 10 (RankedTensor (vec-of -9223372036854775808 -9223372036854775808) (I64)))) ; %5 = func.call @fillRandomI64Tensor2D(%cast_3) : (tensor<?x?xi64>) -> tensor<?x?xi64>
-(let op11 (NamedOp 11 (RankedTensor (vec-of 15000 8) (I64)))) ; %cast_4 = tensor.cast %5 : tensor<?x?xi64> to tensor<15000x8xi64>
-(let op12 (NamedOp 12 (RankedTensor (vec-of 10000 8) (I64)))) ; %6 = func.call @xy_z(%cast_0, %cast_2, %cast_4) : (tensor<10000x10xi64>, tensor<10x15000xi64>, tensor<15000x8xi64>) -> tensor<10000x8xi64>
-(let op13 (arith_constant 13 (NamedAttr "value" (FloatAttr 0.000000e+00 (F32))) (F32))) ; %cst = arith.constant 0.000000e+00 : f32
-;; END OPS ;;
-
-(run 10000)
-
-
-(run 10000)
-(extract op13)
+(rewrite
+    (linalg_matmul (linalg_matmul 2 ?x ?y ?it1 ?a0 (RankedTensor ?ds1 ?t)) ?z ?it2 ?a1 (RankedTensor ?ds2 ?t))
+    (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty (RankedTensor (vec-of (nrows ?y) (ncols ?z)) ?t)) ?a0 (RankedTensor (vec-of (nrows ?y) (ncols ?z)) ?t)) ?it2 ?a1 (RankedTensor ?ds2 ?t))
+)

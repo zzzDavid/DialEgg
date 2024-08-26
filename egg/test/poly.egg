@@ -1,0 +1,54 @@
+(sort Math)
+
+(function Var (String) Math)
+(function Num (i64) Math)
+(function Add (Math Math) Math)
+(function Mul (Math Math) Math)
+(function Pow (Math i64) Math :cost 100000)
+
+(let vx (Var "x"))
+(let va (Var "a"))
+(let vb (Var "b"))
+(let vc (Var "c"))
+(let vd (Var "d"))
+
+(let poly2 (Add vc (Add (Mul vb vx) (Mul va (Pow vx 2))))) ; c + bx + ax^2
+(let poly3 (Add vd ; d + cx + bx^2 + ax^3
+        (Add (Mul vc vx)
+            (Add (Mul vb (Pow vx 2))
+                (Mul va (Pow vx 3))))))
+(let pp (Add (Mul va (Pow vx 3)) (Mul vb (Pow vx 2))))
+
+(rewrite (Add ?x ?y) (Add ?y ?x)) ; x + y = y + x
+(rewrite (Add ?x (Num 0)) ?x) ; x + 0 = x
+
+(rewrite (Mul ?x ?y) (Mul ?y ?x)) ; x * y = y * x
+(rewrite (Mul ?x (Num 1)) ?x) ; x * 1 = x
+
+(rewrite (Pow ?x 0) (Num 1)) ; x^0 = 1
+(rewrite (Pow ?x 1) ?x) ; x^1 = x
+(rewrite (Pow ?x 2) (Mul ?x ?x)) ; x^2 = x * x
+(rule ((= ?lhs (Pow ?x ?n)) (> ?n 2)) ((union ?lhs (Mul ?x (Pow ?x (- ?n 1)))))) ; x^n = x * x^(n-1)
+
+(rule ; ax^n + bx^m = x^(min(n, m)) * (a * x^(n - min(n, m)) + b * x^(m - min(n, m))
+    ((= ?lhs (Add (Mul ?a (Pow ?x ?n)) (Mul ?b (Pow ?x ?m))))
+        (= ?min (min ?n ?m)))
+    ((union ?lhs (Mul (Pow ?x ?min) (Add (Mul ?a (Pow ?x (- ?n ?min))) (Mul ?b (Pow ?x (- ?m ?min)))))))
+)
+
+; prefer a*(...) rather than (...)*a
+(rule
+    ((Mul ?x (Var ?a)))
+    ((unstable-cost (Mul ?x (Var ?a)) 1000))
+)
+
+; prefer a + (...) rather than (...) + a
+(rule
+    ((Add (Var ?a) ?x))
+    ((unstable-cost (Add (Var ?a) ?x) 1000))
+)
+
+
+(run 100)
+
+(extract poly1)

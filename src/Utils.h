@@ -2,6 +2,11 @@
 #define UTILS_H
 
 #include <string>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <limits>
+#include <numbers>
 
 #include "llvm/Support/raw_os_ostream.h"
 #include "mlir/IR/Operation.h"
@@ -31,7 +36,7 @@ inline std::string opToString(const mlir::Operation& op) {
     return str;
 }
 
-inline std::string valueToString(const mlir::Value& value) {
+inline std::string valueToString(mlir::Value value) {
     std::string str;
     llvm::raw_string_ostream stream(str);
     stream << value;
@@ -52,6 +57,20 @@ inline std::string locationToString(const mlir::Location& loc) {
     llvm::raw_string_ostream stream(str);
     stream << loc;
     stream.flush();
+    return str;
+}
+
+inline std::string doubleToString(double d) {
+    std::ostringstream ss;
+    ss << std::fixed << d;
+    std::string str = ss.str();
+
+    // remove trailing zeros
+    size_t lastNonZero = str.find_last_not_of('0');
+    if (lastNonZero != std::string::npos && str[lastNonZero] == '.') {
+        lastNonZero++;
+    }
+    str = str.substr(0, lastNonZero + 1);
     return str;
 }
 
@@ -147,6 +166,34 @@ inline void printFileContents(const std::string& filename, llvm::raw_ostream& ro
         }
         file.close();
     }
+}
+
+inline size_t sizeOfTypeInBytes(mlir::Type type) {
+    if (type.isa<mlir::IntegerType>()) {
+        return type.cast<mlir::IntegerType>().getWidth();
+    }
+
+    if (type.isa<mlir::FloatType>()) {
+        return type.cast<mlir::FloatType>().getWidth();
+    }
+
+    if (type.isa<mlir::IndexType>()) {
+        return 64;
+    }
+
+    if (type.isa<mlir::NoneType>()) {
+        return 0;
+    }
+
+    if (type.isa<mlir::TupleType>()) {
+        size_t size = 0;
+        for (mlir::Type subType: type.cast<mlir::TupleType>().getTypes()) {
+            size += sizeOfTypeInBytes(subType);
+        }
+        return size;
+    }
+
+    return 0;
 }
 
 #endif //UTILS_H

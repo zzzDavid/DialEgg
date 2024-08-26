@@ -1,3 +1,0 @@
-;; Ops
-(function linalg_transpose (i64 Op Op AttrPair Type) Op)
-(function linalg_matmul (i64 Op Op Op AttrPair AttrPair Type) Op)

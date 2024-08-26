@@ -1,48 +1,60 @@
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/TableGen/Record.h"
-#include "mlir/IR/Dialect.h"
+#include <unordered_set>
+#include <map>
+
+#include "mlir/IR/BuiltinOps.h"
+#include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/Pass/Pass.h"
 #include "mlir/InitAllDialects.h"
-#include "mlir/Dialect/Linalg/IR/Linalg.h"
-#include "mlir/Dialect/Tensor/IR/Tensor.h"
-#include "mlir/Dialect/Arith/IR/Arith.h"
-#include "mlir/IR/MLIRContext.h"
-#include "mlir/IR/Operation.h"
-#include "mlir/IR/Builders.h"
-#include "mlir/IR/OpDefinition.h"
-#include "mlir/IR/Types.h"
-#include "mlir/AsmParser/AsmParser.h"
-#include "mlir/TableGen/Operator.h"
-#include "mlir/TableGen/Argument.h"
+#include "mlir/InitAllPasses.h"
+#include "mlir/Tools/mlir-opt/MlirOptMain.h"
 
-#include <time.h>
+struct PlayPass : public mlir::PassWrapper<PlayPass, mlir::OperationPass<mlir::func::FuncOp>> {
+    mlir::StringRef getArgument() const override { return "play"; }
+    mlir::StringRef getDescription() const override { return "Playground pass."; }
 
-int main() {
-    clock_t start = clock();
+    void runOnOperation() override {
+        mlir::func::FuncOp rootOp = getOperation();
 
+        // Get the name of the function
+        llvm::StringRef rootOpName = rootOp.getName();
+
+        llvm::outs() << "--------------------------------\n";
+        llvm::outs() << "Function: " << rootOpName << "\n";
+
+        std::set<mlir::Block*> blocks;
+
+        // Get all operations in the function
+        rootOp.walk([&](mlir::Operation* op) {
+            mlir::Block* block = op->getBlock();
+
+            // Make sure block parent is not a module
+            if (!mlir::isa<mlir::ModuleOp>(block->getParentOp())) {
+                blocks.insert(block);
+            }
+        });
+
+        // Print number of blocks
+        llvm::outs() << "Number of blocks: " << blocks.size() << "\n";
+
+        // Print all blocks with op : block
+        for (mlir::Block* block: blocks) {
+            llvm::outs() << "Block: " << block->getParentOp()->getName() << "\n";
+            block->print(llvm::outs());
+            llvm::outs() << "\n\n\n\n";
+        }
+
+        llvm::outs() << "--------------------------------\n";
+    }
+};
+
+int main(int argc, char** argv) {
     mlir::DialectRegistry registry;
     mlir::registerAllDialects(registry);
 
-    mlir::MLIRContext context(registry);
-    context.loadAllAvailableDialects();
+    // Register passes
+    mlir::registerAllPasses();
+    mlir::PassRegistration<PlayPass>();
 
-    mlir::OpBuilder builder(&context);
-
-    mlir::IntegerType i64Type = mlir::IntegerType::get(&context, 64);
-    mlir::FloatType f64Type = mlir::FloatType::getF64(&context);
-    mlir::TensorType tensorType = mlir::RankedTensorType::get({10, 10}, f64Type);
-
-    // Create linalg.fill_rng_2d operation
-    mlir::OperationState state(mlir::UnknownLoc::get(&context), "linalg.fill_rng_2d");
-    
-    mlir::Value seed = builder.create<mlir::arith::ConstantOp>(mlir::UnknownLoc::get(&context), i64Type, builder.getI64IntegerAttr(0));
-    mlir::Value min = builder.create<mlir::arith::ConstantOp>(mlir::UnknownLoc::get(&context), i64Type, builder.getF64FloatAttr(-100.0));
-    mlir::Value max = builder.create<mlir::arith::ConstantOp>(mlir::UnknownLoc::get(&context), i64Type, builder.getF64FloatAttr(100.0));
-    mlir::tensor::EmptyOp empty = builder.create<mlir::tensor::EmptyOp>(mlir::UnknownLoc::get(&context), tensorType.getShape(), tensorType.getElementType());
-    
-    // mlir::linalg::FillRng2DOp fillRng2d = builder.create<mlir::linalg::FillRng2DOp>(mlir::UnknownLoc::get(&context), empty.getResult(), seed, min, max);
-    mlir::linalg::FillRng2DOp::build(builder, state, llvm::ArrayRef<mlir::Value>{seed, min, max}, empty.getResult());
-    mlir::Operation* fillRng2d = mlir::Operation::create(state);
-    fillRng2d->print(llvm::outs());
-
-    return 0;
+    mlir::LogicalResult result = mlir::MlirOptMain(argc, argv, "Playground", registry);
+    return mlir::asMainReturnCode(result);
 }
