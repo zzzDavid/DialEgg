@@ -1,10 +1,11 @@
-#include "mlir/InitAllDialects.h"
-#include "mlir/InitAllPasses.h"
-#include "mlir/Tools/mlir-opt/MlirOptMain.h"
+#ifndef EGGLOG_CUSTOM_DEFS_H
+#define EGGLOG_CUSTOM_DEFS_H
+
+#include "mlir/IR/Attributes.h"
+#include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/AsmParser/AsmParser.h"
 
 #include "Egglog.h"
-#include "EqualitySaturationPass.h"
 
 /** 
  * Parse the attribute (function arith_fastmath (FastMathFlags) Attr)
@@ -94,31 +95,4 @@ std::vector<std::string> stringifyRankedTensorType(mlir::Type type, Egglog& eggl
     return split;
 }
 
-int main(int argc, char** argv) {
-    // Register dialects
-    mlir::DialectRegistry dialectRegistry;
-    mlir::registerAllDialects(dialectRegistry);
-
-    // Register passes
-    mlir::registerAllPasses();
-
-    std::string egglogExecutable = "~/dev/lib/egglog/target/debug/egglog";  // Change this to the path of your egglog executable
-    std::string eggFile = "egg/egg.egg";                                    // Change this to the path of your egg file
-
-    std::map<std::string, AttrStringifyFunction> attrStringifiers = {
-            {mlir::arith::FastMathFlagsAttr::name.str(), stringifyFastMathFlagsAttr}};
-    std::map<std::string, AttrParseFunction> attrParsers = {
-            {"arith_fastmath", parseFastMathFlagsAttr}};
-
-    std::map<std::string, TypeStringifyFunction> typeStringifiers = {
-            {mlir::RankedTensorType::name.str(), stringifyRankedTensorType}};
-    std::map<std::string, TypeParseFunction> typeParsers = {
-            {"RankedTensor", parseRankedTensorType}};
-
-    EgglogCustomDefs funcs = {attrStringifiers, attrParsers, typeStringifiers, typeParsers};
-    mlir::PassRegistration<EqualitySaturationPass>([&] { return std::make_unique<EqualitySaturationPass>(egglogExecutable, eggFile, funcs); });
-
-    // Run the main MLIR opt
-    mlir::LogicalResult result = mlir::MlirOptMain(argc, argv, "Equality saturated MLIR\n", dialectRegistry);
-    return mlir::asMainReturnCode(result);
-}
+#endif  // EGGLOG_CUSTOM_DEFS_H

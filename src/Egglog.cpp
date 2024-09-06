@@ -1,5 +1,6 @@
 #include <regex>
 
+#include "llvm/Support/raw_ostream.h"
 #include "mlir/IR/Value.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Builders.h"
@@ -13,7 +14,8 @@
 #include "Utils.h"
 
 EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
-    std::vector<std::string> split = Egglog::splitExpression(opStr);
+    std::string newOpStr = Egglog::removeComment(opStr);
+    std::vector<std::string> split = Egglog::splitExpression(newOpStr);
     assert(split.size() > 0);
     assert(split[0] == "function");
 
@@ -27,8 +29,9 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
     }
 
     std::string fullName = split[1];
-    std::string name = fullName.substr(fullName.find_last_of('_') + 1);
-    std::string dialect = fullName.substr(0, fullName.find_first_of('_'));
+    std::string name = Egglog::opNameFromName(fullName);
+    std::string dialect = Egglog::dialectFromName(fullName);
+    std::string version = Egglog::numOperandsFromName(fullName);
 
     std::vector<std::string> args = Egglog::splitExpression(split[2]);
 
@@ -46,10 +49,11 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
     bool region = std::find(args.begin(), args.end(), "MlirRegion") != args.end();
 
     return EgglogOpDef {
-            .str = opStr,
+            .str = newOpStr,
             .fullName = fullName,
             .dialect = dialect,
             .name = name,
+            .version = version,
             .args = args,
             .nOperands = nOperands,
             .nAttributes = nAttributes,
@@ -58,14 +62,24 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
 }
 
 bool EgglogOpDef::isOpFunction(const std::string& opStr) {
-    if (opStr.empty()) {
+    std::string newOpStr = Egglog::removeComment(opStr);
+    if (newOpStr.empty()) {
         return false;
-    } else if (opStr.front() != '(' || opStr.back() != ')') {
+    } else if (newOpStr.front() != '(' || newOpStr.back() != ')') {
         return false;
     }
 
-    std::vector<std::string> split = Egglog::splitExpression(opStr);
+    std::vector<std::string> split = Egglog::splitExpression(newOpStr);
     return split.size() > 1 && split[0] == "function" && (split.back() == "Op" || split[split.size() - 3] == "Op");
+}
+
+std::string Egglog::removeComment(const std::string& str) {
+    // remove everything after the first semicolon
+    size_t semicolon = str.find_first_of(';');
+    if (semicolon != std::string::npos) {
+        return str.substr(0, semicolon);
+    }
+    return str;
 }
 
 std::string EggifiedOp::inlinedEgglogOp() const {
@@ -122,6 +136,42 @@ std::vector<std::string> Egglog::splitExpression(std::string opStr) {
     }
 
     return result;
+}
+
+std::string Egglog::dialectFromName(std::string op) {
+    // remove the leading "func." or "func_"
+    bool isDot = op.find_first_of('.') != std::string::npos;
+    bool isUnderscore = op.find_first_of('_') != std::string::npos;
+
+    if (isDot) {
+        return op.substr(0, op.find_first_of('.'));
+    } else if (isUnderscore) {
+        return op.substr(0, op.find_first_of('_'));
+    } else {
+        return "";
+    }
+}
+
+std::string Egglog::opNameFromName(std::string op) {
+    bool isDot = op.find_first_of('.') != std::string::npos;
+
+    // split by the dot or underscore
+    llvm::StringRef opRef(op);
+    std::pair<llvm::StringRef, llvm::StringRef> split = opRef.split(isDot ? '.' : '_'); // "func" and "call_0"
+    std::pair<llvm::StringRef, llvm::StringRef> split2 = split.second.split(isDot ? '.' : '_'); // "call" and "0"
+
+    return split2.first.str();
+}
+
+std::string Egglog::numOperandsFromName(std::string op) {
+    // get last number in the string "func.name.0" or "func_name_0"
+    bool isDot = op.find_first_of('.') != std::string::npos;
+
+    llvm::StringRef opRef(op);
+    std::pair<llvm::StringRef, llvm::StringRef> split = opRef.split(isDot ? '.' : '_');
+    std::pair<llvm::StringRef, llvm::StringRef> split2 = split.second.split(isDot ? '.' : '_');
+
+    return split2.second.str();
 }
 
 /** Parses the given type string into an MLIR type Form (F16) or (Complex <type>) */
@@ -334,6 +384,8 @@ mlir::Attribute Egglog::parseAttribute(const std::string& attrStr) {
         mlir::Type type = parseType(split[2]);
         mlir::ShapedType shapedType = type.cast<mlir::ShapedType>();
         return mlir::DenseFPElementsAttr::get(shapedType, values);
+    } else if (attrType == "SymbolRefAttr") {  // (SymbolRefAttr "<name>")
+        return mlir::SymbolRefAttr::get(&context, unwrap(split[1], '"'));
     } else if (attrType == "OtherAttr") {  // TODO add all remaining builtin attrs (check below functions)
         return mlir::parseAttribute(unwrap(split[1], '"'), &context);
     } else if (egglogCustom.attrParsers.find(attrType) != egglogCustom.attrParsers.end()) {
@@ -434,6 +486,11 @@ std::string Egglog::eggifyAttribute(mlir::Attribute attr) {
             ss << ") " << eggifyType(shapedType) << ")";
         }
 
+    } else if (typeId == mlir::TypeID::get<mlir::SymbolRefAttr>()) {  // (SymbolRefAttr "<name>")
+        mlir::SymbolRefAttr symbolRefAttr = attr.cast<mlir::SymbolRefAttr>();
+        std::string value = symbolRefAttr.getRootReference().str();
+        ss << "(SymbolRefAttr \"" << value << "\")";
+
     } else if (egglogCustom.attrStringifiers.find(typeName) != egglogCustom.attrStringifiers.end()) {  // custom attr by user
         AttrStringifyFunction stringifyFunc = egglogCustom.attrStringifiers.at(typeName);
         std::vector<std::string> split = stringifyFunc(attr, *this);
@@ -488,26 +545,35 @@ mlir::Value Egglog::parseValue(const std::string& valueStr) {
 mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBuilder& builder) {
     llvm::outs() << "PARSING OPERATION: " << newOpStr << "\n";
 
-    // if the string is found, then it is an existing operation
-    std::optional<EggifiedOp> eggifiedOp = findEggifiedOp(newOpStr);
-    if (eggifiedOp.has_value()) {
-        llvm::outs() << "FOUND EGGIFIED OP: " << eggifiedOp.value().egglogOp << "\n";
-        return eggifiedOp.value().mlirOp;
-        // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
-    }
-
-    // otherwise look in the parsed ops cache
-    if (parsedOps.find(newOpStr) != parsedOps.end()) {
-        llvm::outs() << "FOUND OPERATION IN CACHE: " << newOpStr << "\n";
-        return parsedOps[newOpStr];
-        // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
-    }
-
     std::vector<std::string> split = splitExpression(newOpStr);
     std::string opName = split[0];
+    
+    bool cacheable = opName.find("func_call") == std::string::npos; // TODO if no side-effect, then cacheable
+    if (cacheable) {
+        // if the string is found, then it is an input operation
+        std::optional<EggifiedOp> eggifiedOp = findEggifiedOp(newOpStr);
+        if (eggifiedOp.has_value()) {
+            llvm::outs() << "FOUND EGGIFIED OP: " << eggifiedOp.value().egglogOp << "\n";
+            return eggifiedOp.value().mlirOp;
+            // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
+        }
+
+        // otherwise look in the parsed ops cache
+        if (parsedOps.find(newOpStr) != parsedOps.end() && cacheable) {
+            llvm::outs() << "FOUND OPERATION IN CACHE: " << newOpStr << "\n";
+            return parsedOps[newOpStr];
+            // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
+        }
+    }
+
+    if (supportedEgglogOps.find(opName) == supportedEgglogOps.end()) {
+        llvm::outs() << "Unsupported operation '" << opName << "' but using the result as a variable.\n";
+        exit(1);
+    }
 
     std::replace(opName.begin(), opName.end(), '_', '.');  // Replace underscores with dots
-    EgglogOpDef egglogOpDef = egglogOps.at(opName);
+    EgglogOpDef egglogOpDef = supportedEgglogOps.at(opName);
+    std::string mlirOpName = egglogOpDef.dialect + "." + egglogOpDef.name;
 
     // Operands
     std::vector<mlir::Value> operands;
@@ -517,7 +583,7 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
         if (operandStr.find("(Value ") == 0) {
             mlir::Value operand = parseValue(operandStr);
             operands.push_back(operand);
-        } else { // new operation
+        } else {  // new operation
             mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
             mlir::Value operand = nestedOperand->getResult(0);  // TODO support multiple results?
             operands.push_back(operand);
@@ -537,8 +603,8 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
     // Create the operation
     mlir::Operation* newOp = nullptr;
 
-    if (opName.find("linalg.") == 0) {  // custom ops
-        std::string op = opName.substr(7);
+    if (mlirOpName.find("linalg.") == 0) {  // custom ops
+        std::string op = mlirOpName.substr(7);
         if (op == "transpose") {
             mlir::Attribute attr = attributes[0].getValue();
             newOp = builder.create<mlir::linalg::TransposeOp>(mlir::UnknownLoc::get(&context), operands[0], operands[1], attr.cast<mlir::DenseI64ArrayAttr>());
@@ -546,7 +612,7 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
             newOp = builder.create<mlir::linalg::MatmulOp>(mlir::UnknownLoc::get(&context), operands[2].getType(), llvm::ArrayRef<mlir::Value> {operands[0], operands[1]}, operands[2]);
         }
     } else {  // other ops that have no hidden region, thus are easy to create with OperationState
-        mlir::OperationState state(mlir::UnknownLoc::get(&context), opName);
+        mlir::OperationState state(mlir::UnknownLoc::get(&context), mlirOpName);
         state.addOperands(operands);
         state.addAttributes(attributes);
         state.addTypes(type);
@@ -554,7 +620,7 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
         newOp = builder.create(state);
     }
 
-    parsedOps[newOpStr] = newOp;
+    parsedOps[newOpStr] = newOp; // cache the parsed operation
     return newOp;
 }
 
@@ -583,14 +649,28 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
     }
 
     std::string opName = op->getName().getStringRef().str();
-    bool isSupported = egglogOps.find(opName) != egglogOps.end();
+    bool isSupported = supportedEgglogOps.find(opName) != supportedEgglogOps.end();
 
     if (!isSupported) {
-        llvm::outs() << "Unsupported operation '" << opName << "' but using the result as a variable.\n";
-        return eggifyValue(op->getResult(0));
+        // check is supported if we add the number of operands
+        std::string opNameWithNumOperands = opName + "." + std::to_string(op->getNumOperands());
+        isSupported = supportedEgglogOps.find(opNameWithNumOperands) != supportedEgglogOps.end();
+
+        if (!isSupported) {
+            llvm::outs() << "Unsupported operation '" << opName << "' and '" << opNameWithNumOperands << "' but using the result as a variable.\n";
+            return eggifyValue(op->getResult(0));
+        }
+
+        opName = opNameWithNumOperands;
     }
 
-    EgglogOpDef egglogOpDef = egglogOps.at(opName);
+    EgglogOpDef egglogOpDef = supportedEgglogOps.at(opName);
+
+    // check if not the same number of operands
+    if (egglogOpDef.nOperands != op->getNumOperands()) {
+        llvm::outs() << "Unsupported operation '" << opName << "' since it has " << op->getNumOperands() << " operands but egglog's '" << egglogOpDef.fullName << "' expects " << egglogOpDef.nOperands << " operands.\n";
+        return eggifyValue(op->getResult(0));
+    }
 
     op->removeAttr("linalg.memoized_indexing_maps");
 
@@ -603,15 +683,16 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
 
     // <operand1> <operand2> ... <operandN>
     std::vector<EggifiedOp> operands;
-    for (mlir::Value operand: op->getOperands()) {
-        EggifiedOp eggifiedOperand = eggifyValue(operand);
+    for (size_t i = 0; i < egglogOpDef.nOperands; i++) {
+        EggifiedOp eggifiedOperand = eggifyValue(op->getOperand(i));
         operands.push_back(eggifiedOperand);
         ss << " " << eggifiedOperand.getPrintId();
     }
 
     // <attr1> <attr2> ... <attrM>
-    for (const mlir::NamedAttribute& attr: op->getAttrs()) {
-        ss << " " << eggifyNamedAttribute(attr);
+    llvm::ArrayRef<mlir::NamedAttribute> attrs = op->getAttrs();
+    for (size_t i = 0; i < egglogOpDef.nAttributes; i++) {
+        ss << " " << eggifyNamedAttribute(attrs[i]);
     }
 
     ss << " ";

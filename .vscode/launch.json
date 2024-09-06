@@ -8,8 +8,8 @@
             "name": "Debug",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/eq-sat-opt",
-            "args": ["--mlir-disable-threading", "--eq-sat", "bench/linalg_assoc.mlir"],  // change the file path here
+            "program": "${workspaceFolder}/build/egg-opt",
+            "args": ["--mlir-disable-threading", "--matmul-associate", "bench/linalg_assoc.mlir"],  // change the file path here
             "cwd": "${workspaceFolder}",
         }
     ]

@@ -16,6 +16,7 @@
 ;; (<op_variant> <operand1> <operand2> ... <operandN> <attr1> <attr2> ... <attrM> <block> <type>)
 (datatype Op 
     (Value i64 Type)  ; MLIR value, this is used to represent the result of an operation when the operation is unknown/unsupported
+    (NoOp)
 )
 (sort Block (Vec Op))
 
@@ -66,6 +67,7 @@
 (function DenseFloatArrayAttr (f64 FloatVec Type) Attr)
 (function DenseIntElementsAttr (FloatVec Type) Attr)
 (function DenseFPElementsAttr (FloatVec Type) Attr)
+(function SymbolRefAttr (String) Attr)
 
 (function OtherAttr (String String) Attr) ; (<attr> <type-name>)
 
@@ -77,3 +79,36 @@
 ; SparseElementsAttr
 ; SymbolRefAttr
 ; StridedLayoutAttr
+
+;;;; linalg dialect ;;;;
+(function linalg_matmul (Op Op Op Type) Op)
+
+;;;; tensor dialect ;;;;
+(function tensor_empty (Type) Op)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+; Analysis for cost of linalg_matmul
+(function nrows (Op) i64)
+(function ncols (Op) i64)
+
+(rule ((= ?m (tensor_empty (RankedTensor ?dims ?t))) (> (vec-length ?dims) 1))
+    ((set (nrows ?m) (vec-get ?dims 0))
+    (set (ncols ?m) (vec-get ?dims 1))))
+
+(rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)))
+        (= ?a (nrows ?x))
+        (= ?b (ncols ?x))
+        (= ?c (ncols ?y)))
+    ((set (nrows ?m) ?a)
+     (set (ncols ?m) ?c)
+     (unstable-cost (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)) (* (* ?a ?b) ?c))))
+
+(run 10000)
+
+(rule
+    ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?o0 (RankedTensor ?d0 ?t)) ?z ?o1 (RankedTensor ?d1 ?t))))
+    ((let out_t (RankedTensor (vec-of (nrows ?y) (ncols ?z)) ?t))
+     (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?o1 (RankedTensor ?d1 ?t))))
+)

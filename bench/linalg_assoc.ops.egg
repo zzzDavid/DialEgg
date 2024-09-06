@@ -1,0 +1,56 @@
+(include "egg/base.egg")
+
+;;;; linalg dialect ;;;;
+(function linalg_matmul (Op Op Op Type) Op)
+
+;;;; tensor dialect ;;;;
+(function tensor_empty (Type) Op)
+
+;; OPS HERE ;;
+(let op0 (Value 0 (I64))) ; %0 = func.call @clock() : () -> i64
+(let op1 (tensor_empty (RankedTensor (vec-of 100 10) (I64)))) ; %1 = tensor.empty() : tensor<100x10xi64>
+(let op2 (tensor_empty (RankedTensor (vec-of 10 150) (I64)))) ; %2 = tensor.empty() : tensor<10x150xi64>
+(let op3 (tensor_empty (RankedTensor (vec-of 150 8) (I64)))) ; %3 = tensor.empty() : tensor<150x8xi64>
+(let op4 (tensor_empty (RankedTensor (vec-of 100 150) (I64)))) ; %4 = tensor.empty() : tensor<100x150xi64>
+(let op5 (linalg_matmul op1 op2 op4 (RankedTensor (vec-of 100 150) (I64)))) ; %5 = linalg.matmul ins(%1, %2 : tensor<100x10xi64>, tensor<10x150xi64>) outs(%4 : tensor<100x150xi64>) -> tensor<100x150xi64>
+(let op6 (tensor_empty (RankedTensor (vec-of 100 8) (I64)))) ; %6 = tensor.empty() : tensor<100x8xi64>
+(let op7 (linalg_matmul op5 op3 op6 (RankedTensor (vec-of 100 8) (I64)))) ; %7 = linalg.matmul ins(%5, %3 : tensor<100x150xi64>, tensor<150x8xi64>) outs(%6 : tensor<100x8xi64>) -> tensor<100x8xi64>
+(let op8 (Value 8 (I64))) ; %8 = func.call @clock() : () -> i64
+(let op9 (Value 9 (RankedTensor (vec-of 100 8) (I64)))) ; %9 = func.call @blackhole(%7) : (tensor<100x8xi64>) -> tensor<100x8xi64>
+(let op10 (Value 10 (I32))) ; %c0_i32 = arith.constant 0 : i32
+
+;; RULES HERE ;;
+; Analysis for cost of linalg_matmul
+(function nrows (Op) i64)
+(function ncols (Op) i64)
+
+(rule ((= ?m (tensor_empty (RankedTensor ?dims ?t))) (> (vec-length ?dims) 1))
+    ((set (nrows ?m) (vec-get ?dims 0))
+        (set (ncols ?m) (vec-get ?dims 1))))
+
+(rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)))
+        (= ?a (nrows ?x))
+        (= ?b (ncols ?x))
+        (= ?c (ncols ?y)))
+    ((set (nrows ?m) ?a)
+     (set (ncols ?m) ?c)
+     (unstable-cost (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)) (* (* ?a ?b) ?c))))
+
+(run 10000)
+
+(rule
+    ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?o0 (RankedTensor ?d0 ?t)) ?z ?o1 (RankedTensor ?d1 ?t))))
+    ((let out_t (RankedTensor (vec-of (nrows ?y) (ncols ?z)) ?t))
+     (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?o1 (RankedTensor ?d1 ?t))))
+)
+
+(run 10000)
+
+;; EXTRACTS HERE ;;
+(extract op1)
+(extract op2)
+(extract op3)
+(extract op4)
+(extract op5)
+(extract op6)
+(extract op7)

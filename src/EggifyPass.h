@@ -1,9 +1,9 @@
+#ifndef EGGIFY_PASS_H
+#define EGGIFY_PASS_H
+
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Pass/Pass.h"
-#include "mlir/InitAllDialects.h"
-#include "mlir/InitAllPasses.h"
-#include "mlir/Tools/mlir-opt/MlirOptMain.h"
 
 struct EggifyPass : public mlir::PassWrapper<EggifyPass, mlir::OperationPass<mlir::func::FuncOp>> {
     mlir::StringRef getArgument() const override { return "eggify"; }
@@ -27,7 +27,7 @@ struct EggifyPass : public mlir::PassWrapper<EggifyPass, mlir::OperationPass<mli
 
             // Print the operation name and the number of operands, results, and attributes
             // (function <opName> (i64 [Op]*numOperands [AttrPair]*numAttributes Type) Op)
-            llvm::outs() << "(function " << opNameStr << " (i64"; // (function <opName> i64)
+            llvm::outs() << "(function " << opNameStr << " (i64";  // (function <opName> i64)
             for (size_t i = 0; i < numOperands; i++) {
                 llvm::outs() << " Op";
             }
@@ -41,14 +41,4 @@ struct EggifyPass : public mlir::PassWrapper<EggifyPass, mlir::OperationPass<mli
     }
 };
 
-int main(int argc, char** argv) {
-    mlir::DialectRegistry registry;
-    mlir::registerAllDialects(registry);
-
-    // Register passes
-    mlir::registerAllPasses();
-    mlir::PassRegistration<EggifyPass>();
-
-    mlir::LogicalResult result = mlir::MlirOptMain(argc, argv, "Eggifier\n", registry);
-    return mlir::asMainReturnCode(result);
-}
+#endif  // EGGIFY_PASS_H

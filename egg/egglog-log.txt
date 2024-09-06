@@ -9,6 +9,7 @@
 [INFO ] Declared function NamedAttr.
 [INFO ] Declared sort Op.
 [INFO ] Declared function Value.
+[INFO ] Declared function NoOp.
 [INFO ] Declared sort Block.
 [INFO ] Declared function F16.
 [INFO ] Declared function F32.
@@ -43,23 +44,18 @@
 [INFO ] Declared function DenseFloatArrayAttr.
 [INFO ] Declared function DenseIntElementsAttr.
 [INFO ] Declared function DenseFPElementsAttr.
+[INFO ] Declared function SymbolRefAttr.
 [INFO ] Declared function OtherAttr.
 [INFO ] Declared sort FastMathFlags.
 [INFO ] Declared function none.
 [INFO ] Declared function reassoc.
 [INFO ] Declared function nnan.
+[INFO ] Declared function fast.
 [INFO ] Declared function arith_fastmath.
 [INFO ] Declared function arith_constant.
-[INFO ] Declared function arith_addf.
-[INFO ] Declared function arith_subf.
-[INFO ] Declared function arith_divf.
 [INFO ] Declared function arith_mulf.
-[INFO ] Declared function math_sin.
-[INFO ] Declared function math_cos.
+[INFO ] Declared function arith_addf.
 [INFO ] Declared function math_powf.
-[INFO ] Declared function linalg_transpose.
-[INFO ] Declared function linalg_matmul.
-[INFO ] Declared function tensor_empty.
 [INFO ] Declared function op0.
 [INFO ] Declared function op1.
 [INFO ] Declared function op2.
@@ -68,16 +64,13 @@
 [INFO ] Declared function op5.
 [INFO ] Declared function op6.
 [INFO ] Declared function op7.
-[INFO ] Declared function op8.
-[INFO ] Declared function op9.
-[INFO ] Declared function op10.
-[INFO ] Declared function op11.
-[INFO ] Declared function op12.
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 100 (I64))) (I64))
-[INFO ] extracted with cost 6: (tensor_empty (RankedTensor (vec-of 10000 10000 3) (I64)))
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index))
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index))
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index))
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 10000 (Index))) (Index))
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 10000 10000) (I64)))
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 0 (I64))) (I64))
+[INFO ] Declared rule (rewrite (arith_addf ?x ?y ?a ?t) (arith_addf ?y ?x ?a ?t)).
+[INFO ] Declared rule (rewrite (arith_mulf ?x ?y ?a ?t) (arith_mulf ?y ?x ?a ?t)).
+[INFO ] Declared rule (rewrite (arith_mulf ?x (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t) ?a ?t) ?x).
+[INFO ] Declared rule (rewrite (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr 0.0 ?t)) ?t) ?a ?t) (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t)).
+[INFO ] Declared rule (rewrite (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t) ?a ?t) ?x).
+[INFO ] Declared rule (rule ((= ?lhs (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr ?n ?t)) ?t) ?a ?t))
+           (> ?n 1.0))
+          ((union ?lhs (arith_mulf ?x (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr (- ?n 1.0) ?t)) ?t) ?a ?t) ?a ?t)))
+             ).
+[ERROR] Type mismatch: expr = ?a, expected = Op, actual = AttrPair, reason: mismatch

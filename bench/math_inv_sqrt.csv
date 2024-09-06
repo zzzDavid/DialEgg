@@ -1,0 +1,6 @@
+name,opt,-O0,-O1,-O2,-O3
+math_inv_sqrt,canon,613.0,213.5,214.5,205.0
+math_inv_sqrt,canon+eqsat,878.5,220.0,215.0,221.0
+math_inv_sqrt,noopt,626.0,214.0,218.0,208.5
+math_inv_sqrt,eqsat+canon,888.5,225.0,222.5,229.0
+math_inv_sqrt,eqsat,885.5,220.0,222.5,224.0

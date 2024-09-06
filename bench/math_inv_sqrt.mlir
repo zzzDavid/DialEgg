@@ -1,6 +1,113 @@
 func.func private @printF64(f64)
 func.func private @printF32(f32)
+func.func private @printComma()
 func.func private @printNewline()
+
+// C funcs
+func.func private @clock() -> i64
+func.func private @putchar(i32) -> i32
+llvm.func @printf(!llvm.ptr, ...) -> i32
+
+llvm.mlir.global constant @time("%d us -> %f s")
+func.func @displayTime(%start: i64, %end: i64) {
+    %diff = arith.subi %end, %start : i64
+    %diff_f64 = arith.uitofp %diff : i64 to f64
+
+    %million = arith.constant 100000000.0 : f64
+    %diff_seconds = arith.divf %diff_f64, %million : f64
+
+    // Format: "%f us -> %f s"
+    %time_ptr = llvm.mlir.addressof @time : !llvm.ptr
+    llvm.call @printf(%time_ptr, %diff, %diff_seconds) vararg(!llvm.func<i32 (ptr, ...)>) : (!llvm.ptr, i64, f64) -> i32
+
+    func.return
+}
+
+func.func @fillRandomF64Tensor2D(%tensor: tensor<100000x3xf64>) -> tensor<100000x3xf64> {
+    // Create a 2D tensor with random values with the linalg.fill_rng_2d op
+
+    %seed = arith.constant 0 : i32
+    %min = arith.constant -100000.0 : f64
+    %max = arith.constant 100000.0 : f64
+
+    %tensor_filled = linalg.fill_rng_2d ins(%min, %max, %seed : f64, f64, i32) 
+                                        outs(%tensor : tensor<100000x3xf64>) -> tensor<100000x3xf64>
+
+    return %tensor_filled : tensor<100000x3xf64>
+}
+
+func.func @printF64Tensor1D(%tensor : tensor<?xf64>) {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+
+    %lbracket = arith.constant 91 : i32
+    func.call @putchar(%lbracket) : (i32) -> i32
+
+    %size = tensor.dim %tensor, %c0 : tensor<?xf64>
+    scf.for %i = %c0 to %size step %c1 {
+        %val = tensor.extract %tensor[%i] : tensor<?xf64>
+        func.call @printF64(%val) : (f64) -> ()
+
+        %size_minus_one = index.sub %size, %c1
+        %not_end = index.cmp ult(%i, %size_minus_one)
+        scf.if %not_end { // print comma if not last element
+            func.call @printComma() : () -> ()
+        }
+    }
+
+    %rbracket = arith.constant 93 : i32
+    func.call @putchar(%rbracket) : (i32) -> i32
+
+    func.return
+}
+
+func.func @printF64Tensor2D(%tensor: tensor<?x?xf64>) {
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+
+    %lbracket = arith.constant 91 : i32
+    func.call @putchar(%lbracket) : (i32) -> i32
+
+    %tab = arith.constant 9 : i32
+
+    %size0 = tensor.dim %tensor, %c0 : tensor<?x?xf64>
+    %size1 = tensor.dim %tensor, %c1 : tensor<?x?xf64>
+
+    scf.for %i = %c0 to %size0 step %c1 {
+        %tensor1D = tensor.extract_slice %tensor[%i, 0][1, %size1][1, 1] : tensor<?x?xf64> to tensor<?xf64>
+        
+        func.call @printNewline() : () -> ()
+        func.call @putchar(%tab) : (i32) -> i32
+        func.call @printF64Tensor1D(%tensor1D) : (tensor<?xf64>) -> ()
+
+        %size0_minus_one = index.sub %size0, %c1
+        %not_end = index.cmp ult(%i, %size0_minus_one)
+        scf.if %not_end { // print comma if not last element
+            func.call @printComma() : () -> ()
+        }
+    }
+
+    %size0_gt_0 = index.cmp sgt(%size0, %c0)
+    scf.if %size0_gt_0 { // new line if size0 > 0
+        func.call @printNewline() : () -> ()
+    }
+
+    %rbracket = arith.constant 93 : i32
+    func.call @putchar(%rbracket) : (i32) -> i32
+
+    func.return
+}
+
+func.func @printF32Tensor2D(%tensor: tensor<?x?xf32>) {
+    %tensor_f64 = arith.extf %tensor : tensor<?x?xf32> to tensor<?x?xf64>
+    func.call @printF64Tensor2D(%tensor_f64) : (tensor<?x?xf64>) -> ()
+
+    func.return
+}
+
+func.func @blackhole(%tensor: tensor<100000x3xf32>) -> tensor<100000x3xf32> {
+    func.return %tensor : tensor<100000x3xf32>
+}
 
 func.func @fast_inv_sqrt(%x: f32) -> f32 {
     // C code from https://en.wikipedia.org/wiki/Fast_inverse_square_root
@@ -39,22 +146,68 @@ func.func @fast_inv_sqrt(%x: f32) -> f32 {
     func.return %y_it : f32
 }
 
-func.func @inv_sqrt(%x: f32) -> f32 {
-    %c1 = arith.constant 1.0 : f32
-    %sqrt = math.sqrt %x fastmath<fast> : f32
-    %inv_sqrt = arith.divf %c1, %sqrt fastmath<fast> : f32
-    func.return %inv_sqrt : f32
+func.func @normalize_vector(%x: f32, %y: f32, %z: f32) -> (f32, f32, f32) {
+    %c1_f32 = arith.constant 1.0 : f32
+
+    %x_squared = arith.mulf %x, %x : f32
+    %y_squared = arith.mulf %y, %y : f32
+    %z_squared = arith.mulf %z, %z : f32
+
+    %distance_squared_1 = arith.addf %x_squared, %y_squared : f32
+    %distance_squared = arith.addf %distance_squared_1, %z_squared : f32 // distance_squared = x^2 + y^2 + z^2
+
+    %distance = math.sqrt %distance_squared fastmath<fast> : f32 // distance = sqrt(x^2 + y^2 + z^2)
+    %inv_distance = arith.divf %c1_f32, %distance fastmath<fast> : f32 // inv_distance = 1 / sqrt(x^2 + y^2 + z^2)
+
+    %x_normalized = arith.mulf %x, %inv_distance : f32
+    %y_normalized = arith.mulf %y, %inv_distance : f32
+    %z_normalized = arith.mulf %z, %inv_distance : f32
+
+    func.return %x_normalized, %y_normalized, %z_normalized : f32, f32, f32
+}
+
+func.func @normalize_distance_vectors(%vectors: tensor<100000x3xf32>) -> tensor<100000x3xf32> {
+    // Distance between multiple 3D points and normalizing the resulting vectors. This is a common operation in computer graphics and physics simulations.
+
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %c2 = arith.constant 2 : index
+    %c100000 = arith.constant 100000 : index
+
+    %norm_vectors_init = tensor.empty() : tensor<100000x3xf32>
+    %norm_vectors = scf.for %i = %c0 to %c100000 step %c1 iter_args(%current_vector = %norm_vectors_init) -> (tensor<100000x3xf32>) {
+        %x = tensor.extract %vectors[%i, %c0] : tensor<100000x3xf32>
+        %y = tensor.extract %vectors[%i, %c1] : tensor<100000x3xf32>
+        %z = tensor.extract %vectors[%i, %c2] : tensor<100000x3xf32>
+
+        %nx, %ny, %nz = func.call @normalize_vector(%x, %y, %z) : (f32, f32, f32) -> (f32, f32, f32)
+
+        %normalized_vector1 = tensor.insert %nx into %current_vector[%i, %c0] : tensor<100000x3xf32>
+        %normalized_vector2 = tensor.insert %ny into %normalized_vector1[%i, %c1] : tensor<100000x3xf32>
+        %normalized_vector3 = tensor.insert %nz into %normalized_vector2[%i, %c2] : tensor<100000x3xf32>
+
+        scf.yield %normalized_vector3 : tensor<100000x3xf32>
+    }
+
+    func.return %norm_vectors : tensor<100000x3xf32>
 }
 
 func.func @main() -> i32 {
-    %x = arith.constant 9.0 : f32
-    %inv_sqrt = func.call @inv_sqrt(%x) : (f32) -> f32
-    func.call @printF32(%inv_sqrt) : (f32) -> ()
-    func.call @printNewline() : () -> ()
+    %points = tensor.empty() : tensor<100000x3xf64>
+    %points_filled = func.call @fillRandomF64Tensor2D(%points) : (tensor<100000x3xf64>) -> tensor<100000x3xf64>
+    %points_filled_f32 = arith.truncf %points_filled : tensor<100000x3xf64> to tensor<100000x3xf32>
 
-    %fast_inv_sqrt = func.call @fast_inv_sqrt(%x) : (f32) -> f32
-    func.call @printF32(%fast_inv_sqrt) : (f32) -> ()
-    func.call @printNewline() : () -> ()
+    %start = func.call @clock() : () -> i64
+    %vectors_normalized = func.call @normalize_distance_vectors(%points_filled_f32) : (tensor<100000x3xf32>) -> tensor<100000x3xf32>
+    %end = func.call @clock() : () -> i64
+
+    // %points_filled_f32_cast = tensor.cast %points_filled_f32 : tensor<100000x3xf32> to tensor<?x?xf32>
+    // %vectors_normalized_cast = tensor.cast %vectors_normalized : tensor<100000x3xf32> to tensor<?x?xf32>
+    // func.call @printF32Tensor2D(%points_filled_f32_cast) : (tensor<?x?xf32>) -> ()
+    // func.call @printF32Tensor2D(%vectors_normalized_cast) : (tensor<?x?xf32>) -> ()
+
+    func.call @blackhole(%vectors_normalized) : (tensor<100000x3xf32>) -> tensor<100000x3xf32>
+    func.call @displayTime(%start, %end) : (i64, i64) -> ()
 
     %c0 = arith.constant 0 : i32
     func.return %c0 : i32

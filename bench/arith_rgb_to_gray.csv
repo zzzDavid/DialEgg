@@ -1,0 +1,6 @@
+name,opt,-O0,-O1,-O2,-O3
+arith_rgb_to_gray,canon,52587.5,21417.0,20399.0,20585.0
+arith_rgb_to_gray,canon+eqsat,45576.0,19885.0,18680.5,20892.5
+arith_rgb_to_gray,eqsat+canon,45070.5,22433.5,19305.5,19392.0
+arith_rgb_to_gray,noopt,46079.0,21888.5,19717.5,21753.5
+arith_rgb_to_gray,eqsat,45365.5,21178.5,23935.0,19457.5

@@ -23,14 +23,19 @@ struct EqualitySaturationPass : public mlir::PassWrapper<EqualitySaturationPass,
     std::map<std::string, EgglogOpDef> supportedOps;
     std::set<std::string> supportedDialects;
 
+    EqualitySaturationPass();
     EqualitySaturationPass(const std::string egglogExecutable, const std::string& eggFilePath, const EgglogCustomDefs& funcs);
     EqualitySaturationPass(const std::string& eggFilePath, const EgglogCustomDefs& funcs);
 
-    mlir::StringRef getArgument() const override;
-    mlir::StringRef getDescription() const override;
+    mlir::StringRef getArgument() const override { return "eq-sat"; }
+    mlir::StringRef getDescription() const override { return "Performs equality saturation on each block in the given file. The language definition is egglog."; }
+    
     void runOnOperation() override;
-    void runOnBlock(mlir::Block& block);
-    void runEgglog(const std::vector<EggifiedOp>& block);
+    void runOnBlock(mlir::Block& block, const std::string& blockName);
+    void runEgglog(const std::vector<EggifiedOp>& block, const std::string& blockName);
 };
+
+std::unique_ptr<mlir::Pass> createEqualitySaturationPass(const std::string& egglogExecutable, const std::string& eggFilePath, const EgglogCustomDefs& funcs);
+std::unique_ptr<mlir::Pass> createEqualitySaturationPass(const std::string& eggFilePath, const EgglogCustomDefs& funcs);
 
 #endif  // EQUALITYSATURATIONPASS_H

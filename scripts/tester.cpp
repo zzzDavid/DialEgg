@@ -43,7 +43,7 @@ struct PlayPass : public mlir::PassWrapper<PlayPass, mlir::OperationPass<mlir::f
             llvm::outs() << "\n\n\n\n";
         }
 
-        llvm::outs() << "--------------------------------\n";
+        llvm::outs() << "--------------------------------\n\n\n";
     }
 };
 

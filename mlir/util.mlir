@@ -173,6 +173,13 @@ func.func @printF64Tensor2D(%tensor: tensor<?x?xf64>) {
     func.return
 }
 
+func.func @printF32Tensor2D(%tensor: tensor<?x?xf32>) {
+    %tensor_f64 = arith.extf %tensor : tensor<?x?xf32> to tensor<?x?xf64>
+    func.call @printF64Tensor2D(%tensor_f64) : (tensor<?x?xf64>) -> ()
+
+    func.return
+}
+
 func.func @fillRandomF64Tensor2D(%tensor: tensor<?x?xf64>) -> tensor<?x?xf64> {
     // Create a 2D tensor with random values with the linalg.fill_rng_2d op
 
@@ -220,23 +227,16 @@ func.func @displayTime(%start: i64, %end: i64) {
 
     // Format: "%f us -> %f s"
     %time_ptr = llvm.mlir.addressof @time : !llvm.ptr
-
-    func.call @printNewline() : () -> ()
-    func.call @printNewline() : () -> ()
     llvm.call @printf(%time_ptr, %diff, %diff_seconds) vararg(!llvm.func<i32 (ptr, ...)>) : (!llvm.ptr, i64, f64) -> i32
 
     func.return
 }
 
 func.func @main() -> f32 {
-    
-
     %x = tensor.empty() : tensor<10x3xi64>
     %x_cast = tensor.cast %x : tensor<10x3xi64> to tensor<?x?xi64>
     %x_filled = func.call @fillRandomI64Tensor2D(%x_cast) : (tensor<?x?xi64>) -> tensor<?x?xi64>
     func.call @printI64Tensor2D(%x_filled) : (tensor<?x?xi64>) -> ()
-
-    
 
     %c0 = arith.constant 0.0 : f32
     func.return %c0 : f32

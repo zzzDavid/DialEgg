@@ -20,6 +20,14 @@ inline std::string getSSAName(const mlir::Value& value, const mlir::OpPrintingFl
     return ssaName;
 }
 
+inline std::string getBlockName(mlir::Block& block) {
+    std::string blockName;
+    llvm::raw_string_ostream blockNameStream(blockName);
+    block.printAsOperand(blockNameStream);
+    blockNameStream.flush();
+    return blockName;
+}
+
 inline std::string getTypeName(const mlir::Value& value) {
     std::string type;
     llvm::raw_string_ostream typeStream(type);

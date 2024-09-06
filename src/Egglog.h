@@ -31,7 +31,7 @@ struct EgglogCustomDefs {
 /** Holds the information about a custom egglog operation */
 struct EgglogOpDef {
     std::string str;
-    std::string fullName, dialect, name;
+    std::string fullName, dialect, name, version;
     std::vector<std::string> args;
 
     size_t nOperands;
@@ -89,8 +89,13 @@ public:
      */
     static std::vector<std::string> splitExpression(std::string opStr);
 
-    Egglog(mlir::MLIRContext& context, const EgglogCustomDefs& egglogCustom, const std::map<std::string, EgglogOpDef>& egglogOps)
-        : context(context), egglogCustom(egglogCustom), egglogOps(egglogOps) {}
+    static std::string dialectFromName(std::string op);
+    static std::string opNameFromName(std::string op);
+    static std::string numOperandsFromName(std::string op);
+    static std::string removeComment(const std::string& str);
+
+    Egglog(mlir::MLIRContext& context, const EgglogCustomDefs& egglogCustom, const std::map<std::string, EgglogOpDef>& supportedEgglogOps)
+        : context(context), egglogCustom(egglogCustom), supportedEgglogOps(supportedEgglogOps) {}
 
     size_t nextId() {
         return opId++;
@@ -134,8 +139,9 @@ public:
     size_t opId = 0;
     mlir::MLIRContext& context;
     const EgglogCustomDefs& egglogCustom;
-    const std::map<std::string, EgglogOpDef>& egglogOps;  // Supported operations
+    const std::map<std::string, EgglogOpDef>& supportedEgglogOps;  // Supported operations
 
+    // caches
     std::vector<EggifiedOp> eggifiedBlock;
     std::map<std::string, mlir::Operation*> parsedOps;
 };
