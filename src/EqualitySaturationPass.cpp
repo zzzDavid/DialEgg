@@ -119,12 +119,12 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp>& block, con
     eggFileOut.close();
 
     // Run egglog and extract the results
-    std::string egglogCmd = egglogExecutable + " " + opsEggFilePath + " > " + egglogExtractedFilename + " 2> " + egglogLogFilename;
+    bool svg = true;
+    std::string egglogCmd = egglogExecutable + " " + opsEggFilePath + (svg ? " --to-svg" : "") + " > " + egglogExtractedFilename + " 2> " + egglogLogFilename;
 
     llvm::outs() << "\nRunning egglog: " << egglogCmd << "\n"
                  << "\n";
     std::system(egglogCmd.c_str());
-    // std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
     // dump output
     printFileContents(egglogLogFilename);

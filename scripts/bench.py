@@ -5,12 +5,12 @@ import pandas as pd
 import statistics
 
 def same_name_files(name, directory):
-    return [f for f in os.listdir(directory) if f.startswith(name) and f.endswith(".mlir")]
+    return [f for f in os.listdir(directory) if f.startswith(name + ".") and f.endswith(".mlir")]
 
 def benchmark_file(filename, directory):
     all_mlir_files = same_name_files(filename, directory)
-    all_opt_levels = ["-O0", "-O1", "-O2", "-O3"]
-    n_runs = 51  # number of runs, first run is warmup
+    all_opt_levels = ["-O3"]
+    n_runs = 10  # number of runs, first run is warmup
     regex_time = re.compile(r"(\d+) us -> (\d+\.\d+) s")  # format "53926 us -> 0.053926 s"
 
     # Persist data, cols are: the name of the opt type, and each opt level
@@ -39,7 +39,6 @@ def benchmark_file(filename, directory):
                 if match:
                     times.append(float(match.group(1)))
 
-            times = times[1:]
             avg_time = statistics.mean(times)
             median_time = statistics.median(times)
 
@@ -53,7 +52,7 @@ def benchmark_file(filename, directory):
     df.to_csv(f"bench/{filename}.csv", index=False)
 
 if __name__ == "__main__":
-    benchmark_file("arith_rgb_to_gray", "bench")  # bench/arith_rgb_to_gray.mlir
-    benchmark_file("linalg_assoc", "bench")  # bench/linalg_assoc.mlir
+    # benchmark_file("arith_rgb_to_gray", "bench")  # bench/arith_rgb_to_gray.mlir
+    # benchmark_file("linalg_assoc", "bench")  # bench/linalg_assoc.mlir
     benchmark_file("math_inv_sqrt", "bench")  # bench/math_inv_sqrt.mlir
-    benchmark_file("math_horners_method", "bench")  # bench/math_horners_method.mlir
+    # benchmark_file("math_horners_method", "bench")  # bench/math_horners_method.mlir

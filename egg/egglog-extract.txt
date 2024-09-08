@@ -1,0 +1,7 @@
+(tensor_empty (RankedTensor (vec-of 100 10) (I64)))
+(tensor_empty (RankedTensor (vec-of 10 150) (I64)))
+(tensor_empty (RankedTensor (vec-of 150 8) (I64)))
+(tensor_empty (RankedTensor (vec-of 100 150) (I64)))
+(linalg_matmul (tensor_empty (RankedTensor (vec-of 100 10) (I64))) (tensor_empty (RankedTensor (vec-of 10 150) (I64))) (tensor_empty (RankedTensor (vec-of 100 150) (I64))) (RankedTensor (vec-of 100 150) (I64)))
+(tensor_empty (RankedTensor (vec-of 100 8) (I64)))
+(linalg_matmul (tensor_empty (RankedTensor (vec-of 100 10) (I64))) (linalg_matmul (tensor_empty (RankedTensor (vec-of 10 150) (I64))) (tensor_empty (RankedTensor (vec-of 150 8) (I64))) (tensor_empty (RankedTensor (vec-of 10 8) (I64))) (RankedTensor (vec-of 10 8) (I64))) (tensor_empty (RankedTensor (vec-of 100 8) (I64))) (RankedTensor (vec-of 100 8) (I64)))

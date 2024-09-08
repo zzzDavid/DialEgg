@@ -1,6 +1,6 @@
-name,opt,-O0,-O1,-O2,-O3
-math_horners_method,canon,760.5,117.5,109.0,113.0
-math_horners_method,eqsat+canon,409.5,114.0,107.0,107.5
-math_horners_method,canon+eqsat,403.5,111.0,105.5,108.0
-math_horners_method,noopt,764.0,107.5,107.0,103.5
-math_horners_method,eqsat,397.0,107.0,108.0,104.5
+name,opt,-O3
+math_horners_method,canon,2109.5
+math_horners_method,eqsat+canon,2090.5
+math_horners_method,canon+eqsat,2090.0
+math_horners_method,noopt,2002.5
+math_horners_method,eqsat,1793.0

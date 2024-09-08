@@ -10,8 +10,6 @@ declare void @printF64(double) local_unnamed_addr
 
 declare void @printComma() local_unnamed_addr
 
-declare void @printNewline() local_unnamed_addr
-
 declare i64 @clock() local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
@@ -24,7 +22,7 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 define void @displayTime(i64 %0, i64 %1) local_unnamed_addr #1 {
   %3 = sub i64 %1, %0
   %4 = uitofp i64 %3 to double
-  %5 = fdiv double %4, 1.000000e+08
+  %5 = fdiv double %4, 1.000000e+06
   %6 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @time, i64 %3, double %5)
   ret void
 }
@@ -73,7 +71,7 @@ define { ptr, ptr, i64, [2 x i64], [2 x i64] } @fillRandomF64Tensor2D(ptr %0, pt
   %41 = getelementptr double, ptr %14, i64 %10
   store double %40, ptr %41, align 8
   %42 = add nuw nsw i64 %11, 1
-  %43 = icmp ult i64 %11, 99999
+  %43 = icmp ult i64 %11, 999999
   br i1 %43, label %.preheader, label %44
 
 44:                                               ; preds = %.preheader
@@ -152,7 +150,7 @@ define double @poly_eval_2(double %0, double %1, double %2, double %3) local_unn
 }
 
 define noundef i32 @main() local_unnamed_addr {
-  %1 = tail call dereferenceable_or_null(3200064) ptr @malloc(i64 3200064)
+  %1 = tail call dereferenceable_or_null(32000064) ptr @malloc(i64 32000064)
   %2 = ptrtoint ptr %1 to i64
   %3 = add i64 %2, 63
   %4 = and i64 %3, -64
@@ -193,12 +191,12 @@ define noundef i32 @main() local_unnamed_addr {
   %33 = getelementptr double, ptr %9, i64 3
   store double %32, ptr %33, align 8
   %34 = add nuw nsw i64 %6, 1
-  %35 = icmp ult i64 %6, 99999
+  %35 = icmp ult i64 %6, 999999
   br i1 %35, label %.preheader.i, label %fillRandomF64Tensor2D.exit
 
 fillRandomF64Tensor2D.exit:                       ; preds = %.preheader.i
   %36 = tail call i64 @clock()
-  %37 = tail call dereferenceable_or_null(800064) ptr @malloc(i64 800064)
+  %37 = tail call dereferenceable_or_null(8000064) ptr @malloc(i64 8000064)
   %38 = ptrtoint ptr %37 to i64
   %39 = add i64 %38, 63
   %40 = and i64 %39, -64
@@ -214,15 +212,14 @@ fillRandomF64Tensor2D.exit:                       ; preds = %.preheader.i
   %48 = getelementptr double, ptr %41, i64 %43
   store double %47, ptr %48, align 8
   %49 = add nuw nsw i64 %43, 1
-  %50 = icmp ult i64 %43, 99999
+  %50 = icmp ult i64 %43, 999999
   br i1 %50, label %42, label %51
 
 51:                                               ; preds = %42
   %52 = tail call i64 @clock()
-  tail call void @printNewline()
   %53 = sub i64 %52, %36
   %54 = uitofp i64 %53 to double
-  %55 = fdiv double %54, 1.000000e+08
+  %55 = fdiv double %54, 1.000000e+06
   %56 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @time, i64 %53, double %55)
   ret i32 0
 }

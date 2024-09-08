@@ -224,8 +224,54 @@ mlir::Type Egglog::parseType(std::string typeStr) {
         }
 
         return mlir::TupleType::get(&context, types);
+    } else if (type == "Vector") {
+        std::string dimVec = split[1];
+        std::string elementTypeStr = split[2];
+
+        std::vector<int64_t> dims;
+        std::vector<std::string> dimVecSplit = splitExpression(dimVec);
+        for (size_t i = 1; i < dimVecSplit.size(); i++) {
+            dims.push_back(std::stoll(dimVecSplit[i]));
+        }
+
+        mlir::Type elementType = parseType(elementTypeStr);
+        return mlir::VectorType::get(dims, elementType);
+    } else if (type == "RankedTensor") {
+        std::string dimVec = split[1];
+        std::string elementTypeStr = split[2];
+
+        std::vector<int64_t> dims;
+        std::vector<std::string> dimVecSplit = splitExpression(dimVec);
+        for (size_t i = 1; i < dimVecSplit.size(); i++) {
+            dims.push_back(std::stoll(dimVecSplit[i]));
+        }
+
+        mlir::Type elementType = parseType(elementTypeStr);
+        return mlir::RankedTensorType::get(dims, elementType);
+    } else if (type == "UnrankedTensor") {
+        std::string elementTypeStr = split[1];
+        mlir::Type elementType = parseType(elementTypeStr);
+        return mlir::UnrankedTensorType::get(elementType);
     } else if (type == "OtherType") {
         return mlir::parseType(unwrap(split[1], '"'), &context);
+    } else if (type == "Function") {
+        std::string inputTypesStr = split[1];
+        std::string resultTypesStr = split[2];
+
+        std::vector<mlir::Type> inputTypes;
+        std::vector<mlir::Type> resultTypes;
+
+        std::vector<std::string> inputTypesSplit = splitExpression(inputTypesStr);
+        for (size_t i = 1; i < inputTypesSplit.size(); i++) {
+            inputTypes.push_back(parseType(inputTypesSplit[i]));
+        }
+
+        std::vector<std::string> resultTypesSplit = splitExpression(resultTypesStr);
+        for (size_t i = 1; i < resultTypesSplit.size(); i++) {
+            resultTypes.push_back(parseType(resultTypesSplit[i]));
+        }
+
+        return mlir::FunctionType::get(&context, inputTypes, resultTypes);
     } else if (egglogCustom.typeParsers.find(type) != egglogCustom.typeParsers.end()) {
         TypeParseFunction parseFunc = egglogCustom.typeParsers.at(type);
         return parseFunc(split, *this);
@@ -288,6 +334,28 @@ std::string Egglog::eggifyType(mlir::Type type) {
             ss << " " << eggifyType(element);
         }
         ss << "))";
+    } else if (type.isa<mlir::VectorType>()) {
+        mlir::VectorType vectorType = type.cast<mlir::VectorType>();
+        ss << "(Vector (vec-of";
+        for (int64_t dim: vectorType.getShape()) {
+            ss << " " << dim;
+        }
+        ss << ") " << eggifyType(vectorType.getElementType()) << ")";
+    } else if (type.isa<mlir::RankedTensorType>()) {
+        mlir::RankedTensorType tensorType = type.cast<mlir::RankedTensorType>();
+        llvm::ArrayRef<int64_t> shape = tensorType.getShape();
+        mlir::Type elementType = tensorType.getElementType();
+
+        ss << "(RankedTensor (vec-of";
+        for (int64_t dim: shape) {
+            ss << " " << dim;
+        }
+        ss << ") " << eggifyType(elementType) << ")";
+    } else if (type.isa<mlir::UnrankedTensorType>()) {
+        mlir::UnrankedTensorType tensorType = type.cast<mlir::UnrankedTensorType>();
+        mlir::Type elementType = tensorType.getElementType();
+
+        ss << "(UnrankedTensor " << eggifyType(elementType) << ")";
     } else if (egglogCustom.typeStringifiers.find(typeStr) != egglogCustom.typeStringifiers.end()) {  // custom type by user
         TypeStringifyFunction stringifyFunc = egglogCustom.typeStringifiers.at(typeStr);
         std::vector<std::string> split = stringifyFunc(type, *this);
@@ -298,6 +366,20 @@ std::string Egglog::eggifyType(mlir::Type type) {
             ss << " " << split[i];
         }
         ss << ")";
+    } else if (type.isa<mlir::FunctionType>()) {
+        mlir::FunctionType functionType = type.cast<mlir::FunctionType>();
+        llvm::ArrayRef<mlir::Type> inputTypes = functionType.getInputs();
+        llvm::ArrayRef<mlir::Type> resultTypes = functionType.getResults();
+
+        ss << "(Function (vec-of ";
+        for (mlir::Type inputType: inputTypes) {
+            ss << eggifyType(inputType) << " ";
+        }
+        ss << ") (vec-of ";
+        for (mlir::Type resultType: resultTypes) {
+            ss << eggifyType(resultType) << " ";
+        }
+        ss << "))";
     } else {
         ss << "(OtherType \"" << type << "\" \"" << typeStr << "\")";
     }

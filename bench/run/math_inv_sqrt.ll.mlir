@@ -9,7 +9,7 @@ module {
   llvm.func @printf(!llvm.ptr, ...) -> i32
   llvm.mlir.global external constant @time("%d us -> %f s") {addr_space = 0 : i32}
   llvm.func @displayTime(%arg0: i64, %arg1: i64) {
-    %0 = llvm.mlir.constant(1.000000e+08 : f64) : f64
+    %0 = llvm.mlir.constant(1.000000e+06 : f64) : f64
     %1 = llvm.sub %arg1, %arg0  : i64
     %2 = llvm.uitofp %1 : i64 to f64
     %3 = llvm.fdiv %2, %0  : f64
@@ -26,13 +26,13 @@ module {
     %5 = llvm.insertvalue %arg5, %4[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
     %6 = llvm.insertvalue %arg4, %5[3, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
     %7 = llvm.insertvalue %arg6, %6[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
-    %8 = llvm.mlir.constant(4.6566127999999998E-5 : f64) : f64
+    %8 = llvm.mlir.constant(4.6566127999999999E-4 : f64) : f64
     %9 = llvm.mlir.constant(12345 : i32) : i32
     %10 = llvm.mlir.constant(1103515245 : i32) : i32
     %11 = llvm.mlir.constant(0x41DFFFFFFFC00000 : f64) : f64
-    %12 = llvm.mlir.constant(-1.000000e+05 : f64) : f64
+    %12 = llvm.mlir.constant(-1.000000e+06 : f64) : f64
     %13 = llvm.mlir.constant(0 : index) : i64
-    %14 = llvm.mlir.constant(100000 : index) : i64
+    %14 = llvm.mlir.constant(1000000 : index) : i64
     %15 = llvm.mlir.constant(1 : index) : i64
     %16 = llvm.mlir.constant(3 : index) : i64
     llvm.br ^bb1(%13 : i64)
@@ -336,13 +336,13 @@ module {
     %8 = llvm.mlir.constant(0 : index) : i64
     %9 = llvm.mlir.constant(1 : index) : i64
     %10 = llvm.mlir.constant(2 : index) : i64
-    %11 = llvm.mlir.constant(100000 : index) : i64
-    %12 = llvm.mlir.constant(100000 : index) : i64
+    %11 = llvm.mlir.constant(1000000 : index) : i64
+    %12 = llvm.mlir.constant(1000000 : index) : i64
     %13 = llvm.mlir.constant(3 : index) : i64
     %14 = llvm.mlir.constant(1 : index) : i64
-    %15 = llvm.mlir.constant(300000 : index) : i64
+    %15 = llvm.mlir.constant(3000000 : index) : i64
     %16 = llvm.mlir.zero : !llvm.ptr
-    %17 = llvm.getelementptr %16[300000] : (!llvm.ptr) -> !llvm.ptr, f32
+    %17 = llvm.getelementptr %16[3000000] : (!llvm.ptr) -> !llvm.ptr, f32
     %18 = llvm.ptrtoint %17 : !llvm.ptr to i64
     %19 = llvm.mlir.constant(64 : index) : i64
     %20 = llvm.add %18, %19  : i64
@@ -416,15 +416,15 @@ module {
   llvm.func @main() -> i32 {
     %0 = llvm.mlir.constant(3 : index) : i64
     %1 = llvm.mlir.constant(1 : index) : i64
-    %2 = llvm.mlir.constant(100000 : index) : i64
+    %2 = llvm.mlir.constant(1000000 : index) : i64
     %3 = llvm.mlir.constant(0 : index) : i64
     %4 = llvm.mlir.constant(0 : i32) : i32
-    %5 = llvm.mlir.constant(100000 : index) : i64
+    %5 = llvm.mlir.constant(1000000 : index) : i64
     %6 = llvm.mlir.constant(3 : index) : i64
     %7 = llvm.mlir.constant(1 : index) : i64
-    %8 = llvm.mlir.constant(300000 : index) : i64
+    %8 = llvm.mlir.constant(3000000 : index) : i64
     %9 = llvm.mlir.zero : !llvm.ptr
-    %10 = llvm.getelementptr %9[300000] : (!llvm.ptr) -> !llvm.ptr, f64
+    %10 = llvm.getelementptr %9[3000000] : (!llvm.ptr) -> !llvm.ptr, f64
     %11 = llvm.ptrtoint %10 : !llvm.ptr to i64
     %12 = llvm.mlir.constant(64 : index) : i64
     %13 = llvm.add %11, %12  : i64
@@ -453,12 +453,12 @@ module {
     %36 = llvm.extractvalue %30[4, 0] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
     %37 = llvm.extractvalue %30[4, 1] : !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)> 
     %38 = llvm.call @fillRandomF64Tensor2D(%31, %32, %33, %34, %35, %36, %37) : (!llvm.ptr, !llvm.ptr, i64, i64, i64, i64, i64) -> !llvm.struct<(ptr, ptr, i64, array<2 x i64>, array<2 x i64>)>
-    %39 = llvm.mlir.constant(100000 : index) : i64
+    %39 = llvm.mlir.constant(1000000 : index) : i64
     %40 = llvm.mlir.constant(3 : index) : i64
     %41 = llvm.mlir.constant(1 : index) : i64
-    %42 = llvm.mlir.constant(300000 : index) : i64
+    %42 = llvm.mlir.constant(3000000 : index) : i64
     %43 = llvm.mlir.zero : !llvm.ptr
-    %44 = llvm.getelementptr %43[300000] : (!llvm.ptr) -> !llvm.ptr, f32
+    %44 = llvm.getelementptr %43[3000000] : (!llvm.ptr) -> !llvm.ptr, f32
     %45 = llvm.ptrtoint %44 : !llvm.ptr to i64
     %46 = llvm.mlir.constant(64 : index) : i64
     %47 = llvm.add %45, %46  : i64

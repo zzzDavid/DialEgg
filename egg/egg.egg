@@ -3,7 +3,7 @@
 ;;;; arith dialect ;;;;
 
 ;; Attrs
-(datatype FastMathFlags (none) (reassoc) (nnan) (fast))
+(datatype FastMathFlags (none) (reassoc) (nnan) (ninf) (nsz) (arcp) (contract) (afn) (fast))
 (function arith_fastmath (FastMathFlags) Attr)
 
 ;; Ops

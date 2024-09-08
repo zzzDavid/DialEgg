@@ -54,7 +54,7 @@ std::vector<std::string> stringifyFastMathFlagsAttr(mlir::Attribute attr, Egglog
     return split;
 }
 
-/** Parse the type (function Tensor (DimVec Type) Type) */
+/** Parse the type (function RankedTensor (IntVec Type) Type) */
 mlir::Type parseRankedTensorType(const std::vector<std::string>& split, Egglog& egglog) {
     std::string attrType = split[0];
     assert(attrType == "RankedTensor");
@@ -73,7 +73,7 @@ mlir::Type parseRankedTensorType(const std::vector<std::string>& split, Egglog& 
     return mlir::RankedTensorType::get(dims, parsedType);
 }
 
-/** Serialize the type (function Tensor (DimVec Type) Type) */
+/** Serialize the type (function RankedTensor (IntVec Type) Type) */
 std::vector<std::string> stringifyRankedTensorType(mlir::Type type, Egglog& egglog) {
     std::vector<std::string> split;
     split.push_back("RankedTensor");

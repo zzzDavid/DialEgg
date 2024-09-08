@@ -46,16 +46,8 @@
 [INFO ] Declared function DenseFPElementsAttr.
 [INFO ] Declared function SymbolRefAttr.
 [INFO ] Declared function OtherAttr.
-[INFO ] Declared sort FastMathFlags.
-[INFO ] Declared function none.
-[INFO ] Declared function reassoc.
-[INFO ] Declared function nnan.
-[INFO ] Declared function fast.
-[INFO ] Declared function arith_fastmath.
-[INFO ] Declared function arith_constant.
-[INFO ] Declared function arith_mulf.
-[INFO ] Declared function arith_addf.
-[INFO ] Declared function math_powf.
+[INFO ] Declared function linalg_matmul.
+[INFO ] Declared function tensor_empty.
 [INFO ] Declared function op0.
 [INFO ] Declared function op1.
 [INFO ] Declared function op2.
@@ -64,13 +56,52 @@
 [INFO ] Declared function op5.
 [INFO ] Declared function op6.
 [INFO ] Declared function op7.
-[INFO ] Declared rule (rewrite (arith_addf ?x ?y ?a ?t) (arith_addf ?y ?x ?a ?t)).
-[INFO ] Declared rule (rewrite (arith_mulf ?x ?y ?a ?t) (arith_mulf ?y ?x ?a ?t)).
-[INFO ] Declared rule (rewrite (arith_mulf ?x (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t) ?a ?t) ?x).
-[INFO ] Declared rule (rewrite (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr 0.0 ?t)) ?t) ?a ?t) (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t)).
-[INFO ] Declared rule (rewrite (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t) ?a ?t) ?x).
-[INFO ] Declared rule (rule ((= ?lhs (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr ?n ?t)) ?t) ?a ?t))
-           (> ?n 1.0))
-          ((union ?lhs (arith_mulf ?x (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr (- ?n 1.0) ?t)) ?t) ?a ?t) ?a ?t)))
+[INFO ] Declared function op8.
+[INFO ] Declared function op9.
+[INFO ] Declared function op10.
+[INFO ] Declared function nrows.
+[INFO ] Declared function ncols.
+[INFO ] Declared rule (rule ((= ?m (tensor_empty (RankedTensor ?dims ?t)))
+           (> (vec-length ?dims) 1))
+          ((set (nrows ?m) (vec-get ?dims 0))
+           (set (ncols ?m) (vec-get ?dims 1)))
              ).
-[ERROR] Type mismatch: expr = ?a, expected = Op, actual = AttrPair, reason: mismatch
+[INFO ] Declared rule (rule ((= ?m (tensor_empty (RankedTensor ?dims ?t)))
+           (> (vec-length ?dims) 1))
+          ((set (nrows ?m) (vec-get ?dims 0))
+           (set (ncols ?m) (vec-get ?dims 1)))
+             ).
+[INFO ] Declared rule (rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t))))
+          ((set (nrows ?m) (nrows ?x))
+           (set (ncols ?m) (ncols ?y)))
+             ).
+[INFO ] Declared rule (rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t))))
+          ((set (nrows ?m) (nrows ?x))
+           (set (ncols ?m) (ncols ?y)))
+             ).
+[INFO ] Declared rule (rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)))
+           (= ?a (nrows ?x))
+           (= ?b (ncols ?x))
+           (= ?c (ncols ?y)))
+          ((unstable-cost (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)) (* (* ?a ?b) ?c)))
+             ).
+[INFO ] Declared rule (rule ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?o0 (RankedTensor ?d0 ?t)) ?z ?o1 (RankedTensor ?d1 ?t))))
+          ((let out_t (RankedTensor (vec-of (nrows ?y) (ncols ?z)) ?t))
+           (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?o1 (RankedTensor ?d1 ?t))))
+             ).
+[INFO ] Ran schedule (repeat 10000 (run)).
+[INFO ] Report: Rule (rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)))        (= __v3 (nrow...: search 0.001s, apply 0.000s, num matches 4
+    Rule (rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)))        (= ?a (nrows ...: search 0.001s, apply 0.000s, num matches 4
+    Rule (rule ((= ?m (tensor_empty (RankedTensor ?dims ?t)))        (> (vec-length ?dims...: search 0.000s, apply 0.000s, num matches 6
+    Rule (rule ((= ?m (tensor_empty (RankedTensor ?dims ?t)))        (> (vec-length ?dims...: search 0.000s, apply 0.000s, num matches 6
+    Rule (rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t))))       ((set (nrows ...: search 0.000s, apply 0.000s, num matches 4
+    Rule (rule ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?o0 (RankedTensor ?d0 ?t)) ?z...: search 0.001s, apply 0.000s, num matches 1
+    Ruleset : search 0.003s, apply 0.000s, rebuild 0.000s
+    
+[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 100 10) (I64)))
+[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 10 150) (I64)))
+[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 150 8) (I64)))
+[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 100 150) (I64)))
+[INFO ] extracted with cost 150019: (linalg_matmul (tensor_empty (RankedTensor (vec-of 100 10) (I64))) (tensor_empty (RankedTensor (vec-of 10 150) (I64))) (tensor_empty (RankedTensor (vec-of 100 150) (I64))) (RankedTensor (vec-of 100 150) (I64)))
+[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 100 8) (I64)))
+[INFO ] extracted with cost 20033: (linalg_matmul (tensor_empty (RankedTensor (vec-of 100 10) (I64))) (linalg_matmul (tensor_empty (RankedTensor (vec-of 10 150) (I64))) (tensor_empty (RankedTensor (vec-of 150 8) (I64))) (tensor_empty (RankedTensor (vec-of 10 8) (I64))) (RankedTensor (vec-of 10 8) (I64))) (tensor_empty (RankedTensor (vec-of 100 8) (I64))) (RankedTensor (vec-of 100 8) (I64)))

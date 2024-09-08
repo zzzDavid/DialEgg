@@ -10,18 +10,18 @@ module {
   func.func @displayTime(%arg0: i64, %arg1: i64) {
     %0 = arith.subi %arg1, %arg0 : i64
     %1 = arith.uitofp %0 : i64 to f64
-    %cst = arith.constant 1.000000e+08 : f64
+    %cst = arith.constant 1.000000e+06 : f64
     %2 = arith.divf %1, %cst : f64
     %3 = llvm.mlir.addressof @time : !llvm.ptr
     %4 = llvm.call @printf(%3, %0, %2) vararg(!llvm.func<i32 (ptr, ...)>) : (!llvm.ptr, i64, f64) -> i32
     return
   }
-  func.func @fillRandomF64Tensor2D(%arg0: tensor<100000x4xf64>) -> tensor<100000x4xf64> {
+  func.func @fillRandomF64Tensor2D(%arg0: tensor<1000000x4xf64>) -> tensor<1000000x4xf64> {
     %c0_i32 = arith.constant 0 : i32
     %cst = arith.constant -1.000000e+01 : f64
     %cst_0 = arith.constant 1.000000e+01 : f64
-    %0 = linalg.fill_rng_2d ins(%cst, %cst_0, %c0_i32 : f64, f64, i32) outs(%arg0 : tensor<100000x4xf64>) -> tensor<100000x4xf64>
-    return %0 : tensor<100000x4xf64>
+    %0 = linalg.fill_rng_2d ins(%cst, %cst_0, %c0_i32 : f64, f64, i32) outs(%arg0 : tensor<1000000x4xf64>) -> tensor<1000000x4xf64>
+    return %0 : tensor<1000000x4xf64>
   }
   func.func @printF64Tensor1D(%arg0: tensor<?xf64>) {
     %c0 = arith.constant 0 : index
@@ -47,46 +47,43 @@ module {
   }
   func.func @poly_eval_3(%arg0: f64, %arg1: f64, %arg2: f64, %arg3: f64, %arg4: f64) -> f64 {
     %0 = arith.mulf %arg4, %arg4 fastmath<fast> : f64
-    %1 = arith.mulf %arg4, %0 fastmath<fast> : f64
-    %2 = arith.mulf %arg0, %arg4 fastmath<fast> : f64
-    %3 = arith.addf %arg1, %2 fastmath<fast> : f64
-    %4 = arith.mulf %3, %arg4 fastmath<fast> : f64
-    %5 = arith.addf %4, %arg2 fastmath<fast> : f64
-    %6 = arith.mulf %arg4, %5 fastmath<fast> : f64
-    %7 = arith.addf %arg3, %6 fastmath<fast> : f64 // d + x(c + x(b + ax))
-    return %7 : f64
+    %1 = arith.mulf %arg4, %arg0 fastmath<fast> : f64
+    %2 = arith.addf %arg1, %1 fastmath<fast> : f64
+    %3 = arith.mulf %arg4, %2 fastmath<fast> : f64
+    %4 = arith.addf %arg2, %3 fastmath<fast> : f64
+    %5 = arith.mulf %arg4, %4 fastmath<fast> : f64
+    %6 = arith.addf %arg3, %5 fastmath<fast> : f64
+    return %6 : f64
   }
   func.func @poly_eval_2(%arg0: f64, %arg1: f64, %arg2: f64, %arg3: f64) -> f64 {
-    %0 = arith.mulf %arg3, %arg3 fastmath<fast> : f64
-    %1 = arith.mulf %arg0, %arg3 fastmath<fast> : f64
-    %2 = arith.addf %1, %arg1 fastmath<fast> : f64
-    %3 = arith.mulf %arg3, %2 fastmath<fast> : f64
-    %4 = arith.addf %arg2, %3 fastmath<fast> : f64 // c + x(b + ax)
-    return %4 : f64
+    %0 = arith.mulf %arg3, %arg0 fastmath<fast> : f64
+    %1 = arith.addf %arg1, %0 fastmath<fast> : f64
+    %2 = arith.mulf %arg3, %1 fastmath<fast> : f64
+    %3 = arith.addf %arg2, %2 fastmath<fast> : f64
+    return %3 : f64
   }
   func.func @main() -> i32 {
-    %0 = tensor.empty() : tensor<100000x4xf64>
-    %1 = call @fillRandomF64Tensor2D(%0) : (tensor<100000x4xf64>) -> tensor<100000x4xf64>
+    %0 = tensor.empty() : tensor<1000000x4xf64>
+    %1 = call @fillRandomF64Tensor2D(%0) : (tensor<1000000x4xf64>) -> tensor<1000000x4xf64>
     %2 = call @clock() : () -> i64
     %cst = arith.constant 1.000000e+00 : f64
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %c2 = arith.constant 2 : index
     %c3 = arith.constant 3 : index
-    %c100000 = arith.constant 100000 : index
-    %3 = tensor.empty() : tensor<100000xf64>
-    %4 = scf.for %arg0 = %c0 to %c100000 step %c1 iter_args(%arg1 = %3) -> (tensor<100000xf64>) {
-      %extracted = tensor.extract %1[%arg0, %c0] : tensor<100000x4xf64>
-      %extracted_0 = tensor.extract %1[%arg0, %c1] : tensor<100000x4xf64>
-      %extracted_1 = tensor.extract %1[%arg0, %c2] : tensor<100000x4xf64>
-      %extracted_2 = tensor.extract %1[%arg0, %c3] : tensor<100000x4xf64>
+    %c1000000 = arith.constant 1000000 : index
+    %3 = tensor.empty() : tensor<1000000xf64>
+    %4 = scf.for %arg0 = %c0 to %c1000000 step %c1 iter_args(%arg1 = %3) -> (tensor<1000000xf64>) {
+      %extracted = tensor.extract %1[%arg0, %c0] : tensor<1000000x4xf64>
+      %extracted_0 = tensor.extract %1[%arg0, %c1] : tensor<1000000x4xf64>
+      %extracted_1 = tensor.extract %1[%arg0, %c2] : tensor<1000000x4xf64>
+      %extracted_2 = tensor.extract %1[%arg0, %c3] : tensor<1000000x4xf64>
       %7 = func.call @poly_eval_3(%extracted, %extracted_0, %extracted_1, %extracted_2, %cst) : (f64, f64, f64, f64, f64) -> f64
-      %inserted = tensor.insert %7 into %arg1[%arg0] : tensor<100000xf64>
-      scf.yield %inserted : tensor<100000xf64>
+      %inserted = tensor.insert %7 into %arg1[%arg0] : tensor<1000000xf64>
+      scf.yield %inserted : tensor<1000000xf64>
     }
     %5 = call @clock() : () -> i64
-    %cast = tensor.cast %4 : tensor<100000xf64> to tensor<?xf64>
-    call @printNewline() : () -> ()
+    %cast = tensor.cast %4 : tensor<1000000xf64> to tensor<?xf64>
     call @displayTime(%2, %5) : (i64, i64) -> ()
     %6 = call @blackhole(%cast) : (tensor<?xf64>) -> tensor<?xf64>
     %c0_i32 = arith.constant 0 : i32

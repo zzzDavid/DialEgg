@@ -13,7 +13,7 @@ func.func @displayTime(%start: i64, %end: i64) {
     %diff = arith.subi %end, %start : i64
     %diff_f64 = arith.uitofp %diff : i64 to f64
 
-    %million = arith.constant 100000000.0 : f64
+    %million = arith.constant 1000000.0 : f64
     %diff_seconds = arith.divf %diff_f64, %million : f64
 
     // Format: "%f us -> %f s"
@@ -23,17 +23,17 @@ func.func @displayTime(%start: i64, %end: i64) {
     func.return
 }
 
-func.func @fillRandomF64Tensor2D(%tensor: tensor<100000x3xf64>) -> tensor<100000x3xf64> {
+func.func @fillRandomF64Tensor2D(%tensor: tensor<1000000x3xf64>) -> tensor<1000000x3xf64> {
     // Create a 2D tensor with random values with the linalg.fill_rng_2d op
 
     %seed = arith.constant 0 : i32
-    %min = arith.constant -100000.0 : f64
-    %max = arith.constant 100000.0 : f64
+    %min = arith.constant -1000000.0 : f64
+    %max = arith.constant 1000000.0 : f64
 
     %tensor_filled = linalg.fill_rng_2d ins(%min, %max, %seed : f64, f64, i32) 
-                                        outs(%tensor : tensor<100000x3xf64>) -> tensor<100000x3xf64>
+                                        outs(%tensor : tensor<1000000x3xf64>) -> tensor<1000000x3xf64>
 
-    return %tensor_filled : tensor<100000x3xf64>
+    return %tensor_filled : tensor<1000000x3xf64>
 }
 
 func.func @printF64Tensor1D(%tensor : tensor<?xf64>) {
@@ -105,8 +105,8 @@ func.func @printF32Tensor2D(%tensor: tensor<?x?xf32>) {
     func.return
 }
 
-func.func @blackhole(%tensor: tensor<100000x3xf32>) -> tensor<100000x3xf32> {
-    func.return %tensor : tensor<100000x3xf32>
+func.func @blackhole(%tensor: tensor<1000000x3xf32>) -> tensor<1000000x3xf32> {
+    func.return %tensor : tensor<1000000x3xf32>
 }
 
 func.func @fast_inv_sqrt(%x: f32) -> f32 {
@@ -166,47 +166,47 @@ func.func @normalize_vector(%x: f32, %y: f32, %z: f32) -> (f32, f32, f32) {
     func.return %x_normalized, %y_normalized, %z_normalized : f32, f32, f32
 }
 
-func.func @normalize_distance_vectors(%vectors: tensor<100000x3xf32>) -> tensor<100000x3xf32> {
+func.func @normalize_distance_vectors(%vectors: tensor<1000000x3xf32>) -> tensor<1000000x3xf32> {
     // Distance between multiple 3D points and normalizing the resulting vectors. This is a common operation in computer graphics and physics simulations.
 
     %c0 = arith.constant 0 : index
     %c1 = arith.constant 1 : index
     %c2 = arith.constant 2 : index
-    %c100000 = arith.constant 100000 : index
+    %c1000000 = arith.constant 1000000 : index
 
-    %norm_vectors_init = tensor.empty() : tensor<100000x3xf32>
-    %norm_vectors = scf.for %i = %c0 to %c100000 step %c1 iter_args(%current_vector = %norm_vectors_init) -> (tensor<100000x3xf32>) {
-        %x = tensor.extract %vectors[%i, %c0] : tensor<100000x3xf32>
-        %y = tensor.extract %vectors[%i, %c1] : tensor<100000x3xf32>
-        %z = tensor.extract %vectors[%i, %c2] : tensor<100000x3xf32>
+    %norm_vectors_init = tensor.empty() : tensor<1000000x3xf32>
+    %norm_vectors = scf.for %i = %c0 to %c1000000 step %c1 iter_args(%current_vector = %norm_vectors_init) -> (tensor<1000000x3xf32>) {
+        %x = tensor.extract %vectors[%i, %c0] : tensor<1000000x3xf32>
+        %y = tensor.extract %vectors[%i, %c1] : tensor<1000000x3xf32>
+        %z = tensor.extract %vectors[%i, %c2] : tensor<1000000x3xf32>
 
         %nx, %ny, %nz = func.call @normalize_vector(%x, %y, %z) : (f32, f32, f32) -> (f32, f32, f32)
 
-        %normalized_vector1 = tensor.insert %nx into %current_vector[%i, %c0] : tensor<100000x3xf32>
-        %normalized_vector2 = tensor.insert %ny into %normalized_vector1[%i, %c1] : tensor<100000x3xf32>
-        %normalized_vector3 = tensor.insert %nz into %normalized_vector2[%i, %c2] : tensor<100000x3xf32>
+        %normalized_vector1 = tensor.insert %nx into %current_vector[%i, %c0] : tensor<1000000x3xf32>
+        %normalized_vector2 = tensor.insert %ny into %normalized_vector1[%i, %c1] : tensor<1000000x3xf32>
+        %normalized_vector3 = tensor.insert %nz into %normalized_vector2[%i, %c2] : tensor<1000000x3xf32>
 
-        scf.yield %normalized_vector3 : tensor<100000x3xf32>
+        scf.yield %normalized_vector3 : tensor<1000000x3xf32>
     }
 
-    func.return %norm_vectors : tensor<100000x3xf32>
+    func.return %norm_vectors : tensor<1000000x3xf32>
 }
 
 func.func @main() -> i32 {
-    %points = tensor.empty() : tensor<100000x3xf64>
-    %points_filled = func.call @fillRandomF64Tensor2D(%points) : (tensor<100000x3xf64>) -> tensor<100000x3xf64>
-    %points_filled_f32 = arith.truncf %points_filled : tensor<100000x3xf64> to tensor<100000x3xf32>
+    %points = tensor.empty() : tensor<1000000x3xf64>
+    %points_filled = func.call @fillRandomF64Tensor2D(%points) : (tensor<1000000x3xf64>) -> tensor<1000000x3xf64>
+    %points_filled_f32 = arith.truncf %points_filled : tensor<1000000x3xf64> to tensor<1000000x3xf32>
 
     %start = func.call @clock() : () -> i64
-    %vectors_normalized = func.call @normalize_distance_vectors(%points_filled_f32) : (tensor<100000x3xf32>) -> tensor<100000x3xf32>
+    %vectors_normalized = func.call @normalize_distance_vectors(%points_filled_f32) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
     %end = func.call @clock() : () -> i64
 
-    // %points_filled_f32_cast = tensor.cast %points_filled_f32 : tensor<100000x3xf32> to tensor<?x?xf32>
-    // %vectors_normalized_cast = tensor.cast %vectors_normalized : tensor<100000x3xf32> to tensor<?x?xf32>
+    // %points_filled_f32_cast = tensor.cast %points_filled_f32 : tensor<1000000x3xf32> to tensor<?x?xf32>
+    // %vectors_normalized_cast = tensor.cast %vectors_normalized : tensor<1000000x3xf32> to tensor<?x?xf32>
     // func.call @printF32Tensor2D(%points_filled_f32_cast) : (tensor<?x?xf32>) -> ()
     // func.call @printF32Tensor2D(%vectors_normalized_cast) : (tensor<?x?xf32>) -> ()
 
-    func.call @blackhole(%vectors_normalized) : (tensor<100000x3xf32>) -> tensor<100000x3xf32>
+    func.call @blackhole(%vectors_normalized) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
     func.call @displayTime(%start, %end) : (i64, i64) -> ()
 
     %c0 = arith.constant 0 : i32

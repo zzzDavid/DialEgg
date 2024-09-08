@@ -24,7 +24,7 @@ declare noundef i32 @printf(ptr nocapture noundef readonly, ...) local_unnamed_a
 define void @displayTime(i64 %0, i64 %1) local_unnamed_addr #1 {
   %3 = sub i64 %1, %0
   %4 = uitofp i64 %3 to double
-  %5 = fdiv double %4, 1.000000e+08
+  %5 = fdiv double %4, 1.000000e+06
   %6 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @time, i64 %3, double %5)
   ret void
 }
@@ -44,27 +44,27 @@ define { ptr, ptr, i64, [2 x i64], [2 x i64] } @fillRandomF64Tensor2D(ptr %0, pt
   %15 = add i32 %14, -740551042
   %16 = sitofp i32 %15 to double
   %17 = fadd double %16, 0x41DFFFFFFFC00000
-  %18 = fmul double %17, 0x3F0869FFF9927183
-  %19 = fadd double %18, -1.000000e+05
+  %18 = fmul double %17, 0x3F3E847FF7F70DE4
+  %19 = fadd double %18, -1.000000e+06
   store double %19, ptr %13, align 8
   %20 = mul i32 %11, -1029531031
   %21 = add i32 %20, 362964203
   %22 = sitofp i32 %21 to double
   %23 = fadd double %22, 0x41DFFFFFFFC00000
-  %24 = fmul double %23, 0x3F0869FFF9927183
-  %25 = fadd double %24, -1.000000e+05
+  %24 = fmul double %23, 0x3F3E847FF7F70DE4
+  %25 = fadd double %24, -1.000000e+06
   %26 = getelementptr double, ptr %13, i64 %6
   store double %25, ptr %26, align 8
   %27 = mul i32 %11, -1029531031
   %28 = add i32 %27, 1466479448
   %29 = sitofp i32 %28 to double
   %30 = fadd double %29, 0x41DFFFFFFFC00000
-  %31 = fmul double %30, 0x3F0869FFF9927183
-  %32 = fadd double %31, -1.000000e+05
+  %31 = fmul double %30, 0x3F3E847FF7F70DE4
+  %32 = fadd double %31, -1.000000e+06
   %33 = getelementptr double, ptr %13, i64 %9
   store double %32, ptr %33, align 8
   %34 = add nuw nsw i64 %10, 1
-  %35 = icmp ult i64 %10, 99999
+  %35 = icmp ult i64 %10, 999999
   br i1 %35, label %.preheader, label %36
 
 36:                                               ; preds = %.preheader
@@ -295,7 +295,7 @@ define { float, float, float } @normalize_vector(float %0, float %1, float %2) l
 
 ; Function Attrs: nofree nounwind memory(write, argmem: readwrite, inaccessiblemem: readwrite)
 define { ptr, ptr, i64, [2 x i64], [2 x i64] } @normalize_distance_vectors(ptr nocapture readnone %0, ptr nocapture readonly %1, i64 %2, i64 %3, i64 %4, i64 %5, i64 %6) local_unnamed_addr #4 {
-  %8 = tail call dereferenceable_or_null(1200064) ptr @malloc(i64 1200064)
+  %8 = tail call dereferenceable_or_null(12000064) ptr @malloc(i64 12000064)
   %9 = ptrtoint ptr %8 to i64
   %10 = add i64 %9, 63
   %11 = and i64 %10, -64
@@ -338,14 +338,14 @@ define { ptr, ptr, i64, [2 x i64], [2 x i64] } @normalize_distance_vectors(ptr n
   %44 = getelementptr float, ptr %42, i64 2
   store float %40, ptr %44, align 4
   %45 = add nuw nsw i64 %16, 1
-  %46 = icmp ult i64 %16, 99999
+  %46 = icmp ult i64 %16, 999999
   br i1 %46, label %15, label %47
 
 47:                                               ; preds = %15
   %48 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } undef, ptr %8, 0
   %49 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %48, ptr %12, 1
   %50 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %49, i64 0, 2
-  %51 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %50, i64 100000, 3, 0
+  %51 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %50, i64 1000000, 3, 0
   %52 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %51, i64 3, 3, 1
   %53 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %52, i64 3, 4, 0
   %54 = insertvalue { ptr, ptr, i64, [2 x i64], [2 x i64] } %53, i64 1, 4, 1
@@ -353,7 +353,7 @@ define { ptr, ptr, i64, [2 x i64], [2 x i64] } @normalize_distance_vectors(ptr n
 }
 
 define noundef i32 @main() local_unnamed_addr {
-  %1 = tail call dereferenceable_or_null(2400064) ptr @malloc(i64 2400064)
+  %1 = tail call dereferenceable_or_null(24000064) ptr @malloc(i64 24000064)
   %2 = ptrtoint ptr %1 to i64
   %3 = add i64 %2, 63
   %4 = and i64 %3, -64
@@ -369,29 +369,29 @@ define noundef i32 @main() local_unnamed_addr {
   %11 = add i32 %10, -740551042
   %12 = sitofp i32 %11 to double
   %13 = fadd double %12, 0x41DFFFFFFFC00000
-  %14 = fmul double %13, 0x3F0869FFF9927183
-  %15 = fadd double %14, -1.000000e+05
+  %14 = fmul double %13, 0x3F3E847FF7F70DE4
+  %15 = fadd double %14, -1.000000e+06
   store double %15, ptr %9, align 8
   %16 = add i32 %10, 362964203
   %17 = sitofp i32 %16 to double
   %18 = fadd double %17, 0x41DFFFFFFFC00000
-  %19 = fmul double %18, 0x3F0869FFF9927183
-  %20 = fadd double %19, -1.000000e+05
+  %19 = fmul double %18, 0x3F3E847FF7F70DE4
+  %20 = fadd double %19, -1.000000e+06
   %21 = getelementptr double, ptr %9, i64 1
   store double %20, ptr %21, align 8
   %22 = add i32 %10, 1466479448
   %23 = sitofp i32 %22 to double
   %24 = fadd double %23, 0x41DFFFFFFFC00000
-  %25 = fmul double %24, 0x3F0869FFF9927183
-  %26 = fadd double %25, -1.000000e+05
+  %25 = fmul double %24, 0x3F3E847FF7F70DE4
+  %26 = fadd double %25, -1.000000e+06
   %27 = getelementptr double, ptr %9, i64 2
   store double %26, ptr %27, align 8
   %28 = add nuw nsw i64 %6, 1
-  %29 = icmp ult i64 %6, 99999
+  %29 = icmp ult i64 %6, 999999
   br i1 %29, label %.preheader.i, label %fillRandomF64Tensor2D.exit
 
 fillRandomF64Tensor2D.exit:                       ; preds = %.preheader.i
-  %30 = tail call dereferenceable_or_null(1200064) ptr @malloc(i64 1200064)
+  %30 = tail call dereferenceable_or_null(12000064) ptr @malloc(i64 12000064)
   %31 = ptrtoint ptr %30 to i64
   %32 = add i64 %31, 63
   %33 = and i64 %32, -64
@@ -417,12 +417,12 @@ fillRandomF64Tensor2D.exit:                       ; preds = %.preheader.i
   %48 = getelementptr float, ptr %38, i64 2
   store float %47, ptr %48, align 4
   %49 = add nuw nsw i64 %35, 1
-  %50 = icmp ult i64 %35, 99999
+  %50 = icmp ult i64 %35, 999999
   br i1 %50, label %.preheader, label %51
 
 51:                                               ; preds = %.preheader
   %52 = tail call i64 @clock()
-  %53 = tail call dereferenceable_or_null(1200064) ptr @malloc(i64 1200064)
+  %53 = tail call dereferenceable_or_null(12000064) ptr @malloc(i64 12000064)
   %54 = ptrtoint ptr %53 to i64
   %55 = add i64 %54, 63
   %56 = and i64 %55, -64
@@ -462,59 +462,15 @@ fillRandomF64Tensor2D.exit:                       ; preds = %.preheader.i
   %86 = getelementptr float, ptr %84, i64 2
   store float %83, ptr %86, align 4
   %87 = add nuw nsw i64 %59, 1
-  %88 = icmp ult i64 %59, 99999
+  %88 = icmp ult i64 %59, 999999
   br i1 %88, label %58, label %normalize_distance_vectors.exit
 
 normalize_distance_vectors.exit:                  ; preds = %58
   %89 = tail call i64 @clock()
-  %90 = tail call dereferenceable_or_null(1200064) ptr @malloc(i64 1200064)
-  %91 = ptrtoint ptr %90 to i64
-  %92 = add i64 %91, 63
-  %93 = and i64 %92, -64
-  %94 = inttoptr i64 %93 to ptr
-  br label %95
-
-95:                                               ; preds = %95, %normalize_distance_vectors.exit
-  %96 = phi i64 [ 0, %normalize_distance_vectors.exit ], [ %124, %95 ]
-  %97 = mul nuw nsw i64 %96, 3
-  %98 = getelementptr float, ptr %34, i64 %97
-  %99 = load float, ptr %98, align 4
-  %100 = getelementptr float, ptr %98, i64 1
-  %101 = load float, ptr %100, align 4
-  %102 = getelementptr float, ptr %98, i64 2
-  %103 = load float, ptr %102, align 4
-  %104 = fmul float %99, %99
-  %105 = fmul float %101, %101
-  %106 = fmul float %103, %103
-  %107 = fadd float %104, %105
-  %108 = fadd float %107, %106
-  %109 = fmul float %108, 5.000000e-01
-  %110 = bitcast float %108 to i32
-  %111 = ashr i32 %110, 1
-  %112 = sub i32 1597463007, %111
-  %113 = bitcast i32 %112 to float
-  %114 = fmul float %113, %113
-  %115 = fmul float %109, %114
-  %116 = fsub float 1.500000e+00, %115
-  %117 = fmul float %116, %113
-  %118 = fmul float %99, %117
-  %119 = fmul float %101, %117
-  %120 = fmul float %103, %117
-  %121 = getelementptr float, ptr %94, i64 %97
-  store float %118, ptr %121, align 4
-  %122 = getelementptr float, ptr %121, i64 1
-  store float %119, ptr %122, align 4
-  %123 = getelementptr float, ptr %121, i64 2
-  store float %120, ptr %123, align 4
-  %124 = add nuw nsw i64 %96, 1
-  %125 = icmp ult i64 %96, 99999
-  br i1 %125, label %95, label %normalize_distance_vectors.exit1
-
-normalize_distance_vectors.exit1:                 ; preds = %95
-  %126 = sub i64 %89, %52
-  %127 = uitofp i64 %126 to double
-  %128 = fdiv double %127, 1.000000e+08
-  %129 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @time, i64 %126, double %128)
+  %90 = sub i64 %89, %52
+  %91 = uitofp i64 %90 to double
+  %92 = fdiv double %91, 1.000000e+06
+  %93 = tail call i32 (ptr, ...) @printf(ptr nonnull dereferenceable(1) @time, i64 %90, double %92)
   ret i32 0
 }
 

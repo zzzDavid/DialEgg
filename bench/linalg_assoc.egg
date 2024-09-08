@@ -13,19 +13,18 @@
 (function nrows (Op) i64)
 (function ncols (Op) i64)
 
-(rule ((= ?m (tensor_empty (RankedTensor ?dims ?t))) (> (vec-length ?dims) 1))
+(rule ((= ?m (tensor_empty (RankedTensor ?dims ?t))) 
+       (> (vec-length ?dims) 1))
     ((set (nrows ?m) (vec-get ?dims 0))
-    (set (ncols ?m) (vec-get ?dims 1))))
+     (set (ncols ?m) (vec-get ?dims 1))))
+
+(rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t))))
+    ((set (nrows ?m) (nrows ?x))
+     (set (ncols ?m) (ncols ?y))))
 
 (rule ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)))
-        (= ?a (nrows ?x))
-        (= ?b (ncols ?x))
-        (= ?c (ncols ?y)))
-    ((set (nrows ?m) ?a)
-     (set (ncols ?m) ?c)
-     (unstable-cost (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)) (* (* ?a ?b) ?c))))
-
-(run 10000)
+     (= ?a (nrows ?x)) (= ?b (ncols ?x)) (= ?c (ncols ?y)))
+    ((unstable-cost (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)) (* (* ?a ?b) ?c))))
 
 (rule
     ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?o0 (RankedTensor ?d0 ?t)) ?z ?o1 (RankedTensor ?d1 ?t))))
