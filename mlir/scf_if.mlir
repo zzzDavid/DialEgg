@@ -1,14 +1,13 @@
-func.func @nestedFunc(%arg0: i32) -> i32 {
-    %0 = arith.addi %arg0, %arg0 : i32
-    %a0_i1 = arith.cmpi slt, %0, %arg0 : i32
-    %1 = scf.if %a0_i1 -> (i32) {
-        ^bb0:
-        %2 = arith.subi %0, %arg0 : i32
-        scf.yield %2 : i32
+func.func @conditional_sqrt(%x: f32) -> f32 {
+    %zero = arith.constant 0.0 : f32
+    %cond = arith.cmpf oge, %x, %zero : f32
+    %sqrt = scf.if %cond -> (f32) {
+        %sqrt = math.sqrt %x : f32
+        scf.yield %sqrt : f32
     } else {
-        ^bb1:
-        %3 = arith.muli %0, %arg0 : i32
-        scf.yield %3 : i32
+        %neg = arith.negf %x : f32
+        %sqrt = math.sqrt %neg : f32
+        scf.yield %sqrt : f32
     }
-    func.return %1 : i32
+    func.return %sqrt : f32
 }

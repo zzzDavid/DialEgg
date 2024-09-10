@@ -36,7 +36,7 @@ struct EgglogOpDef {
 
     size_t nOperands;
     size_t nAttributes;
-    bool region;
+    size_t nRegions;
 
     size_t cost = 1;
 
@@ -127,8 +127,8 @@ public:
 
     EggifiedOp eggifyValue(mlir::Value);
     EggifiedOp eggifyOperation(mlir::Operation*);
-    std::vector<EggifiedOp> eggifyOperations(const std::vector<mlir::Operation*>&);
     std::string eggifyBlock(mlir::Block&);
+    std::string eggifyRegion(mlir::Region&);
 
     std::optional<EggifiedOp> findEggifiedOp(mlir::Operation*);
     std::optional<EggifiedOp> findEggifiedOp(mlir::Value);

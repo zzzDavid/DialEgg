@@ -37,16 +37,17 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
 
     size_t nOperands = 0;
     size_t nAttributes = 0;
+    size_t nRegions = 0;
 
     for (const std::string& arg: args) {
         if (arg == "Op") {
             nOperands++;
         } else if (arg == "AttrPair") {
             nAttributes++;
+        } else if (arg == "Region") {
+            nRegions++;
         }
     }
-
-    bool region = std::find(args.begin(), args.end(), "MlirRegion") != args.end();
 
     return EgglogOpDef {
             .str = newOpStr,
@@ -57,7 +58,7 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
             .args = args,
             .nOperands = nOperands,
             .nAttributes = nAttributes,
-            .region = region,
+            .nRegions = nRegions,
             .cost = cost};
 }
 
@@ -777,12 +778,11 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
         ss << " " << eggifyNamedAttribute(attrs[i]);
     }
 
-    ss << " ";
-
-    // block - WE ONLY SUPPORT OPERATIONS WITH A SINGLE BLOCK IN THEIR REGION
-    if (op->getNumRegions() == 1 && op->getRegion(0).hasOneBlock() && (egglogOpDef.dialect != "linalg" || egglogOpDef.fullName == "linalg.generic")) {
-        ss << eggifyBlock(op->getRegion(0).front());
+    for (size_t i = 0; i < egglogOpDef.nRegions; i++) {
+        ss << " " << eggifyRegion(op->getRegion(i));
     }
+
+    ss << " ";
 
     // <type>
     ss << eggifyType(op->getResult(0).getType());
@@ -794,24 +794,36 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
     return eggifiedOp;
 }
 
-std::vector<EggifiedOp> Egglog::eggifyOperations(const std::vector<mlir::Operation*>& ops) {
-    std::vector<EggifiedOp> eggifiedOps;
-    for (mlir::Operation* op: ops) {
-        eggifiedOps.push_back(eggifyOperation(op));
-    }
-    return eggifiedOps;
-}
-
 std::string Egglog::eggifyBlock(mlir::Block& block) {
     std::stringstream ss;
 
     mlir::Block::OpListType& ops = block.getOperations();
 
-    ss << "(vec-of";
+    ss << "(Blk (vec-of";
     for (mlir::Operation& op: ops) {
-        ss << " " << eggifyOperation(&op).egglogOp;
+        if (op.getNumResults() == 0) {  // ignore if no results
+            llvm::outs() << "Skipping operation with no results: " << op.getName() << "\n";
+            continue;
+        } else if (op.getNumResults() > 1) {  // exit if more than one result
+            llvm::outs() << "Skipping operation with more than one result: " << op.getName() << "\n";
+        }
+
+        ss << " " << eggifyOperation(&op).getPrintId();
     }
-    ss << ")";
+    ss << "))";
+    return ss.str();
+}
+
+std::string Egglog::eggifyRegion(mlir::Region& region) {
+    std::stringstream ss;
+
+    mlir::Region::BlockListType& blocks = region.getBlocks();
+
+    ss << "(Reg (vec-of";
+    for (mlir::Block& block: blocks) {
+        ss << " " << eggifyBlock(block);
+    }
+    ss << "))";
     return ss.str();
 }
 

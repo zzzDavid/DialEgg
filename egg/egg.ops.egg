@@ -1,0 +1,39 @@
+(include "egg/base.egg")
+
+;;;; arith dialect ;;;;
+
+;; Attrs
+(datatype FastMathFlags (none) (reassoc) (nnan) (ninf) (nsz) (arcp) (contract) (afn) (fast))
+(function arith_fastmath (FastMathFlags) Attr)
+
+(function arith_constant (AttrPair Type) Op)
+(function arith_cmpf (Op Op AttrPair AttrPair Type) Op)
+(function scf_if (Op Region Region Type) Op)
+(function math_sqrt (Op AttrPair Type) Op)
+(function arith_negf (Op AttrPair Type) Op)
+
+;; OPS HERE ;;
+(let op0 (Value 0 (F32))) ; <block argument> of type 'f32' at index: 0
+(let op1 (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32))) ; %cst = arith.constant 0.000000e+00 : f32
+(let op2 (arith_cmpf op0 op1 (NamedAttr "fastmath" (arith_fastmath (none))) (NamedAttr "predicate" (IntegerAttr 3 (I64))) (I1))) ; %0 = arith.cmpf oge, %arg0, %cst : f32
+(let op3 (math_sqrt op0 (NamedAttr "fastmath" (arith_fastmath (none))) (F32))) ; %2 = math.sqrt %arg0 : f32
+(let op4 (arith_negf op0 (NamedAttr "fastmath" (arith_fastmath (none))) (F32))) ; %2 = arith.negf %arg0 : f32
+(let op5 (math_sqrt op4 (NamedAttr "fastmath" (arith_fastmath (none))) (F32))) ; %3 = math.sqrt %2 : f32
+(let op6 (scf_if op2 (Reg (vec-of (Blk (vec-of op3)))) (Reg (vec-of (Blk (vec-of op4 op5)))) (F32))) ; %1 = scf.if %0 -> (f32) {
+;   %2 = math.sqrt %arg0 : f32
+;   scf.yield %2 : f32
+; } else {
+;   %2 = arith.negf %arg0 : f32
+;   %3 = math.sqrt %2 : f32
+;   scf.yield %3 : f32
+; }
+
+;; RULES HERE ;;
+
+;; EXTRACTS HERE ;;
+(extract op1)
+(extract op2)
+(extract op3)
+(extract op4)
+(extract op5)
+(extract op6)
