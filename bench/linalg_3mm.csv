@@ -1,0 +1,7 @@
+name,opt,-O3
+linalg_3mm,eqsat+canon,563.0
+linalg_3mm,canon+eqsat,568.0
+linalg_3mm,eqsat,576.0
+linalg_3mm,cpp,2921.5
+linalg_3mm,noopt,7314.0
+linalg_3mm,canon,7776.5

@@ -9,55 +9,33 @@
 ;; OPS HERE ;;
 
 ;; RULES HERE ;;
-; Analysis for cost of linalg_matmul
-; (function type-of (Op) Type)
-; (rule ((= ?A (tensor_empty ?t))) ((set (type-of ?A) ?t)))
-; (rule ((= ?A (linalg_matmul ?x ?y ?o ?t))) ((set (type-of ?A) ?t)))
-
-; (function dims (Type) IntVec)
-; (rule ((= ?t (RankedTensor ?dims ?tp))) ((set (dims ?t) ?dims)))
-
-; (rule 
-;     ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t))))
-
-;     ((let a (vec-get (dims (type-of ?x)) 0))
-;      (let b (vec-get (dims (type-of ?x)) 1))
-;      (let c (vec-get (dims (type-of ?y)) 1))
-;      (unstable-cost (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)) (* (* a b) c)))
-; )
-
-; (rule
-;     ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?o0 (RankedTensor ?d0 ?t)) ?z ?o1 (RankedTensor ?d1 ?t))))
-
-;     ((let out_t (RankedTensor (vec-of (vec-get (dims (type-of ?y)) 0) (vec-get ?d1 1)) ?t))
-;      (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?o1 (RankedTensor ?d1 ?t))))
-; )
-
-; (run 10000)
 (rule ((= ?A (tensor_empty ?t))) ((set (type-of ?A) ?t)))
 (rule ((= ?A (linalg_matmul ?x ?y ?o ?t))) ((set (type-of ?A) ?t)))
 
 (function nrows (Type) i64)
 (function ncols (Type) i64)
-(rule ((= ?t (RankedTensor ?dims ?tp))) 
-    ((set (nrows ?t) (vec-get ?dims 0)) 
-     (set (ncols ?t) (vec-get ?dims 1)))
+(rule ((= ?t (RankedTensor ?shape ?tp))) 
+    ((set (nrows ?t) (vec-get ?shape 0)) 
+     (set (ncols ?t) (vec-get ?shape 1)))
 )
 
 (rule 
-    ((= ?m (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t))))
+    ((linalg_matmul ?x ?y ?xy ?t)
+     (= a (nrows (type-of ?x)))
+     (= b (ncols (type-of ?x)))
+     (= c (ncols (type-of ?y))))
 
-    ((let a (nrows (type-of ?x)))
-     (let b (ncols (type-of ?x)))
-     (let c (ncols (type-of ?y)))
-     (unstable-cost (linalg_matmul ?x ?y ?o (RankedTensor ?d ?t)) (* (* a b) c)))
+    ((unstable-cost (linalg_matmul ?x ?y ?xy ?t) (* (* a b) c)))
 )
 
 (rule
-    ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?o0 (RankedTensor ?d0 ?t)) ?z ?o1 (RankedTensor ?d1 ?t))))
+    ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?xy ?xy_t) ?z ?xy_z ?xyz_t))
+     (= ?b (nrows (type-of ?y)))
+     (= ?d (ncols (type-of ?z)))
+     (= ?xyz_t (RankedTensor ? ?t)))
     
-    ((let out_t (RankedTensor (vec-of (nrows (type-of ?y)) (ncols (type-of ?z))) ?t))
-     (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?o1 (RankedTensor ?d1 ?t))))
+    ((let out_t (RankedTensor (vec-of ?b ?d) ?t))
+     (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?xy_z ?xyz_t)))
 )
 
 (run 10000)

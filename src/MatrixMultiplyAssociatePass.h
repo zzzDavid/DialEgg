@@ -15,10 +15,8 @@ class MatrixMultiplyAssociateRewritePattern : public mlir::OpRewritePattern<mlir
 public:
     MatrixMultiplyAssociateRewritePattern(mlir::MLIRContext* context) : OpRewritePattern<mlir::linalg::MatmulOp>(context) {}
 
-    mlir::LogicalResult matchAndRewrite(mlir::linalg::MatmulOp op, mlir::PatternRewriter& rewriter) const override {
+    mlir::LogicalResult matchAndRewrite(mlir::linalg::MatmulOp op, mlir::PatternRewriter& rewriter) const override { // Matches either (XY)Z or X(YZ)
         llvm::outs() << "Matching and rewriting matmul operation: " << op << "\n";
-        // It could be either (XY)Z or X(YZ)
-        // caluculate the cost of both and determine which one is better, and use that one
 
         mlir::Value lhs = op.getOperand(0);  // could be X or (XY)
         mlir::Value rhs = op.getOperand(1);  // could be (YZ) or Z
@@ -118,7 +116,10 @@ public:
         mlir::RewritePatternSet patterns(context);
         patterns.add<MatrixMultiplyAssociateRewritePattern>(context);
 
-        if (mlir::failed(mlir::applyPatternsAndFoldGreedily(func, std::move(patterns)))) {
+        mlir::GreedyRewriteConfig config = mlir::GreedyRewriteConfig();
+        config.strictMode = mlir::GreedyRewriteStrictness::ExistingOps;
+        config.useTopDownTraversal = true;
+        if (mlir::failed(mlir::applyPatternsAndFoldGreedily(func, std::move(patterns), config))) {
             signalPassFailure();
         }
 

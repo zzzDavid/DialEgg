@@ -53,6 +53,7 @@ def benchmark_file(filename, directory):
 
 if __name__ == "__main__":
     # benchmark_file("arith_rgb_to_gray", "bench")  # bench/arith_rgb_to_gray.mlir
-    # benchmark_file("linalg_assoc", "bench")  # bench/linalg_assoc.mlir
-    benchmark_file("math_inv_sqrt", "bench")  # bench/math_inv_sqrt.mlir
+    benchmark_file("linalg_assoc", "bench")  # bench/linalg_assoc.mlir
+    # benchmark_file("linalg_3mm", "bench")  # bench/linalg_3mm.mlir
+    # benchmark_file("math_inv_sqrt", "bench")  # bench/math_inv_sqrt.mlir
     # benchmark_file("math_horners_method", "bench")  # bench/math_horners_method.mlir

@@ -1,6 +1,7 @@
 name,opt,-O3
-linalg_assoc,eqsat,16.0
-linalg_assoc,noopt,119.5
-linalg_assoc,canon,122.5
-linalg_assoc,eqsat+canon,15.5
-linalg_assoc,canon+eqsat,13.5
+linalg_assoc,eqsat,13.0
+linalg_assoc,noopt,116.5
+linalg_assoc,canon,114.5
+linalg_assoc,eqsat+canon,13.0
+linalg_assoc,cpp,13.0
+linalg_assoc,canon+eqsat,14.0
