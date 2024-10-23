@@ -37,6 +37,7 @@ struct EgglogOpDef {
     size_t nOperands;
     size_t nAttributes;
     size_t nRegions;
+    size_t nResults;
 
     size_t cost = 1;
 
@@ -53,13 +54,21 @@ struct EggifiedOp {
     std::vector<EggifiedOp> operands;
 
     // for reference
-    mlir::Value mlirValue;
+    std::vector<mlir::Value> mlirValues;
     mlir::Operation* mlirOp;
 
-    EggifiedOp(size_t id, std::string egglogOp, const std::vector<EggifiedOp>& operands, mlir::Operation* mlirOp)
-        : id(id), opaque(false), egglogOp(egglogOp), operands(operands), mlirValue(mlirOp->getResult(0)), mlirOp(mlirOp) {}
-    EggifiedOp(size_t id, std::string egglogOp, mlir::Value mlirValue)
-        : id(id), opaque(true), egglogOp(egglogOp), mlirValue(mlirValue), mlirOp(mlirValue.getDefiningOp()) {}
+    EggifiedOp(size_t id, bool opaque, std::string egglogOp, const std::vector<EggifiedOp>& operands, const std::vector<mlir::Value>& mlirValues, mlir::Operation* mlirOp)
+        : id(id), opaque(opaque), egglogOp(egglogOp), operands(operands), mlirValues(mlirValues), mlirOp(mlirOp) {}
+
+    static EggifiedOp opaqueOp(size_t id, std::string egglogOp, mlir::Operation* mlirOp) {
+        return EggifiedOp(id, true, egglogOp, {}, std::vector<mlir::Value>(mlirOp->result_begin(), mlirOp->result_end()), mlirOp);
+    }
+    static EggifiedOp value(size_t id, std::string egglogOp, mlir::Value mlirValue) {
+        return EggifiedOp(id, true, egglogOp, {}, {mlirValue}, mlirValue.getDefiningOp());
+    }
+    static EggifiedOp op(size_t id, std::string egglogOp, const std::vector<EggifiedOp>& operands, mlir::Operation* mlirOp) {
+        return EggifiedOp(id, false, egglogOp, operands, std::vector<mlir::Value>(mlirOp->result_begin(), mlirOp->result_end()), mlirOp);
+    }
 
     std::string getPrintId() const {
         return "op" + std::to_string(id);
@@ -70,7 +79,17 @@ struct EggifiedOp {
     }
 
     void print(llvm::raw_ostream& os) const {
-        os << "[" << id << "] " << egglogOp << " FROM OP: " << mlirValue << "\n"; // [<id>] <egglog> <mlir>
+        os << "[" << id << "] " << egglogOp << " FROM OP: ";
+        mlirDump(os);
+        os << "\n";
+    }
+
+    void mlirDump(llvm::raw_ostream& os) const {
+        if (mlirOp != nullptr) {
+            os << mlirOp;
+        } else {
+            os << mlirValues[0];  // todo fix for multi-result support
+        }
     }
 
     std::string inlinedEgglogOp() const;
@@ -122,11 +141,14 @@ public:
      *      %1 = tensor.empty() : tensor<2x3xf32>
      *      %2 = linalg.transpose %0, %1 : tensor<3x2xf32>, tensor<2x3xf32>
      */
-    mlir::Operation* parseOperation(const std::string&, mlir::OpBuilder&);  // TODO return EqSatOp
+    mlir::Operation* parseOperation(const std::string&, mlir::OpBuilder&);
     mlir::Value parseValue(const std::string&);
+    mlir::Block* parseBlock(const std::string&, mlir::OpBuilder&);
+    std::vector<mlir::Block*> parseBlocksFromRegion(const std::string&, mlir::OpBuilder&);
 
     EggifiedOp eggifyValue(mlir::Value);
     EggifiedOp eggifyOperation(mlir::Operation*);
+    EggifiedOp eggifyOpaqueOperation(mlir::Operation*);
     std::string eggifyBlock(mlir::Block&);
     std::string eggifyRegion(mlir::Region&);
 

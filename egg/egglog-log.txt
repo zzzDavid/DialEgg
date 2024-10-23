@@ -10,6 +10,7 @@
 [INFO ] Declared function ValueAttr.
 [INFO ] Declared sort Op.
 [INFO ] Declared function Value.
+[INFO ] Declared function OpaqueOp.
 [INFO ] Declared function NoOp.
 [INFO ] Declared sort OpVec.
 [INFO ] Declared sort Block.
@@ -57,8 +58,23 @@
 [INFO ] Declared function DenseFPElementsAttr.
 [INFO ] Declared function SymbolRefAttr.
 [INFO ] Declared function OtherAttr.
-[INFO ] Declared function linalg_matmul.
-[INFO ] Declared function tensor_empty.
+[INFO ] Declared sort FastMathFlags.
+[INFO ] Declared function none.
+[INFO ] Declared function reassoc.
+[INFO ] Declared function nnan.
+[INFO ] Declared function ninf.
+[INFO ] Declared function nsz.
+[INFO ] Declared function arcp.
+[INFO ] Declared function contract.
+[INFO ] Declared function afn.
+[INFO ] Declared function fast.
+[INFO ] Declared function arith_fastmath.
+[INFO ] Declared function arith_constant.
+[INFO ] Declared function arith_cmpf.
+[INFO ] Declared function scf_if.
+[INFO ] Declared function scf_yield.
+[INFO ] Declared function math_sqrt.
+[INFO ] Declared function arith_negf.
 [INFO ] Declared function op0.
 [INFO ] Declared function op1.
 [INFO ] Declared function op2.
@@ -69,55 +85,11 @@
 [INFO ] Declared function op7.
 [INFO ] Declared function op8.
 [INFO ] Declared function op9.
-[INFO ] Declared function op10.
-[INFO ] Declared function op11.
-[INFO ] Declared function op12.
-[INFO ] Declared function op13.
-[INFO ] Declared rule (rule ((= ?A (tensor_empty ?t)))
-          ((set (type-of ?A) ?t))
-             ).
-[INFO ] Declared rule (rule ((= ?A (linalg_matmul ?x ?y ?o ?t)))
-          ((set (type-of ?A) ?t))
-             ).
-[INFO ] Declared function nrows.
-[INFO ] Declared function ncols.
-[INFO ] Declared rule (rule ((= ?t (RankedTensor ?shape ?tp)))
-          ((set (nrows ?t) (vec-get ?shape 0))
-           (set (ncols ?t) (vec-get ?shape 1)))
-             ).
-[INFO ] Declared rule (rule ((= ?t (RankedTensor ?shape ?tp)))
-          ((set (nrows ?t) (vec-get ?shape 0))
-           (set (ncols ?t) (vec-get ?shape 1)))
-             ).
-[INFO ] Declared rule (rule ((linalg_matmul ?x ?y ?xy ?t)
-           (= a (nrows (type-of ?x)))
-           (= b (ncols (type-of ?x)))
-           (= c (ncols (type-of ?y))))
-          ((unstable-cost (linalg_matmul ?x ?y ?xy ?t) (* (* a b) c)))
-             ).
-[INFO ] Declared rule (rule ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?xy ?xy_t) ?z ?xy_z ?xyz_t))
-           (= ?b (nrows (type-of ?y)))
-           (= ?d (ncols (type-of ?z)))
-           (= ?xyz_t (RankedTensor ? ?t)))
-          ((let out_t (RankedTensor (vec-of ?b ?d) ?t))
-           (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?xy_z ?xyz_t)))
-             ).
-[INFO ] Ran schedule (repeat 10000 (run)).
-[INFO ] Report: Rule (rule ((= ?A (tensor_empty ?t)))       ((set (type-of ?A) ?t))          ): search 0.000s, apply 0.000s, num matches 10
-    Rule (rule ((= ?t (RankedTensor ?shape ?tp)))       ((set (nrows ?t) (vec-get ?shape ...: search 0.000s, apply 0.000s, num matches 10
-    Rule (rule ((= ?A (linalg_matmul ?x ?y ?o ?t)))       ((set (type-of ?A) ?t))        ...: search 0.000s, apply 0.000s, num matches 12
-    Rule (rule ((= ?t (RankedTensor ?shape ?tp))        (= __v1 (vec-get ?shape 0))      ...: search 0.000s, apply 0.000s, num matches 10
-    Rule (rule ((linalg_matmul ?x ?y ?xy ?t)        (= a (nrows (type-of ?x)))        (= ...: search 0.002s, apply 0.000s, num matches 11
-    Rule (rule ((= ?lhs (linalg_matmul (linalg_matmul ?x ?y ?xy ?xy_t) ?z ?xy_z ?xyz_t)) ...: search 0.003s, apply 0.000s, num matches 5
-    Ruleset : search 0.006s, apply 0.000s, rebuild 0.001s
-    
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 200 175) (I64)))
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 175 250) (I64)))
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 250 150) (I64)))
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 150 10) (I64)))
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 200 250) (I64)))
-[INFO ] extracted with cost 8750019: (linalg_matmul (tensor_empty (RankedTensor (vec-of 200 175) (I64))) (tensor_empty (RankedTensor (vec-of 175 250) (I64))) (tensor_empty (RankedTensor (vec-of 200 250) (I64))) (RankedTensor (vec-of 200 250) (I64)))
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 200 150) (I64)))
-[INFO ] extracted with cost 11812533: (linalg_matmul (tensor_empty (RankedTensor (vec-of 200 175) (I64))) (linalg_matmul (tensor_empty (RankedTensor (vec-of 175 250) (I64))) (tensor_empty (RankedTensor (vec-of 250 150) (I64))) (tensor_empty (RankedTensor (vec-of 175 150) (I64))) (RankedTensor (vec-of 175 150) (I64))) (tensor_empty (RankedTensor (vec-of 200 150) (I64))) (RankedTensor (vec-of 200 150) (I64)))
-[INFO ] extracted with cost 5: (tensor_empty (RankedTensor (vec-of 200 10) (I64)))
-[INFO ] extracted with cost 1162547: (linalg_matmul (tensor_empty (RankedTensor (vec-of 200 175) (I64))) (linalg_matmul (tensor_empty (RankedTensor (vec-of 175 250) (I64))) (linalg_matmul (tensor_empty (RankedTensor (vec-of 250 150) (I64))) (tensor_empty (RankedTensor (vec-of 150 10) (I64))) (tensor_empty (RankedTensor (vec-of 250 10) (I64))) (RankedTensor (vec-of 250 10) (I64))) (tensor_empty (RankedTensor (vec-of 175 10) (I64))) (RankedTensor (vec-of 175 10) (I64))) (tensor_empty (RankedTensor (vec-of 200 10) (I64))) (RankedTensor (vec-of 200 10) (I64)))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32))
+[INFO ] extracted with cost 21: (arith_cmpf (Value 0 (F32)) (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (NamedAttr "predicate" (IntegerAttr 3 (I64))) (I1))
+[INFO ] extracted with cost 9: (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))
+[INFO ] extracted with cost 10: (scf_yield (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)))
+[INFO ] extracted with cost 9: (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))
+[INFO ] extracted with cost 15: (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))
+[INFO ] extracted with cost 16: (scf_yield (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)))
+[INFO ] extracted with cost 86: (scf_if (arith_cmpf (Value 0 (F32)) (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (NamedAttr "predicate" (IntegerAttr 3 (I64))) (I1)) (Reg (vec-of (Blk (vec-of (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (scf_yield (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))))))) (Reg (vec-of (Blk (vec-of (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (scf_yield (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))))))) (F32))

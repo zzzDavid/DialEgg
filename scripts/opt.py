@@ -21,9 +21,10 @@ def opt_file(file_path):
 
 def main():
     # opt_file("bench/arith_rgb_to_gray.mlir")
-    opt_file("bench/linalg_assoc.mlir")
+    # opt_file("bench/linalg_assoc.mlir")
     # opt_file("bench/linalg_3mm.mlir")
     # opt_file("bench/math_inv_sqrt.mlir")
+    opt_file("bench/math_inv_sqrt_.mlir")
     # opt_file("bench/math_horners_method.mlir")
 
 if __name__ == "__main__":

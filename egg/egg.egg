@@ -9,6 +9,7 @@
 (function arith_constant (AttrPair Type) Op)
 (function arith_cmpf (Op Op AttrPair AttrPair Type) Op)
 (function scf_if (Op Region Region Type) Op)
+(function scf_yield (Op) Op)
 (function math_sqrt (Op AttrPair Type) Op)
 (function arith_negf (Op AttrPair Type) Op)
 

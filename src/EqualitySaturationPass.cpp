@@ -85,9 +85,13 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp>& block, con
 
                 // Put semi-colon at the beginning of each line
                 std::stringstream ss;
-                ss << valueToString(op.mlirValue);
-                std::string mlirLine;
+                if (op.mlirOp != nullptr) {
+                    ss << opToString(*op.mlirOp);
+                } else {
+                    ss << valueToString(op.mlirValues[0]);
+                }
 
+                std::string mlirLine;
                 std::getline(ss, mlirLine, '\n');
                 egglogLines.back() += " ; " + mlirLine;
 
@@ -145,13 +149,6 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
     }
 
     for (mlir::Operation& op: block.getOperations()) {
-        if (op.getNumResults() == 0) {  // ignore if no results
-            llvm::outs() << "Skipping operation with no results: " << op.getName() << "\n";
-            continue;
-        } else if (op.getNumResults() > 1) {  // exit if more than one result
-            llvm::outs() << "Skipping operation with more than one result: " << op.getName() << "\n";
-        }
-
         EggifiedOp eggifiedOp = egglog.eggifyOperation(&op);
         eggifiedOp.print(llvm::outs());
     }
