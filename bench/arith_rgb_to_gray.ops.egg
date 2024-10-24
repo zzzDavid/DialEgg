@@ -37,19 +37,23 @@
 ;   scf.yield %8 : tensor<3840x2160xi64>
 ; }
 (let op12 (Value 12 (I64))) ; %6 = func.call @clock() : () -> i64
-(let op13 (Value 13 (RankedTensor (vec-of 3840 2160) (I64)))) ; %7 = func.call @blackhole2(%5) : (tensor<3840x2160xi64>) -> tensor<3840x2160xi64>
-(let op14 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I64))) (I64))) ; %c0_i64 = arith.constant 0 : i64
+(let op13 (Value 13 (None))) ; func.call @displayTime(%3, %6) : (i64, i64) -> ()
+(let op14 (Value 14 (RankedTensor (vec-of 3840 2160) (I64)))) ; %7 = func.call @blackhole2(%5) : (tensor<3840x2160xi64>) -> tensor<3840x2160xi64>
+(let op15 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I64))) (I64))) ; %c0_i64 = arith.constant 0 : i64
+(let op16 (Value 16 (None))) ; func.return %c0_i64 : i64
 
 ;; RULES HERE ;;
+(ruleset rules)
 (rule ; division by a power of 2 is equivalent to right shift
     ((= ?lhs (arith_divsi ?x (arith_constant (NamedAttr "value" (IntegerAttr ?n ?t)) ?t) ?t)) ; x / n
      (= ?lgn (log2 ?n)) ; if n = 2^k, then k = log2(n)
      (= ?n (<< 1 ?lgn))) ; check if n is a power of 2
     ((union ?lhs (arith_shrsi ?x (arith_constant (NamedAttr "value" (IntegerAttr ?lgn ?t)) ?t) ?t))) ; x / n = x >> lgn
+    :ruleset rules
 )
 
-(run 10000)
-
+(run-schedule (saturate rules))
+; (run 1000)
 ;; EXTRACTS HERE ;;
 (extract op0)
 (extract op5)
@@ -57,4 +61,4 @@
 (extract op7)
 (extract op8)
 (extract op9)
-(extract op14)
+(extract op15)

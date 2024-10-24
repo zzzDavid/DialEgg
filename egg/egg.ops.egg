@@ -14,32 +14,17 @@
 (function arith_negf (Op AttrPair Type) Op)
 
 ;; OPS HERE ;;
-(let op0 (Value 0 (F32))) ; <block argument> of type 'f32' at index: 0
-(let op1 (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32))) ; %cst = arith.constant 0.000000e+00 : f32
-(let op2 (arith_cmpf op0 op1 (NamedAttr "fastmath" (arith_fastmath (none))) (NamedAttr "predicate" (IntegerAttr 3 (I64))) (I1))) ; %0 = arith.cmpf oge, %arg0, %cst : f32
-(let op3 (math_sqrt op0 (NamedAttr "fastmath" (arith_fastmath (none))) (F32))) ; %2 = math.sqrt %arg0 : f32
-(let op4 (scf_yield op3)) ; scf.yield %2 : f32
-(let op5 (arith_negf op0 (NamedAttr "fastmath" (arith_fastmath (none))) (F32))) ; %2 = arith.negf %arg0 : f32
-(let op6 (math_sqrt op5 (NamedAttr "fastmath" (arith_fastmath (none))) (F32))) ; %3 = math.sqrt %2 : f32
-(let op7 (scf_yield op6)) ; scf.yield %3 : f32
-(let op8 (scf_if op2 (Reg (vec-of (Blk (vec-of op3 op4)))) (Reg (vec-of (Blk (vec-of op5 op6 op7)))) (F32))) ; %1 = scf.if %0 -> (f32) {
-;   %2 = math.sqrt %arg0 : f32
-;   scf.yield %2 : f32
-; } else {
-;   %2 = arith.negf %arg0 : f32
-;   %3 = math.sqrt %2 : f32
-;   scf.yield %3 : f32
-; }
-(let op9 (Value 9 (None))) ; func.return %1 : f32
+(let op0 (Value 0 (RankedTensor (vec-of 100 100) (I32)))) ; %0 = tensor.empty() : tensor<100x100xi32>
+(let op1 (Value 1 (RankedTensor (vec-of 100 100) (I32)))) ; %1 = tensor.empty() : tensor<100x100xi32>
+(let op2 (Value 2 (RankedTensor (vec-of 100 100) (I32)))) ; %2 = tensor.empty() : tensor<100x100xi32>
+(let op3 (Value 3 (RankedTensor (vec-of 100 100) (I32)))) ; %3 = tensor.empty() : tensor<100x100xi32>
+(let op4 (Value 4 (RankedTensor (vec-of 100 100) (I32)))) ; %4 = linalg.matmul ins(%0, %1 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%3 : tensor<100x100xi32>) -> tensor<100x100xi32>
+(let op5 (Value 5 (RankedTensor (vec-of 100 100) (I32)))) ; %5 = tensor.empty() : tensor<100x100xi32>
+(let op6 (Value 6 (RankedTensor (vec-of 100 100) (I32)))) ; %6 = linalg.matmul ins(%4, %2 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%5 : tensor<100x100xi32>) -> tensor<100x100xi32>
+(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32))) ; %c0_i32 = arith.constant 0 : i32
+(let op8 (Value 8 (None))) ; func.return %c0_i32 : i32
 
 ;; RULES HERE ;;
 
 ;; EXTRACTS HERE ;;
-(extract op1)
-(extract op2)
-(extract op3)
-(extract op4)
-(extract op5)
-(extract op6)
 (extract op7)
-(extract op8)

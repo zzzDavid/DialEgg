@@ -62,19 +62,12 @@
 [INFO ] Declared function none.
 [INFO ] Declared function reassoc.
 [INFO ] Declared function nnan.
-[INFO ] Declared function ninf.
-[INFO ] Declared function nsz.
-[INFO ] Declared function arcp.
-[INFO ] Declared function contract.
-[INFO ] Declared function afn.
 [INFO ] Declared function fast.
 [INFO ] Declared function arith_fastmath.
 [INFO ] Declared function arith_constant.
-[INFO ] Declared function arith_cmpf.
-[INFO ] Declared function scf_if.
-[INFO ] Declared function scf_yield.
-[INFO ] Declared function math_sqrt.
-[INFO ] Declared function arith_negf.
+[INFO ] Declared function arith_mulf.
+[INFO ] Declared function arith_addf.
+[INFO ] Declared function math_powf.
 [INFO ] Declared function op0.
 [INFO ] Declared function op1.
 [INFO ] Declared function op2.
@@ -85,11 +78,40 @@
 [INFO ] Declared function op7.
 [INFO ] Declared function op8.
 [INFO ] Declared function op9.
-[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32))
-[INFO ] extracted with cost 21: (arith_cmpf (Value 0 (F32)) (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (NamedAttr "predicate" (IntegerAttr 3 (I64))) (I1))
-[INFO ] extracted with cost 9: (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))
-[INFO ] extracted with cost 10: (scf_yield (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)))
-[INFO ] extracted with cost 9: (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))
-[INFO ] extracted with cost 15: (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))
-[INFO ] extracted with cost 16: (scf_yield (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)))
-[INFO ] extracted with cost 86: (scf_if (arith_cmpf (Value 0 (F32)) (arith_constant (NamedAttr "value" (FloatAttr 0.0 (F32))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (NamedAttr "predicate" (IntegerAttr 3 (I64))) (I1)) (Reg (vec-of (Blk (vec-of (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (scf_yield (math_sqrt (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))))))) (Reg (vec-of (Blk (vec-of (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (scf_yield (math_sqrt (arith_negf (Value 0 (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32)) (NamedAttr "fastmath" (arith_fastmath (none))) (F32))))))) (F32))
+[INFO ] Declared function op10.
+[INFO ] Declared function op11.
+[INFO ] Declared function op12.
+[INFO ] Declared function op13.
+[INFO ] Declared function op14.
+[INFO ] Declared function op15.
+[INFO ] Declared function op16.
+[INFO ] Declared ruleset rules.
+[INFO ] Declared rule (rewrite (arith_addf ?x ?y ?a ?t) (arith_addf ?y ?x ?a ?t)).
+[INFO ] Declared rule (rewrite (arith_mulf ?x ?y ?a ?t) (arith_mulf ?y ?x ?a ?t)).
+[INFO ] Declared rule (rewrite (arith_addf (arith_addf ?x ?y ?a ?t) ?z ?a ?t) (arith_addf ?x (arith_addf ?y ?z ?a ?t) ?a ?t)).
+[INFO ] Declared rule (rewrite (arith_mulf (arith_mulf ?x ?y ?a ?t) ?z ?a ?t) (arith_mulf ?x (arith_mulf ?y ?z ?a ?t) ?a ?t)).
+[INFO ] Declared rule (rewrite (arith_mulf ?x (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t) ?a ?t) ?x).
+[INFO ] Declared rule (rewrite (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr 0.0 ?t)) ?t) ?a ?t) (arith_constant (NamedAttr 'value' (FloatAttr 1.0 ?t)) ?t)).
+[INFO ] Declared rule (rule ((= ?lhs (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr ?n ?t)) ?t) ?a ?t))
+           (>= ?n 1.0))
+          ((union ?lhs (arith_mulf ?x (math_powf ?x (arith_constant (NamedAttr 'value' (FloatAttr (- ?n 1.0) ?t)) ?t) ?a ?t) ?a ?t)))
+             ).
+[INFO ] Declared rule (rewrite (arith_addf (arith_mulf ?m ?x ?a ?t) (arith_mulf ?n ?x ?a ?t) ?a ?t) (arith_mulf ?x (arith_addf ?m ?n ?a ?t) ?a ?t)).
+[INFO ] Ran schedule (seq (saturate (seq (run rules)))).
+[INFO ] Report: Rule (rule ((= rewrite_var__ (arith_addf ?x ?y ?a ?t)))       ((union rewrite_var__ (...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (math_powf ?x (arith_constant (NamedAttr "value" (FloatA...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (arith_mulf ?x ?y ?a ?t)))       ((union rewrite_var__ (...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (arith_addf (arith_mulf ?m ?x ?a ?t) (arith_mulf ?n ?x ?...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (arith_mulf (arith_mulf ?x ?y ?a ?t) ?z ?a ?t)))       (...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (arith_mulf ?x (arith_constant (NamedAttr "value" (Float...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (arith_addf (arith_addf ?x ?y ?a ?t) ?z ?a ?t)))       (...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= ?lhs (math_powf ?x (arith_constant (NamedAttr "value" (FloatAttr ?n ?t...: search 0.000s, apply 0.000s, num matches 0
+    Ruleset rules: search 0.000s, apply 0.000s, rebuild 0.000s
+    
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (FloatAttr 1.0 (F64))) (F64))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 3 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 1000000 (Index))) (Index))
+[INFO ] extracted with cost 7: (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32))

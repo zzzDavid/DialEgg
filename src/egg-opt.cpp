@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     // Equality Saturation Pass
     std::string egglogExecutable = "~/dev/lib/egglog/target/debug/egglog";  // Default
-    std::string eggFile = "egg/egg.egg";
+    std::string eggFile = "mm/linalg_nmm.egg";
     
     std::string inputFilename;
     for (int i = 1; i < argc; i++) {

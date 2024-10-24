@@ -133,9 +133,9 @@ define { ptr, ptr, i64, [1 x i64], [1 x i64] } @blackhole(ptr %0, ptr %1, i64 %2
 define double @poly_eval_3(double %0, double %1, double %2, double %3, double %4) {
   %6 = fmul fast double %4, %0
   %7 = fadd fast double %1, %6
-  %8 = fmul fast double %4, %7
+  %8 = fmul fast double %7, %4
   %9 = fadd fast double %2, %8
-  %10 = fmul fast double %4, %9
+  %10 = fmul fast double %9, %4
   %11 = fadd fast double %3, %10
   ret double %11
 }

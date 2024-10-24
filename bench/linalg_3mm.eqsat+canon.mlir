@@ -23,12 +23,12 @@ module {
     %2 = tensor.empty() : tensor<175x250xi64>
     %3 = tensor.empty() : tensor<250x150xi64>
     %4 = tensor.empty() : tensor<150x10xi64>
-    %5 = tensor.empty() : tensor<250x10xi64>
-    %6 = linalg.matmul ins(%3, %4 : tensor<250x150xi64>, tensor<150x10xi64>) outs(%5 : tensor<250x10xi64>) -> tensor<250x10xi64>
-    %7 = tensor.empty() : tensor<175x10xi64>
-    %8 = linalg.matmul ins(%2, %6 : tensor<175x250xi64>, tensor<250x10xi64>) outs(%7 : tensor<175x10xi64>) -> tensor<175x10xi64>
-    %9 = tensor.empty() : tensor<200x10xi64>
-    %10 = linalg.matmul ins(%1, %8 : tensor<200x175xi64>, tensor<175x10xi64>) outs(%9 : tensor<200x10xi64>) -> tensor<200x10xi64>
+    %5 = tensor.empty() : tensor<200x10xi64>
+    %6 = tensor.empty() : tensor<250x10xi64>
+    %7 = linalg.matmul ins(%3, %4 : tensor<250x150xi64>, tensor<150x10xi64>) outs(%6 : tensor<250x10xi64>) -> tensor<250x10xi64>
+    %8 = tensor.empty() : tensor<175x10xi64>
+    %9 = linalg.matmul ins(%2, %7 : tensor<175x250xi64>, tensor<250x10xi64>) outs(%8 : tensor<175x10xi64>) -> tensor<175x10xi64>
+    %10 = linalg.matmul ins(%1, %9 : tensor<200x175xi64>, tensor<175x10xi64>) outs(%5 : tensor<200x10xi64>) -> tensor<200x10xi64>
     %11 = call @clock() : () -> i64
     call @displayTime(%0, %11) : (i64, i64) -> ()
     %12 = call @blackhole(%10) : (tensor<200x10xi64>) -> tensor<200x10xi64>

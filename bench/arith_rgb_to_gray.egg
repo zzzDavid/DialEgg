@@ -16,13 +16,15 @@
 ;; OPS HERE ;;
 
 ;; RULES HERE ;;
+(ruleset rules)
 (rule ; division by a power of 2 is equivalent to right shift
     ((= ?lhs (arith_divsi ?x (arith_constant (NamedAttr "value" (IntegerAttr ?n ?t)) ?t) ?t)) ; x / n
      (= ?lgn (log2 ?n)) ; if n = 2^k, then k = log2(n)
      (= ?n (<< 1 ?lgn))) ; check if n is a power of 2
     ((union ?lhs (arith_shrsi ?x (arith_constant (NamedAttr "value" (IntegerAttr ?lgn ?t)) ?t) ?t))) ; x / n = x >> lgn
+    :ruleset rules
 )
 
-(run 10000)
-
+(run-schedule (saturate rules))
+; (run 1000)
 ;; EXTRACTS HERE ;;

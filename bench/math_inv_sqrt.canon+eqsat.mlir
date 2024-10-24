@@ -27,57 +27,6 @@ module {
     %0 = linalg.fill_rng_2d ins(%cst_1, %cst_2, %c0_i32 : f64, f64, i32) outs(%arg0 : tensor<1000000x3xf64>) -> tensor<1000000x3xf64>
     return %0 : tensor<1000000x3xf64>
   }
-  func.func @printF64Tensor1D(%arg0: tensor<?xf64>) {
-    %c93_i32 = arith.constant 93 : i32
-    %c0 = arith.constant 0 : index
-    %c1 = arith.constant 1 : index
-    %c91_i32 = arith.constant 91 : i32
-    %0 = call @putchar(%c91_i32) : (i32) -> i32
-    %dim = tensor.dim %arg0, %c0 : tensor<?xf64>
-    scf.for %arg1 = %c0 to %dim step %c1 {
-      %extracted = tensor.extract %arg0[%arg1] : tensor<?xf64>
-      func.call @printF64(%extracted) : (f64) -> ()
-      %2 = index.sub %dim, %c1
-      %3 = index.cmp ult(%arg1, %2)
-      scf.if %3 {
-        func.call @printComma() : () -> ()
-      }
-    }
-    %1 = call @putchar(%c93_i32) : (i32) -> i32
-    return
-  }
-  func.func @printF64Tensor2D(%arg0: tensor<?x?xf64>) {
-    %c93_i32 = arith.constant 93 : i32
-    %c9_i32 = arith.constant 9 : i32
-    %c0 = arith.constant 0 : index
-    %c1 = arith.constant 1 : index
-    %c91_i32 = arith.constant 91 : i32
-    %0 = call @putchar(%c91_i32) : (i32) -> i32
-    %dim = tensor.dim %arg0, %c0 : tensor<?x?xf64>
-    %dim_0 = tensor.dim %arg0, %c1 : tensor<?x?xf64>
-    scf.for %arg1 = %c0 to %dim step %c1 {
-      %extracted_slice = tensor.extract_slice %arg0[%arg1, 0] [1, %dim_0] [1, 1] : tensor<?x?xf64> to tensor<?xf64>
-      func.call @printNewline() : () -> ()
-      %3 = func.call @putchar(%c9_i32) : (i32) -> i32
-      func.call @printF64Tensor1D(%extracted_slice) : (tensor<?xf64>) -> ()
-      %4 = index.sub %dim, %c1
-      %5 = index.cmp ult(%arg1, %4)
-      scf.if %5 {
-        func.call @printComma() : () -> ()
-      }
-    }
-    %1 = index.cmp sgt(%dim, %c0)
-    scf.if %1 {
-      func.call @printNewline() : () -> ()
-    }
-    %2 = call @putchar(%c93_i32) : (i32) -> i32
-    return
-  }
-  func.func @printF32Tensor2D(%arg0: tensor<?x?xf32>) {
-    %0 = arith.extf %arg0 : tensor<?x?xf32> to tensor<?x?xf64>
-    call @printF64Tensor2D(%0) : (tensor<?x?xf64>) -> ()
-    return
-  }
   func.func @blackhole(%arg0: tensor<1000000x3xf32>) -> tensor<1000000x3xf32> {
     return %arg0 : tensor<1000000x3xf32>
   }
@@ -135,7 +84,8 @@ module {
     %3 = call @clock() : () -> i64
     %4 = call @normalize_distance_vectors(%2) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
     %5 = call @clock() : () -> i64
-    %6 = call @blackhole(%4) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
+    %6 = call @normalize_distance_vectors(%2) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
+    %7 = call @blackhole(%6) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
     call @displayTime(%3, %5) : (i64, i64) -> ()
     return %c0_i32 : i32
   }

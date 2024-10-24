@@ -26,20 +26,27 @@
 (let op4 (func_call op2 (NamedAttr "callee" (SymbolRefAttr "normalize_distance_vectors")) (RankedTensor (vec-of 1000000 3) (F32)))) ; %4 = func.call @normalize_distance_vectors(%2) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
 (let op5 (Value 5 (I64))) ; %5 = func.call @clock() : () -> i64
 (let op6 (func_call op4 (NamedAttr "callee" (SymbolRefAttr "blackhole")) (RankedTensor (vec-of 1000000 3) (F32)))) ; %6 = func.call @blackhole(%4) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
-(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32))) ; %c0_i32 = arith.constant 0 : i32
+(let op7 (Value 7 (None))) ; func.call @displayTime(%3, %5) : (i64, i64) -> ()
+(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32))) ; %c0_i32 = arith.constant 0 : i32
+(let op9 (Value 9 (None))) ; func.return %c0_i32 : i32
 
 ;; RULES HERE ;;
+(ruleset rules)
+
 (rewrite
     (arith_divf 
         (arith_constant (NamedAttr "value" (FloatAttr 1.0 (F32))) (F32)) ; 1.0
         (math_sqrt ?x (NamedAttr "fastmath" (arith_fastmath (fast))) (F32)) ; sqrt(x) with fastmath<fast>
         (NamedAttr "fastmath" (arith_fastmath (fast))) (F32)) ; 1 / sqrt(x) with fastmath<fast>
     (func_call ?x (NamedAttr "callee" (SymbolRefAttr "fast_inv_sqrt")) (F32))
+    :ruleset rules
 )
-(run 10000)
+
+(run-schedule (saturate rules))
+; (run 10000)
 
 ;; EXTRACTS HERE ;;
 (extract op1)
 (extract op4)
 (extract op6)
-(extract op7)
+(extract op8)

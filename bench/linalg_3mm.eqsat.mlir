@@ -20,26 +20,21 @@ module {
     %0 = call @clock() : () -> i64
     %1 = tensor.empty() : tensor<200x175xi64>
     %2 = tensor.empty() : tensor<175x250xi64>
-    %3 = tensor.empty() : tensor<200x250xi64>
-    %4 = tensor.empty() : tensor<200x175xi64>
-    %5 = tensor.empty() : tensor<175x250xi64>
-    %6 = tensor.empty() : tensor<250x150xi64>
+    %3 = tensor.empty() : tensor<250x150xi64>
+    %4 = tensor.empty() : tensor<150x10xi64>
+    %5 = tensor.empty() : tensor<200x250xi64>
+    %6 = tensor.empty() : tensor<200x150xi64>
     %7 = tensor.empty() : tensor<175x150xi64>
-    %8 = linalg.matmul ins(%5, %6 : tensor<175x250xi64>, tensor<250x150xi64>) outs(%7 : tensor<175x150xi64>) -> tensor<175x150xi64>
-    %9 = tensor.empty() : tensor<200x150xi64>
-    %10 = tensor.empty() : tensor<200x175xi64>
-    %11 = tensor.empty() : tensor<175x250xi64>
-    %12 = tensor.empty() : tensor<250x150xi64>
-    %13 = tensor.empty() : tensor<150x10xi64>
-    %14 = tensor.empty() : tensor<250x10xi64>
-    %15 = linalg.matmul ins(%12, %13 : tensor<250x150xi64>, tensor<150x10xi64>) outs(%14 : tensor<250x10xi64>) -> tensor<250x10xi64>
-    %16 = tensor.empty() : tensor<175x10xi64>
-    %17 = linalg.matmul ins(%11, %15 : tensor<175x250xi64>, tensor<250x10xi64>) outs(%16 : tensor<175x10xi64>) -> tensor<175x10xi64>
-    %18 = tensor.empty() : tensor<200x10xi64>
-    %19 = linalg.matmul ins(%10, %17 : tensor<200x175xi64>, tensor<175x10xi64>) outs(%18 : tensor<200x10xi64>) -> tensor<200x10xi64>
-    %20 = call @clock() : () -> i64
-    call @displayTime(%0, %20) : (i64, i64) -> ()
-    %21 = call @blackhole(%19) : (tensor<200x10xi64>) -> tensor<200x10xi64>
+    %8 = linalg.matmul ins(%2, %3 : tensor<175x250xi64>, tensor<250x150xi64>) outs(%7 : tensor<175x150xi64>) -> tensor<175x150xi64>
+    %9 = tensor.empty() : tensor<200x10xi64>
+    %10 = tensor.empty() : tensor<250x10xi64>
+    %11 = linalg.matmul ins(%3, %4 : tensor<250x150xi64>, tensor<150x10xi64>) outs(%10 : tensor<250x10xi64>) -> tensor<250x10xi64>
+    %12 = tensor.empty() : tensor<175x10xi64>
+    %13 = linalg.matmul ins(%2, %11 : tensor<175x250xi64>, tensor<250x10xi64>) outs(%12 : tensor<175x10xi64>) -> tensor<175x10xi64>
+    %14 = linalg.matmul ins(%1, %13 : tensor<200x175xi64>, tensor<175x10xi64>) outs(%9 : tensor<200x10xi64>) -> tensor<200x10xi64>
+    %15 = call @clock() : () -> i64
+    call @displayTime(%0, %15) : (i64, i64) -> ()
+    %16 = call @blackhole(%14) : (tensor<200x10xi64>) -> tensor<200x10xi64>
     %c0_i32 = arith.constant 0 : i32
     return %c0_i32 : i32
   }

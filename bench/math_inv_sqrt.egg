@@ -21,13 +21,18 @@
 ;; OPS HERE ;;
 
 ;; RULES HERE ;;
+(ruleset rules)
+
 (rewrite
     (arith_divf 
         (arith_constant (NamedAttr "value" (FloatAttr 1.0 (F32))) (F32)) ; 1.0
         (math_sqrt ?x (NamedAttr "fastmath" (arith_fastmath (fast))) (F32)) ; sqrt(x) with fastmath<fast>
         (NamedAttr "fastmath" (arith_fastmath (fast))) (F32)) ; 1 / sqrt(x) with fastmath<fast>
     (func_call ?x (NamedAttr "callee" (SymbolRefAttr "fast_inv_sqrt")) (F32))
+    :ruleset rules
 )
-(run 10000)
+
+(run-schedule (saturate rules))
+; (run 10000)
 
 ;; EXTRACTS HERE ;;

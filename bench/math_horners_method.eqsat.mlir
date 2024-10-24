@@ -47,20 +47,22 @@ module {
   }
   func.func @poly_eval_3(%arg0: f64, %arg1: f64, %arg2: f64, %arg3: f64, %arg4: f64) -> f64 {
     %0 = arith.mulf %arg4, %arg4 fastmath<fast> : f64
-    %1 = arith.mulf %arg4, %arg0 fastmath<fast> : f64
-    %2 = arith.addf %arg1, %1 fastmath<fast> : f64
-    %3 = arith.mulf %arg4, %2 fastmath<fast> : f64
-    %4 = arith.addf %arg2, %3 fastmath<fast> : f64
-    %5 = arith.mulf %arg4, %4 fastmath<fast> : f64
-    %6 = arith.addf %arg3, %5 fastmath<fast> : f64
-    return %6 : f64
+    %1 = arith.mulf %arg4, %arg1 fastmath<fast> : f64
+    %2 = arith.mulf %arg4, %arg0 fastmath<fast> : f64
+    %3 = arith.addf %arg1, %2 fastmath<fast> : f64
+    %4 = arith.mulf %3, %arg4 fastmath<fast> : f64
+    %5 = arith.addf %arg2, %4 fastmath<fast> : f64
+    %6 = arith.mulf %5, %arg4 fastmath<fast> : f64
+    %7 = arith.addf %arg3, %6 fastmath<fast> : f64
+    return %7 : f64
   }
   func.func @poly_eval_2(%arg0: f64, %arg1: f64, %arg2: f64, %arg3: f64) -> f64 {
-    %0 = arith.mulf %arg3, %arg0 fastmath<fast> : f64
-    %1 = arith.addf %arg1, %0 fastmath<fast> : f64
-    %2 = arith.mulf %arg3, %1 fastmath<fast> : f64
-    %3 = arith.addf %arg2, %2 fastmath<fast> : f64
-    return %3 : f64
+    %0 = arith.mulf %arg3, %arg3 fastmath<fast> : f64
+    %1 = arith.mulf %arg3, %arg0 fastmath<fast> : f64
+    %2 = arith.addf %arg1, %1 fastmath<fast> : f64
+    %3 = arith.mulf %arg3, %2 fastmath<fast> : f64
+    %4 = arith.addf %arg2, %3 fastmath<fast> : f64
+    return %4 : f64
   }
   func.func @main() -> i32 {
     %0 = tensor.empty() : tensor<1000000x4xf64>

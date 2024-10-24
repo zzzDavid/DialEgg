@@ -1,6 +1,6 @@
 name,opt,-O3
-arith_rgb_to_gray,canon,24232.5
-arith_rgb_to_gray,canon+eqsat,20292.5
-arith_rgb_to_gray,eqsat+canon,20464.0
-arith_rgb_to_gray,noopt,24358.0
-arith_rgb_to_gray,eqsat,21414.0
+arith_rgb_to_gray,canon,20955.5
+arith_rgb_to_gray,canon+eqsat,19591.0
+arith_rgb_to_gray,eqsat+canon,19416.5
+arith_rgb_to_gray,noopt,20776.0
+arith_rgb_to_gray,eqsat,19465.0

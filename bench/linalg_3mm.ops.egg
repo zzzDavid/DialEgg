@@ -19,18 +19,23 @@
 (let op9 (tensor_empty (RankedTensor (vec-of 200 10) (I64)))) ; %9 = tensor.empty() : tensor<200x10xi64>
 (let op10 (linalg_matmul op8 op4 op9 (RankedTensor (vec-of 200 10) (I64)))) ; %10 = linalg.matmul ins(%8, %4 : tensor<200x150xi64>, tensor<150x10xi64>) outs(%9 : tensor<200x10xi64>) -> tensor<200x10xi64>
 (let op11 (Value 11 (I64))) ; %11 = func.call @clock() : () -> i64
-(let op12 (Value 12 (RankedTensor (vec-of 200 10) (I64)))) ; %12 = func.call @blackhole(%10) : (tensor<200x10xi64>) -> tensor<200x10xi64>
-(let op13 (Value 13 (I32))) ; %c0_i32 = arith.constant 0 : i32
+(let op12 (Value 12 (None))) ; func.call @displayTime(%0, %11) : (i64, i64) -> ()
+(let op13 (Value 13 (RankedTensor (vec-of 200 10) (I64)))) ; %12 = func.call @blackhole(%10) : (tensor<200x10xi64>) -> tensor<200x10xi64>
+(let op14 (Value 14 (I32))) ; %c0_i32 = arith.constant 0 : i32
+(let op15 (Value 15 (None))) ; func.return %c0_i32 : i32
 
 ;; RULES HERE ;;
-(rule ((= ?A (tensor_empty ?t))) ((set (type-of ?A) ?t)))
-(rule ((= ?A (linalg_matmul ?x ?y ?o ?t))) ((set (type-of ?A) ?t)))
+(ruleset rules)
+
+(rule ((= ?A (tensor_empty ?t))) ((set (type-of ?A) ?t)) :ruleset rules)
+(rule ((= ?A (linalg_matmul ?x ?y ?o ?t))) ((set (type-of ?A) ?t)) :ruleset rules)
 
 (function nrows (Type) i64)
 (function ncols (Type) i64)
 (rule ((= ?t (RankedTensor ?shape ?tp))) 
     ((set (nrows ?t) (vec-get ?shape 0)) 
      (set (ncols ?t) (vec-get ?shape 1)))
+    :ruleset rules
 )
 
 (rule 
@@ -40,6 +45,7 @@
      (= c (ncols (type-of ?y))))
 
     ((unstable-cost (linalg_matmul ?x ?y ?xy ?t) (* (* a b) c)))
+    :ruleset rules
 )
 
 (rule
@@ -50,9 +56,11 @@
     
     ((let out_t (RankedTensor (vec-of ?b ?d) ?t))
      (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?xy_z ?xyz_t)))
+    :ruleset rules
 )
 
-(run 10000)
+(run-schedule (saturate rules))
+; (run 10000)
 
 ;; EXTRACTS HERE ;;
 (extract op1)

@@ -91,6 +91,8 @@
         "system_error": "cpp",
         "__availability": "cpp",
         "__memory": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "forward_list": "cpp",
+        "print": "cpp"
     }
 }

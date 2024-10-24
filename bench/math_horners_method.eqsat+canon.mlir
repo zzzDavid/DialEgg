@@ -52,9 +52,9 @@ module {
   func.func @poly_eval_3(%arg0: f64, %arg1: f64, %arg2: f64, %arg3: f64, %arg4: f64) -> f64 {
     %0 = arith.mulf %arg4, %arg0 fastmath<fast> : f64
     %1 = arith.addf %arg1, %0 fastmath<fast> : f64
-    %2 = arith.mulf %arg4, %1 fastmath<fast> : f64
+    %2 = arith.mulf %1, %arg4 fastmath<fast> : f64
     %3 = arith.addf %arg2, %2 fastmath<fast> : f64
-    %4 = arith.mulf %arg4, %3 fastmath<fast> : f64
+    %4 = arith.mulf %3, %arg4 fastmath<fast> : f64
     %5 = arith.addf %arg3, %4 fastmath<fast> : f64
     return %5 : f64
   }

@@ -36,74 +36,74 @@ func.func @fillRandomF64Tensor2D(%tensor: tensor<1000000x3xf64>) -> tensor<10000
     return %tensor_filled : tensor<1000000x3xf64>
 }
 
-func.func @printF64Tensor1D(%tensor : tensor<?xf64>) {
-    %c0 = arith.constant 0 : index
-    %c1 = arith.constant 1 : index
+// func.func @printF64Tensor1D(%tensor : tensor<?xf64>) {
+//     %c0 = arith.constant 0 : index
+//     %c1 = arith.constant 1 : index
 
-    %lbracket = arith.constant 91 : i32
-    func.call @putchar(%lbracket) : (i32) -> i32
+//     %lbracket = arith.constant 91 : i32
+//     func.call @putchar(%lbracket) : (i32) -> i32
 
-    %size = tensor.dim %tensor, %c0 : tensor<?xf64>
-    scf.for %i = %c0 to %size step %c1 {
-        %val = tensor.extract %tensor[%i] : tensor<?xf64>
-        func.call @printF64(%val) : (f64) -> ()
+//     %size = tensor.dim %tensor, %c0 : tensor<?xf64>
+//     scf.for %i = %c0 to %size step %c1 {
+//         %val = tensor.extract %tensor[%i] : tensor<?xf64>
+//         func.call @printF64(%val) : (f64) -> ()
 
-        %size_minus_one = index.sub %size, %c1
-        %not_end = index.cmp ult(%i, %size_minus_one)
-        scf.if %not_end { // print comma if not last element
-            func.call @printComma() : () -> ()
-        }
-    }
+//         %size_minus_one = index.sub %size, %c1
+//         %not_end = index.cmp ult(%i, %size_minus_one)
+//         scf.if %not_end { // print comma if not last element
+//             func.call @printComma() : () -> ()
+//         }
+//     }
 
-    %rbracket = arith.constant 93 : i32
-    func.call @putchar(%rbracket) : (i32) -> i32
+//     %rbracket = arith.constant 93 : i32
+//     func.call @putchar(%rbracket) : (i32) -> i32
 
-    func.return
-}
+//     func.return
+// }
 
-func.func @printF64Tensor2D(%tensor: tensor<?x?xf64>) {
-    %c0 = arith.constant 0 : index
-    %c1 = arith.constant 1 : index
+// func.func @printF64Tensor2D(%tensor: tensor<?x?xf64>) {
+//     %c0 = arith.constant 0 : index
+//     %c1 = arith.constant 1 : index
 
-    %lbracket = arith.constant 91 : i32
-    func.call @putchar(%lbracket) : (i32) -> i32
+//     %lbracket = arith.constant 91 : i32
+//     func.call @putchar(%lbracket) : (i32) -> i32
 
-    %tab = arith.constant 9 : i32
+//     %tab = arith.constant 9 : i32
 
-    %size0 = tensor.dim %tensor, %c0 : tensor<?x?xf64>
-    %size1 = tensor.dim %tensor, %c1 : tensor<?x?xf64>
+//     %size0 = tensor.dim %tensor, %c0 : tensor<?x?xf64>
+//     %size1 = tensor.dim %tensor, %c1 : tensor<?x?xf64>
 
-    scf.for %i = %c0 to %size0 step %c1 {
-        %tensor1D = tensor.extract_slice %tensor[%i, 0][1, %size1][1, 1] : tensor<?x?xf64> to tensor<?xf64>
+//     scf.for %i = %c0 to %size0 step %c1 {
+//         %tensor1D = tensor.extract_slice %tensor[%i, 0][1, %size1][1, 1] : tensor<?x?xf64> to tensor<?xf64>
         
-        func.call @printNewline() : () -> ()
-        func.call @putchar(%tab) : (i32) -> i32
-        func.call @printF64Tensor1D(%tensor1D) : (tensor<?xf64>) -> ()
+//         func.call @printNewline() : () -> ()
+//         func.call @putchar(%tab) : (i32) -> i32
+//         func.call @printF64Tensor1D(%tensor1D) : (tensor<?xf64>) -> ()
 
-        %size0_minus_one = index.sub %size0, %c1
-        %not_end = index.cmp ult(%i, %size0_minus_one)
-        scf.if %not_end { // print comma if not last element
-            func.call @printComma() : () -> ()
-        }
-    }
+//         %size0_minus_one = index.sub %size0, %c1
+//         %not_end = index.cmp ult(%i, %size0_minus_one)
+//         scf.if %not_end { // print comma if not last element
+//             func.call @printComma() : () -> ()
+//         }
+//     }
 
-    %size0_gt_0 = index.cmp sgt(%size0, %c0)
-    scf.if %size0_gt_0 { // new line if size0 > 0
-        func.call @printNewline() : () -> ()
-    }
+//     %size0_gt_0 = index.cmp sgt(%size0, %c0)
+//     scf.if %size0_gt_0 { // new line if size0 > 0
+//         func.call @printNewline() : () -> ()
+//     }
 
-    %rbracket = arith.constant 93 : i32
-    func.call @putchar(%rbracket) : (i32) -> i32
+//     %rbracket = arith.constant 93 : i32
+//     func.call @putchar(%rbracket) : (i32) -> i32
 
-    func.return
-}
+//     func.return
+// }
 
-func.func @printF32Tensor2D(%tensor: tensor<?x?xf32>) {
-    %tensor_f64 = arith.extf %tensor : tensor<?x?xf32> to tensor<?x?xf64>
-    func.call @printF64Tensor2D(%tensor_f64) : (tensor<?x?xf64>) -> ()
+// func.func @printF32Tensor2D(%tensor: tensor<?x?xf32>) {
+//     %tensor_f64 = arith.extf %tensor : tensor<?x?xf32> to tensor<?x?xf64>
+//     func.call @printF64Tensor2D(%tensor_f64) : (tensor<?x?xf64>) -> ()
 
-    func.return
-}
+//     func.return
+// }
 
 func.func @blackhole(%tensor: tensor<1000000x3xf32>) -> tensor<1000000x3xf32> {
     func.return %tensor : tensor<1000000x3xf32>

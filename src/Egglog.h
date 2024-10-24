@@ -86,7 +86,7 @@ struct EggifiedOp {
 
     void mlirDump(llvm::raw_ostream& os) const {
         if (mlirOp != nullptr) {
-            os << mlirOp;
+            os << *mlirOp;
         } else {
             os << mlirValues[0];  // todo fix for multi-result support
         }

@@ -46,9 +46,13 @@ add_llvm_executable(egg-opt src/egg-opt.cpp src/EqualitySaturationPass.cpp src/E
 llvm_update_compile_flags(egg-opt)
 target_link_libraries(egg-opt PRIVATE ${OPT_LIBS})
 
-add_llvm_executable(tester scripts/tester.cpp)
-llvm_update_compile_flags(tester)
-target_link_libraries(tester PRIVATE ${OPT_LIBS})
+# add_llvm_executable(tester scripts/tester.cpp)
+# llvm_update_compile_flags(tester)
+# target_link_libraries(tester PRIVATE ${OPT_LIBS})
+
+add_llvm_executable(mm scripts/mm.cpp)
+llvm_update_compile_flags(mm)
+target_link_libraries(mm PRIVATE ${OPT_LIBS})
 
 # add_llvm_executable(linalg scripts/linalg.cpp)
 # llvm_update_compile_flags(linalg)

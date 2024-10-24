@@ -10,7 +10,7 @@ def same_name_files(name, directory):
 def benchmark_file(filename, directory):
     all_mlir_files = same_name_files(filename, directory)
     all_opt_levels = ["-O3"]
-    n_runs = 10  # number of runs, first run is warmup
+    n_runs = 50  # number of runs, first run is warmup
     regex_time = re.compile(r"(\d+) us -> (\d+\.\d+) s")  # format "53926 us -> 0.053926 s"
 
     # Persist data, cols are: the name of the opt type, and each opt level
@@ -52,8 +52,8 @@ def benchmark_file(filename, directory):
     df.to_csv(f"bench/{filename}.csv", index=False)
 
 if __name__ == "__main__":
-    benchmark_file("arith_rgb_to_gray", "bench")  # bench/arith_rgb_to_gray.mlir
-    benchmark_file("linalg_assoc", "bench")  # bench/linalg_assoc.mlir
-    benchmark_file("linalg_3mm", "bench")  # bench/linalg_3mm.mlir
+    # benchmark_file("arith_rgb_to_gray", "bench")  # bench/arith_rgb_to_gray.mlir
+    # benchmark_file("linalg_assoc", "bench")  # bench/linalg_assoc.mlir
+    # benchmark_file("linalg_3mm", "bench")  # bench/linalg_3mm.mlir
     benchmark_file("math_inv_sqrt", "bench")  # bench/math_inv_sqrt.mlir
-    benchmark_file("math_horners_method", "bench")  # bench/math_horners_method.mlir
+    # benchmark_file("math_horners_method", "bench")  # bench/math_horners_method.mlir

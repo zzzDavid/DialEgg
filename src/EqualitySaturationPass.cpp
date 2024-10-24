@@ -8,6 +8,7 @@
 #include <string_view>
 #include <thread>
 #include <chrono>
+#include <time.h>
 
 #include "llvm/ADT/Hashing.h"
 #include "llvm/IR/Module.h"
@@ -139,6 +140,11 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp>& block, con
 }
 
 void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& blockName) {
+    clock_t cpuStart = clock();
+    auto wallStart = std::chrono::high_resolution_clock::now();
+
+    // Eggify the block
+
     mlir::MLIRContext& context = getContext();
     Egglog egglog(context, customFunctions, supportedOps);
 
@@ -158,7 +164,29 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
         eggOp.print(llvm::outs());
     }
 
+    clock_t cpuEnd = clock();
+    auto wallEnd = std::chrono::high_resolution_clock::now();
+
+    // Run egglog on the block
+
+    mlirToEgglogCpuTime += double(cpuEnd - cpuStart) / CLOCKS_PER_SEC;
+    mlirToEgglogWallTime += std::chrono::duration<double>(wallEnd - wallStart).count();
+
+    cpuStart = clock();
+    wallStart = std::chrono::high_resolution_clock::now();
+
     runEgglog(egglog.eggifiedBlock, blockName);
+
+    cpuEnd = clock();
+    wallEnd = std::chrono::high_resolution_clock::now();
+
+    egglogCpuTime += double(cpuEnd - cpuStart) / CLOCKS_PER_SEC;
+    egglogWallTime += std::chrono::duration<double>(wallEnd - wallStart).count();
+
+    // Parse the extracted egglog file and replace the MLIR operations
+
+    cpuStart = clock();
+    wallStart = std::chrono::high_resolution_clock::now();
 
     std::ifstream file(egglogExtractedFilename);
 
@@ -195,6 +223,12 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
         llvm::outs() << "\n";
     }
 
+    cpuEnd = clock();
+    wallEnd = std::chrono::high_resolution_clock::now();
+
+    egglogToMlirCpuTime += double(cpuEnd - cpuStart) / CLOCKS_PER_SEC;
+    egglogToMlirWallTime += std::chrono::duration<double>(wallEnd - wallStart).count();
+
     // dump parsed ops cache
     for (const auto& [opStr, op]: egglog.parsedOps) {
         llvm::outs() << opStr << " : " << *op << "\n";
@@ -230,6 +264,30 @@ void EqualitySaturationPass::runOnOperation() {
                 op->erase();
             }
         });
+    }
+
+    llvm::outs() << "-----------------------------------------\n";
+    llvm::outs() << "Done running on function: " << rootOpName << "\n";
+    llvm::outs() << "mlirToEgglogCpuTime = " << mlirToEgglogCpuTime << "s\n";
+    llvm::outs() << "mlirToEgglogWallTime = " << mlirToEgglogWallTime << "s\n";
+    llvm::outs() << "egglogCpuTime = " << egglogCpuTime << "s\n";
+    llvm::outs() << "egglogWallTime = " << egglogWallTime << "s\n";
+    llvm::outs() << "egglogToMlirCpuTime = " << egglogToMlirCpuTime << "s\n";
+    llvm::outs() << "egglogToMlirWallTime = " << egglogToMlirWallTime << "s\n";
+    llvm::outs() << "-----------------------------------------\n";
+
+    // output wall timing in timeFile
+    if (!rootOpName.contains("display") && !rootOpName.contains("print") 
+        && !rootOpName.contains("put") && !rootOpName.contains("clock") 
+        && !rootOpName.contains("blackhole") && !rootOpName.contains("clock")) {
+
+        std::ofstream timeOut(timeFile, std::ios::app);
+        timeOut << "Running on function: " << eggFilePath << ":" << rootOpName.str() << "\n";
+        timeOut << "-----------------------------------------\n";
+        timeOut << "mlirToEgglogWallTime = " << mlirToEgglogWallTime << "s\n";
+        timeOut << "egglogWallTime = " << egglogWallTime << "s\n";
+        timeOut << "egglogToMlirWallTime = " << egglogToMlirWallTime << "s\n";
+        timeOut << "-----------------------------------------\n";
     }
 }
 

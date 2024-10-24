@@ -123,9 +123,9 @@ module {
   llvm.func @poly_eval_3(%arg0: f64, %arg1: f64, %arg2: f64, %arg3: f64, %arg4: f64) -> f64 {
     %0 = llvm.fmul %arg4, %arg0  {fastmathFlags = #llvm.fastmath<fast>} : f64
     %1 = llvm.fadd %arg1, %0  {fastmathFlags = #llvm.fastmath<fast>} : f64
-    %2 = llvm.fmul %arg4, %1  {fastmathFlags = #llvm.fastmath<fast>} : f64
+    %2 = llvm.fmul %1, %arg4  {fastmathFlags = #llvm.fastmath<fast>} : f64
     %3 = llvm.fadd %arg2, %2  {fastmathFlags = #llvm.fastmath<fast>} : f64
-    %4 = llvm.fmul %arg4, %3  {fastmathFlags = #llvm.fastmath<fast>} : f64
+    %4 = llvm.fmul %3, %arg4  {fastmathFlags = #llvm.fastmath<fast>} : f64
     %5 = llvm.fadd %arg3, %4  {fastmathFlags = #llvm.fastmath<fast>} : f64
     llvm.return %5 : f64
   }

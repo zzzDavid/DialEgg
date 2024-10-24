@@ -23,6 +23,17 @@ struct EqualitySaturationPass : public mlir::PassWrapper<EqualitySaturationPass,
     std::map<std::string, EgglogOpDef> supportedOps;
     std::set<std::string> supportedDialects;
 
+    std::string timeFile = "res/time.txt";
+
+    double mlirToEgglogCpuTime = 0.0;
+    double mlirToEgglogWallTime = 0.0;
+
+    double egglogCpuTime = 0.0;
+    double egglogWallTime = 0.0;
+
+    double egglogToMlirCpuTime = 0.0;
+    double egglogToMlirWallTime = 0.0;
+
     EqualitySaturationPass();
     EqualitySaturationPass(const std::string egglogExecutable, const std::string& eggFilePath, const EgglogCustomDefs& funcs);
     EqualitySaturationPass(const std::string& eggFilePath, const EgglogCustomDefs& funcs);

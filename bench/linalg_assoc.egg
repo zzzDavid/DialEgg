@@ -9,14 +9,17 @@
 ;; OPS HERE ;;
 
 ;; RULES HERE ;;
-(rule ((= ?A (tensor_empty ?t))) ((set (type-of ?A) ?t)))
-(rule ((= ?A (linalg_matmul ?x ?y ?o ?t))) ((set (type-of ?A) ?t)))
+(ruleset rules)
+
+(rule ((= ?A (tensor_empty ?t))) ((set (type-of ?A) ?t)) :ruleset rules)
+(rule ((= ?A (linalg_matmul ?x ?y ?o ?t))) ((set (type-of ?A) ?t)) :ruleset rules)
 
 (function nrows (Type) i64)
 (function ncols (Type) i64)
 (rule ((= ?t (RankedTensor ?shape ?tp))) 
     ((set (nrows ?t) (vec-get ?shape 0)) 
      (set (ncols ?t) (vec-get ?shape 1)))
+    :ruleset rules
 )
 
 (rule 
@@ -26,6 +29,7 @@
      (= c (ncols (type-of ?y))))
 
     ((unstable-cost (linalg_matmul ?x ?y ?xy ?t) (* (* a b) c)))
+    :ruleset rules
 )
 
 (rule
@@ -36,8 +40,10 @@
     
     ((let out_t (RankedTensor (vec-of ?b ?d) ?t))
      (union ?lhs (linalg_matmul ?x (linalg_matmul ?y ?z (tensor_empty out_t) out_t) ?xy_z ?xyz_t)))
+    :ruleset rules
 )
 
-(run 10000)
+(run-schedule (saturate rules))
+; (run 10000)
 
 ;; EXTRACTS HERE ;;
