@@ -50,6 +50,7 @@ struct EgglogOpDef {
 struct EggifiedOp {
     size_t id;
     bool opaque;
+    bool notUsed;
     std::string egglogOp;
     std::vector<EggifiedOp> operands;
 

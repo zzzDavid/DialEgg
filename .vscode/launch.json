@@ -9,7 +9,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/egg-opt",
-            "args": ["--mlir-disable-threading", "--eq-sat", "bench/math_inv_sqrt.mlir"],  // change the file path here
+            "args": ["--mlir-disable-threading", "--eq-sat", "mm/linalg_50mm.mlir"],  // change the file path here
             "cwd": "${workspaceFolder}",
         }
     ]

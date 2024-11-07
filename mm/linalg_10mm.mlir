@@ -1,0 +1,41 @@
+module {
+  func.func @blackhole(%arg0: tensor<100x100xi32>) -> tensor<100x100xi32> {
+    return %arg0 : tensor<100x100xi32>
+  }
+  func.func @main() -> i32 {
+    %0 = tensor.empty() : tensor<100x100xi32>
+    %1 = tensor.empty() : tensor<100x100xi32>
+    %2 = tensor.empty() : tensor<100x100xi32>
+    %3 = linalg.matmul ins(%0, %1 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%2 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %4 = tensor.empty() : tensor<100x100xi32>
+    %5 = tensor.empty() : tensor<100x100xi32>
+    %6 = linalg.matmul ins(%3, %4 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%5 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %7 = tensor.empty() : tensor<100x100xi32>
+    %8 = tensor.empty() : tensor<100x100xi32>
+    %9 = linalg.matmul ins(%6, %7 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%8 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %10 = tensor.empty() : tensor<100x100xi32>
+    %11 = tensor.empty() : tensor<100x100xi32>
+    %12 = linalg.matmul ins(%9, %10 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%11 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %13 = tensor.empty() : tensor<100x100xi32>
+    %14 = tensor.empty() : tensor<100x100xi32>
+    %15 = linalg.matmul ins(%12, %13 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%14 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %16 = tensor.empty() : tensor<100x100xi32>
+    %17 = tensor.empty() : tensor<100x100xi32>
+    %18 = linalg.matmul ins(%15, %16 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%17 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %19 = tensor.empty() : tensor<100x100xi32>
+    %20 = tensor.empty() : tensor<100x100xi32>
+    %21 = linalg.matmul ins(%18, %19 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%20 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %22 = tensor.empty() : tensor<100x100xi32>
+    %23 = tensor.empty() : tensor<100x100xi32>
+    %24 = linalg.matmul ins(%21, %22 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%23 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %25 = tensor.empty() : tensor<100x100xi32>
+    %26 = tensor.empty() : tensor<100x100xi32>
+    %27 = linalg.matmul ins(%24, %25 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%26 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %28 = tensor.empty() : tensor<100x100xi32>
+    %29 = tensor.empty() : tensor<100x100xi32>
+    %30 = linalg.matmul ins(%27, %28 : tensor<100x100xi32>, tensor<100x100xi32>) outs(%29 : tensor<100x100xi32>) -> tensor<100x100xi32>
+    %31 = call @blackhole(%30) : (tensor<100x100xi32>) -> tensor<100x100xi32>
+    %c0_i32 = arith.constant 0 : i32
+    return %c0_i32 : i32
+  }
+}

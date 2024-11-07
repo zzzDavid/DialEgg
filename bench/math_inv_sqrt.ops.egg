@@ -19,16 +19,16 @@
 ; (function func_call_2 (Op Op AttrPair Type) Op)
 
 ;; OPS HERE ;;
-(let op0 (Value 0 (RankedTensor (vec-of 1000000 3) (F64)))) ; %0 = tensor.empty() : tensor<1000000x3xf64>
-(let op1 (func_call op0 (NamedAttr "callee" (SymbolRefAttr "fillRandomF64Tensor2D")) (RankedTensor (vec-of 1000000 3) (F64)))) ; %1 = func.call @fillRandomF64Tensor2D(%0) : (tensor<1000000x3xf64>) -> tensor<1000000x3xf64>
-(let op2 (Value 2 (RankedTensor (vec-of 1000000 3) (F32)))) ; %2 = arith.truncf %1 : tensor<1000000x3xf64> to tensor<1000000x3xf32>
-(let op3 (Value 3 (I64))) ; %3 = func.call @clock() : () -> i64
-(let op4 (func_call op2 (NamedAttr "callee" (SymbolRefAttr "normalize_distance_vectors")) (RankedTensor (vec-of 1000000 3) (F32)))) ; %4 = func.call @normalize_distance_vectors(%2) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
-(let op5 (Value 5 (I64))) ; %5 = func.call @clock() : () -> i64
-(let op6 (func_call op4 (NamedAttr "callee" (SymbolRefAttr "blackhole")) (RankedTensor (vec-of 1000000 3) (F32)))) ; %6 = func.call @blackhole(%4) : (tensor<1000000x3xf32>) -> tensor<1000000x3xf32>
-(let op7 (Value 7 (None))) ; func.call @displayTime(%3, %5) : (i64, i64) -> ()
-(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32))) ; %c0_i32 = arith.constant 0 : i32
-(let op9 (Value 9 (None))) ; func.return %c0_i32 : i32
+(let op0 (Value 0 (RankedTensor (vec-of 1000000 3) (F64))))
+(let op1 (func_call op0 (NamedAttr "callee" (SymbolRefAttr "fillRandomF64Tensor2D")) (RankedTensor (vec-of 1000000 3) (F64))))
+(let op2 (Value 2 (RankedTensor (vec-of 1000000 3) (F32))))
+(let op3 (Value 3 (I64)))
+(let op4 (func_call op2 (NamedAttr "callee" (SymbolRefAttr "normalize_distance_vectors")) (RankedTensor (vec-of 1000000 3) (F32))))
+(let op5 (Value 5 (I64)))
+(let op6 (func_call op4 (NamedAttr "callee" (SymbolRefAttr "blackhole")) (RankedTensor (vec-of 1000000 3) (F32))))
+(let op7 (Value 7 (None)))
+(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32)))
+(let op9 (Value 9 (None)))
 
 ;; RULES HERE ;;
 (ruleset rules)
@@ -46,7 +46,4 @@
 ; (run 10000)
 
 ;; EXTRACTS HERE ;;
-(extract op1)
-(extract op4)
 (extract op6)
-(extract op8)

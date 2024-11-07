@@ -16,18 +16,18 @@ public:
     MatrixMultiplyAssociateRewritePattern(mlir::MLIRContext* context) : OpRewritePattern<mlir::linalg::MatmulOp>(context) {}
 
     mlir::LogicalResult matchAndRewrite(mlir::linalg::MatmulOp op, mlir::PatternRewriter& rewriter) const override { // Matches either (XY)Z or X(YZ)
-        llvm::outs() << "Matching and rewriting matmul operation: " << op << "\n";
+        // llvm::outs() << "Matching and rewriting matmul operation: " << op << "\n";
 
         mlir::Value lhs = op.getOperand(0);  // could be X or (XY)
         mlir::Value rhs = op.getOperand(1);  // could be (YZ) or Z
-        llvm::outs() << "lhs: " << lhs << "\n";
-        llvm::outs() << "rhs: " << rhs << "\n";
+        // llvm::outs() << "lhs: " << lhs << "\n";
+        // llvm::outs() << "rhs: " << rhs << "\n";
 
         mlir::Operation* lhsOp = lhs.getDefiningOp();  // could be nullptr
         mlir::Operation* rhsOp = rhs.getDefiningOp();  // could be nullptr
 
-        if (lhsOp != nullptr) llvm::outs() << "lhsOp: " << *lhsOp << "\n";
-        if (rhsOp != nullptr) llvm::outs() << "rhsOp: " << *rhsOp << "\n";
+        // if (lhsOp != nullptr) llvm::outs() << "lhsOp: " << *lhsOp << "\n";
+        // if (rhsOp != nullptr) llvm::outs() << "rhsOp: " << *rhsOp << "\n";
 
         mlir::Value x, y, z;
         bool is_x_yz = false, is_xy_z = false;
@@ -45,9 +45,9 @@ public:
             return mlir::failure();  // this is just a normal matmul (XY)
         }
 
-        llvm::outs() << "x: " << x << " | " << x.getType() << "\n";
-        llvm::outs() << "y: " << y << " | " << y.getType() << "\n";
-        llvm::outs() << "z: " << z << " | " << z.getType() << "\n";
+        // llvm::outs() << "x: " << x << " | " << x.getType() << "\n";
+        // llvm::outs() << "y: " << y << " | " << y.getType() << "\n";
+        // llvm::outs() << "z: " << z << " | " << z.getType() << "\n";
 
         mlir::RankedTensorType xType = x.getType().cast<mlir::RankedTensorType>();
         mlir::RankedTensorType yType = y.getType().cast<mlir::RankedTensorType>();
@@ -72,13 +72,13 @@ public:
             mlir::Value xyInit = rewriter.create<mlir::tensor::EmptyOp>(op.getLoc(), xyType, mlir::ValueRange {});
             mlir::linalg::MatmulOp xy = rewriter.create<mlir::linalg::MatmulOp>(op.getLoc(), xyType, mlir::ValueRange {x, y}, xyInit);
             
-            llvm::outs() << "xy: " << xy.getResult(0) << "\n";
+            // llvm::outs() << "xy: " << xy.getResult(0) << "\n";
 
             mlir::Type xyzType = mlir::RankedTensorType::get({a, d}, opType);
             mlir::Value xyzInit = rewriter.create<mlir::tensor::EmptyOp>(op.getLoc(), xyzType, mlir::ValueRange {});
             mlir::linalg::MatmulOp xyz = rewriter.create<mlir::linalg::MatmulOp>(op.getLoc(), xyzType, mlir::ValueRange {xy.getResult(0), z}, xyzInit);
 
-            llvm::outs() << "Replacing with: " << xyz.getResult(0) << "\n";
+            // llvm::outs() << "Replacing with: " << xyz.getResult(0) << "\n";
 
             rewriter.replaceOp(op, xyz.getResult(0));
         } else if (x_yzCost < xy_zCost && is_xy_z) { // X(YZ) is better than (XY)Z
@@ -86,13 +86,13 @@ public:
             mlir::Value yzInit = rewriter.create<mlir::tensor::EmptyOp>(op.getLoc(), yzType, mlir::ValueRange {});
             mlir::linalg::MatmulOp yz = rewriter.create<mlir::linalg::MatmulOp>(op.getLoc(), yzType, mlir::ValueRange {y, z}, yzInit);
 
-            llvm::outs() << "yz: " << yz.getResult(0) << "\n";
+            // llvm::outs() << "yz: " << yz.getResult(0) << "\n";
 
             mlir::Type xyzType = mlir::RankedTensorType::get({a, d}, opType);
             mlir::Value xyzInit = rewriter.create<mlir::tensor::EmptyOp>(op.getLoc(), xyzType, mlir::ValueRange {});
             mlir::linalg::MatmulOp xyz = rewriter.create<mlir::linalg::MatmulOp>(op.getLoc(), xyzType, mlir::ValueRange {x, yz.getResult(0)}, xyzInit);
 
-            llvm::outs() << "Replacing with: " << xyz.getResult(0) << "\n";
+            // llvm::outs() << "Replacing with: " << xyz.getResult(0) << "\n";
 
             rewriter.replaceOp(op, xyz.getResult(0));
         } // if equal, just keep the original

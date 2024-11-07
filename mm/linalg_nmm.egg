@@ -6,6 +6,8 @@
 ;;;; tensor dialect ;;;;
 (function tensor_empty (Type) Op)
 
+(function func_call (Op AttrPair Type) Op)
+
 ;; OPS HERE ;;
 
 ;; RULES HERE ;;

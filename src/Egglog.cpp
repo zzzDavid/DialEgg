@@ -1,4 +1,5 @@
 #include <regex>
+#include <chrono>
 
 #include "llvm/Support/raw_ostream.h"
 #include "mlir/IR/Value.h"
@@ -102,7 +103,7 @@ std::string EggifiedOp::inlinedEgglogOp() const {
     return inlinedEgglogOp;
 }
 
-std::vector<std::string> Egglog::splitExpression(std::string opStr) {
+std::vector<std::string> Egglog::splitExpression(std::string opStr) { // linear
     // The expression must be surrounded by parentheses
     if (opStr.front() != '(' || opStr.back() != ')') {
         llvm::outs() << "Invalid expression: " << opStr << "\n";
@@ -630,8 +631,7 @@ mlir::Value Egglog::parseValue(const std::string& valueStr) {
 }
 
 mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBuilder& builder) {
-    llvm::outs() << "PARSING OPERATION: " << newOpStr << "\n";
-
+    // llvm::outs() << "PARSING OPERATION: " << newOpStr << "\n";
     std::vector<std::string> split = splitExpression(newOpStr);
     std::string opName = split[0];
 
@@ -639,16 +639,16 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
     // bool cacheable = false;
     if (cacheable) {
         // if the string is found, then it is an input operation
-        std::optional<EggifiedOp> eggifiedOp = findEggifiedOp(newOpStr);
-        if (eggifiedOp.has_value()) {
-            llvm::outs() << "FOUND EGGIFIED OP: " << eggifiedOp.value().egglogOp << "\n";
-            return eggifiedOp.value().mlirOp;
-            // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
-        }
+
+        // if (eggifiedOp.has_value()) {
+        //     // llvm::outs() << "FOUND EGGIFIED OP: " << eggifiedOp.value().egglogOp << "\n";
+        //     return eggifiedOp.value().mlirOp;
+        //     // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
+        // }
 
         // otherwise look in the parsed ops cache
         if (parsedOps.find(newOpStr) != parsedOps.end() && cacheable) {
-            llvm::outs() << "FOUND OPERATION IN CACHE: " << newOpStr << "\n";
+            // llvm::outs() << "FOUND OPERATION IN CACHE: " << newOpStr << "\n";
             return parsedOps[newOpStr];
             // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
         }
@@ -668,7 +668,7 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
     // Operands
     std::vector<mlir::Value> operands;
     for (size_t i = 0; i < egglogOpDef.nOperands; i++, index++) {
-        std::string operandStr = split[index + 1];
+        std::string operandStr = split[index + 1]; // get the operand string
 
         if (operandStr.find("(Value ") == 0) {
             mlir::Value operand = parseValue(operandStr);
@@ -700,7 +700,7 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
         mlir::Type type = parseType(split[index + 1]);
         types.push_back(type);
     }
-
+    
     // Create the operation
     mlir::Operation* newOp = nullptr;
 
@@ -864,6 +864,8 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
     ss << ")";
 
     EggifiedOp eggifiedOp = EggifiedOp::op(nextId(), ss.str(), operands, op);
+    eggifiedOp.notUsed = op->use_empty();
+    // eggifiedOp.notUsed = true;
     eggifiedBlock.push_back(eggifiedOp);
     return eggifiedOp;
 }

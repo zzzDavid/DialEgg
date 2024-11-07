@@ -13,6 +13,11 @@
 
 ;;;; math dialect ;;;;
 (function math_powf (Op Op AttrPair Type) Op :cost 100000)
+
+;;;; func dialect ;;;;
+; (function func_return_0 (Type) Op)
+; (function func_return_1 (Op Type) Op)
+
 ;; OPS HERE ;;
 
 ;; RULES HERE ;;

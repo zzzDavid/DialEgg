@@ -34,7 +34,7 @@ mlir::func::FuncOp buildBlackholeFunction(mlir::OpBuilder builder) {
  * n = 3: ((XY)Z)W
  * n = 4: (((XY)Z)W)V
  */
-mlir::func::FuncOp buildNMM(mlir::OpBuilder builder, uint8_t n = 2) {
+mlir::func::FuncOp buildNMMFunction(mlir::OpBuilder builder, uint8_t n) {
     mlir::IntegerType i32Type = builder.getI32Type();
     mlir::RankedTensorType tensorType = mlir::RankedTensorType::get({100, 100}, i32Type);
 
@@ -45,17 +45,21 @@ mlir::func::FuncOp buildNMM(mlir::OpBuilder builder, uint8_t n = 2) {
 
     mlir::tensor::EmptyOp x = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
     mlir::tensor::EmptyOp y = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
-    mlir::tensor::EmptyOp z = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
 
-    // Create a linalg.matmul operation.
     mlir::Value xy_init = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
     mlir::linalg::MatmulOp xy = builder.create<mlir::linalg::MatmulOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange {x, y}, xy_init);
 
-    mlir::Value xy_z_init = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
-    mlir::linalg::MatmulOp xy_z = builder.create<mlir::linalg::MatmulOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange {xy.getResult(0), z}, xy_z_init);
+    mlir::linalg::MatmulOp mult = xy;
+    for (uint8_t i = 0; i < n - 1; i++) {
+        mlir::tensor::EmptyOp z = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
+        mlir::Value xy_z_init = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
+        mlir::linalg::MatmulOp xy_z = builder.create<mlir::linalg::MatmulOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange {mult.getResult(0), z}, xy_z_init);
+
+        mult = xy_z;
+    }
 
     // call blackhole function with xy_z as argument
-    builder.create<mlir::func::CallOp>(builder.getUnknownLoc(), "blackhole", mlir::ValueRange {xy_z.getResult(0)}, mlir::ValueRange {xy_z.getResult(0)});
+    builder.create<mlir::func::CallOp>(builder.getUnknownLoc(), "blackhole", mlir::ValueRange {mult.getResult(0)}, mlir::ValueRange {mult.getResult(0)});
 
     mlir::Value c0 = builder.create<mlir::arith::ConstantOp>(builder.getUnknownLoc(), i32Type, builder.getI32IntegerAttr(0));
     builder.create<mlir::func::ReturnOp>(builder.getUnknownLoc(), c0);
@@ -80,8 +84,8 @@ int main() {
     auto blackholeFunction = buildBlackholeFunction(builder);
     module.push_back(blackholeFunction);
 
-    auto mainFunction = buildNMM(builder);
-    module.push_back(mainFunction);
+    auto NMMFunction = buildNMMFunction(builder, n);
+    module.push_back(NMMFunction);
 
     // Open the file to write the MLIR code to.
     std::error_code EC;

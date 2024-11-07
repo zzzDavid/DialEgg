@@ -14,33 +14,23 @@
 (function arith_shli (Op Op AttrPair Type) Op)
 
 ;; OPS HERE ;;
-(let op0 (arith_constant (NamedAttr "value" (IntegerAttr 100 (I64))) (I64))) ; %c100_i64 = arith.constant 100 : i64
-(let op1 (Value 1 (RankedTensor (vec-of 3840 2160 3) (I64)))) ; %0 = tensor.empty() : tensor<3840x2160x3xi64>
-(let op2 (Value 2 (RankedTensor (vec-of 3840 2160 3) (I64)))) ; %1 = linalg.fill ins(%c100_i64 : i64) outs(%0 : tensor<3840x2160x3xi64>) -> tensor<3840x2160x3xi64>
-(let op3 (Value 3 (RankedTensor (vec-of 3840 2160 3) (I64)))) ; %2 = func.call @blackhole1(%1) : (tensor<3840x2160x3xi64>) -> tensor<3840x2160x3xi64>
-(let op4 (Value 4 (I64))) ; %3 = func.call @clock() : () -> i64
-(let op5 (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index))) ; %c0 = arith.constant 0 : index
-(let op6 (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index))) ; %c1 = arith.constant 1 : index
-(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index))) ; %c2 = arith.constant 2 : index
-(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 3840 (Index))) (Index))) ; %c3840 = arith.constant 3840 : index
-(let op9 (arith_constant (NamedAttr "value" (IntegerAttr 2160 (Index))) (Index))) ; %c2160 = arith.constant 2160 : index
-(let op10 (Value 10 (RankedTensor (vec-of 3840 2160) (I64)))) ; %4 = tensor.empty() : tensor<3840x2160xi64>
-(let op11 (Value 11 (RankedTensor (vec-of 3840 2160) (I64)))) ; %5 = scf.for %arg0 = %c0 to %c3840 step %c1 iter_args(%arg1 = %4) -> (tensor<3840x2160xi64>) {
-;   %8 = scf.for %arg2 = %c0 to %c2160 step %c1 iter_args(%arg3 = %arg1) -> (tensor<3840x2160xi64>) {
-;     %extracted = tensor.extract %2[%arg0, %arg2, %c0] : tensor<3840x2160x3xi64>
-;     %extracted_0 = tensor.extract %2[%arg0, %arg2, %c1] : tensor<3840x2160x3xi64>
-;     %extracted_1 = tensor.extract %2[%arg0, %arg2, %c2] : tensor<3840x2160x3xi64>
-;     %9 = func.call @rgb_to_grayscale(%extracted, %extracted_0, %extracted_1) : (i64, i64, i64) -> i64
-;     %inserted = tensor.insert %9 into %arg3[%arg0, %arg2] : tensor<3840x2160xi64>
-;     scf.yield %inserted : tensor<3840x2160xi64>
-;   }
-;   scf.yield %8 : tensor<3840x2160xi64>
-; }
-(let op12 (Value 12 (I64))) ; %6 = func.call @clock() : () -> i64
-(let op13 (Value 13 (None))) ; func.call @displayTime(%3, %6) : (i64, i64) -> ()
-(let op14 (Value 14 (RankedTensor (vec-of 3840 2160) (I64)))) ; %7 = func.call @blackhole2(%5) : (tensor<3840x2160xi64>) -> tensor<3840x2160xi64>
-(let op15 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I64))) (I64))) ; %c0_i64 = arith.constant 0 : i64
-(let op16 (Value 16 (None))) ; func.return %c0_i64 : i64
+(let op0 (arith_constant (NamedAttr "value" (IntegerAttr 100 (I64))) (I64)))
+(let op1 (Value 1 (RankedTensor (vec-of 3840 2160 3) (I64))))
+(let op2 (Value 2 (RankedTensor (vec-of 3840 2160 3) (I64))))
+(let op3 (Value 3 (RankedTensor (vec-of 3840 2160 3) (I64))))
+(let op4 (Value 4 (I64)))
+(let op5 (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index)))
+(let op6 (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index)))
+(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index)))
+(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 3840 (Index))) (Index)))
+(let op9 (arith_constant (NamedAttr "value" (IntegerAttr 2160 (Index))) (Index)))
+(let op10 (Value 10 (RankedTensor (vec-of 3840 2160) (I64))))
+(let op11 (Value 11 (RankedTensor (vec-of 3840 2160) (I64))))
+(let op12 (Value 12 (I64)))
+(let op13 (Value 13 (None)))
+(let op14 (Value 14 (RankedTensor (vec-of 3840 2160) (I64))))
+(let op15 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I64))) (I64)))
+(let op16 (Value 16 (None)))
 
 ;; RULES HERE ;;
 (ruleset rules)
@@ -55,10 +45,3 @@
 (run-schedule (saturate rules))
 ; (run 1000)
 ;; EXTRACTS HERE ;;
-(extract op0)
-(extract op5)
-(extract op6)
-(extract op7)
-(extract op8)
-(extract op9)
-(extract op15)

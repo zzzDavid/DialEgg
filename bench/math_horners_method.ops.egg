@@ -13,32 +13,29 @@
 
 ;;;; math dialect ;;;;
 (function math_powf (Op Op AttrPair Type) Op :cost 100000)
+
+;;;; func dialect ;;;;
+; (function func_return_0 (Type) Op)
+; (function func_return_1 (Op Type) Op)
+
 ;; OPS HERE ;;
-(let op0 (Value 0 (RankedTensor (vec-of 1000000 4) (F64)))) ; %0 = tensor.empty() : tensor<1000000x4xf64>
-(let op1 (Value 1 (RankedTensor (vec-of 1000000 4) (F64)))) ; %1 = func.call @fillRandomF64Tensor2D(%0) : (tensor<1000000x4xf64>) -> tensor<1000000x4xf64>
-(let op2 (Value 2 (I64))) ; %2 = func.call @clock() : () -> i64
-(let op3 (arith_constant (NamedAttr "value" (FloatAttr 1.0 (F64))) (F64))) ; %cst = arith.constant 1.000000e+00 : f64
-(let op4 (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index))) ; %c0 = arith.constant 0 : index
-(let op5 (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index))) ; %c1 = arith.constant 1 : index
-(let op6 (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index))) ; %c2 = arith.constant 2 : index
-(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 3 (Index))) (Index))) ; %c3 = arith.constant 3 : index
-(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 1000000 (Index))) (Index))) ; %c1000000 = arith.constant 1000000 : index
-(let op9 (Value 9 (RankedTensor (vec-of 1000000) (F64)))) ; %3 = tensor.empty() : tensor<1000000xf64>
-(let op10 (Value 10 (RankedTensor (vec-of 1000000) (F64)))) ; %4 = scf.for %arg0 = %c0 to %c1000000 step %c1 iter_args(%arg1 = %3) -> (tensor<1000000xf64>) {
-;   %extracted = tensor.extract %1[%arg0, %c0] : tensor<1000000x4xf64>
-;   %extracted_0 = tensor.extract %1[%arg0, %c1] : tensor<1000000x4xf64>
-;   %extracted_1 = tensor.extract %1[%arg0, %c2] : tensor<1000000x4xf64>
-;   %extracted_2 = tensor.extract %1[%arg0, %c3] : tensor<1000000x4xf64>
-;   %7 = func.call @poly_eval_3(%extracted, %extracted_0, %extracted_1, %extracted_2, %cst) : (f64, f64, f64, f64, f64) -> f64
-;   %inserted = tensor.insert %7 into %arg1[%arg0] : tensor<1000000xf64>
-;   scf.yield %inserted : tensor<1000000xf64>
-; }
-(let op11 (Value 11 (I64))) ; %5 = func.call @clock() : () -> i64
-(let op12 (Value 12 (RankedTensor (vec-of -9223372036854775808) (F64)))) ; %cast = tensor.cast %4 : tensor<1000000xf64> to tensor<?xf64>
-(let op13 (Value 13 (None))) ; func.call @displayTime(%2, %5) : (i64, i64) -> ()
-(let op14 (Value 14 (RankedTensor (vec-of -9223372036854775808) (F64)))) ; %6 = func.call @blackhole(%cast) : (tensor<?xf64>) -> tensor<?xf64>
-(let op15 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32))) ; %c0_i32 = arith.constant 0 : i32
-(let op16 (Value 16 (None))) ; func.return %c0_i32 : i32
+(let op0 (Value 0 (RankedTensor (vec-of 1000000 4) (F64))))
+(let op1 (Value 1 (RankedTensor (vec-of 1000000 4) (F64))))
+(let op2 (Value 2 (I64)))
+(let op3 (arith_constant (NamedAttr "value" (FloatAttr 1.0 (F64))) (F64)))
+(let op4 (arith_constant (NamedAttr "value" (IntegerAttr 0 (Index))) (Index)))
+(let op5 (arith_constant (NamedAttr "value" (IntegerAttr 1 (Index))) (Index)))
+(let op6 (arith_constant (NamedAttr "value" (IntegerAttr 2 (Index))) (Index)))
+(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 3 (Index))) (Index)))
+(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 1000000 (Index))) (Index)))
+(let op9 (Value 9 (RankedTensor (vec-of 1000000) (F64))))
+(let op10 (Value 10 (RankedTensor (vec-of 1000000) (F64))))
+(let op11 (Value 11 (I64)))
+(let op12 (Value 12 (RankedTensor (vec-of -9223372036854775808) (F64))))
+(let op13 (Value 13 (None)))
+(let op14 (Value 14 (RankedTensor (vec-of -9223372036854775808) (F64))))
+(let op15 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I32))) (I32)))
+(let op16 (Value 16 (None)))
 
 ;; RULES HERE ;;
 (ruleset rules)
@@ -80,10 +77,3 @@
 ; (run rules 1000) ; search 0.017s, apply 0.002s, rebuild 0.006s, total 0.025s
 
 ;; EXTRACTS HERE ;;
-(extract op3)
-(extract op4)
-(extract op5)
-(extract op6)
-(extract op7)
-(extract op8)
-(extract op15)
