@@ -3,6 +3,5 @@
 cmake-build-*/
 build/
 __pycache__/
-# .vscode/
-.eqsat_venv/
-
+.vscode/
+.dialegg.venv/

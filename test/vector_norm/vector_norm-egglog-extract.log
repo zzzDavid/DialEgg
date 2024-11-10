@@ -1,0 +1,1 @@
+(func_call (Value 8 (F32)) (NamedAttr "callee" (SymbolRefAttr "fast_inv_sqrt")) (F32))

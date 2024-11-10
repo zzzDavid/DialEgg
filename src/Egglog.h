@@ -41,6 +41,14 @@ struct EgglogOpDef {
 
     size_t cost = 1;
 
+    std::string egglogName() const {
+        return dialect + "_" + name;
+    }
+
+    std::string mlirName() const {
+        return dialect + "." + name;
+    }
+
     // format: (function [name] ([params]) Op) or (function [name] ([params]) Op :cost [cost])
     static bool isOpFunction(const std::string& opStr);
     static EgglogOpDef parseOpFunction(const std::string& opStr);
@@ -50,25 +58,52 @@ struct EgglogOpDef {
 struct EggifiedOp {
     size_t id;
     bool opaque;
-    bool notUsed;
     std::string egglogOp;
-    std::vector<EggifiedOp> operands;
+    std::vector<EggifiedOp*> operands;
+    std::vector<EggifiedOp*> users;
 
     // for reference
     std::vector<mlir::Value> mlirValues;
     mlir::Operation* mlirOp;
 
-    EggifiedOp(size_t id, bool opaque, std::string egglogOp, const std::vector<EggifiedOp>& operands, const std::vector<mlir::Value>& mlirValues, mlir::Operation* mlirOp)
+    EggifiedOp(size_t id, bool opaque, std::string egglogOp, const std::vector<EggifiedOp*>& operands, const std::vector<mlir::Value>& mlirValues, mlir::Operation* mlirOp)
         : id(id), opaque(opaque), egglogOp(egglogOp), operands(operands), mlirValues(mlirValues), mlirOp(mlirOp) {}
 
-    static EggifiedOp opaqueOp(size_t id, std::string egglogOp, mlir::Operation* mlirOp) {
-        return EggifiedOp(id, true, egglogOp, {}, std::vector<mlir::Value>(mlirOp->result_begin(), mlirOp->result_end()), mlirOp);
+    static EggifiedOp* opaqueOp(size_t id, std::string egglogOp, mlir::Operation* mlirOp) {
+        return new EggifiedOp(id, true, egglogOp, {}, std::vector<mlir::Value>(mlirOp->result_begin(), mlirOp->result_end()), mlirOp);
     }
-    static EggifiedOp value(size_t id, std::string egglogOp, mlir::Value mlirValue) {
-        return EggifiedOp(id, true, egglogOp, {}, {mlirValue}, mlirValue.getDefiningOp());
+    static EggifiedOp* value(size_t id, std::string egglogOp, mlir::Value mlirValue) {
+        return new EggifiedOp(id, true, egglogOp, {}, {mlirValue}, mlirValue.getDefiningOp());
     }
-    static EggifiedOp op(size_t id, std::string egglogOp, const std::vector<EggifiedOp>& operands, mlir::Operation* mlirOp) {
-        return EggifiedOp(id, false, egglogOp, operands, std::vector<mlir::Value>(mlirOp->result_begin(), mlirOp->result_end()), mlirOp);
+    static EggifiedOp* op(size_t id, std::string egglogOp, const std::vector<EggifiedOp*>& operands, mlir::Operation* mlirOp) {
+        return new EggifiedOp(id, false, egglogOp, operands, std::vector<mlir::Value>(mlirOp->result_begin(), mlirOp->result_end()), mlirOp);
+    }
+
+    /**
+     * We want to avoid extraction as much as possible because Egglog's extraction algorithm is slow.
+     * 
+     * Opaque ops are never touched and thus do not need to be extracted.
+     * Operations with no users must be extracted, in case they were optimized by Egglog.
+     * Operations with all users as opaque must be extracted, in case they were optimized by Egglog.
+     * Operations with a non-opaque user may not be extracted, as the optimized operation will be inlined in the user.
+     */
+    bool shouldBeExtracted() const {
+        if (opaque) { // do no extract opaque operations
+            return false;
+        }
+
+        // extract operation that have all users as opaque (in other words, do not extract if there is a user that is not opaque)
+        for (const EggifiedOp* user: users) {
+            if (!user->opaque) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    void addUser(EggifiedOp* user) {
+        users.push_back(user);
     }
 
     std::string getPrintId() const {
@@ -82,6 +117,13 @@ struct EggifiedOp {
     void print(llvm::raw_ostream& os) const {
         os << "[" << id << "] " << egglogOp << " FROM OP: ";
         mlirDump(os);
+
+        // print number of users
+        os << "; USERS: ";
+        for (const EggifiedOp* user: users) {
+            os << user->getPrintId() << " ";
+        }
+
         os << "\n";
     }
 
@@ -92,8 +134,6 @@ struct EggifiedOp {
             os << mlirValues[0];  // todo fix for multi-result support
         }
     }
-
-    std::string inlinedEgglogOp() const;
 };
 
 /**
@@ -117,8 +157,18 @@ public:
     Egglog(mlir::MLIRContext& context, const EgglogCustomDefs& egglogCustom, const std::map<std::string, EgglogOpDef>& supportedEgglogOps)
         : context(context), egglogCustom(egglogCustom), supportedEgglogOps(supportedEgglogOps) {}
 
+    ~Egglog() {
+        for (EggifiedOp* op: eggifiedBlock) {
+            delete op;
+        }
+    }
+
     size_t nextId() {
         return opId++;
+    }
+
+    bool isSupportedOp(const std::string& opName) {
+        return supportedEgglogOps.find(opName) != supportedEgglogOps.end();
     }
 
     /** Parses the given type string into an MLIR type Form (F16) or (Complex <type>) */
@@ -147,16 +197,16 @@ public:
     mlir::Block* parseBlock(const std::string&, mlir::OpBuilder&);
     std::vector<mlir::Block*> parseBlocksFromRegion(const std::string&, mlir::OpBuilder&);
 
-    EggifiedOp eggifyValue(mlir::Value);
-    EggifiedOp eggifyOperation(mlir::Operation*);
-    EggifiedOp eggifyOpaqueOperation(mlir::Operation*);
+    EggifiedOp* eggifyValue(mlir::Value);
+    EggifiedOp* eggifyOperation(mlir::Operation*);
+    EggifiedOp* eggifyOpaqueOperation(mlir::Operation*);
     std::string eggifyBlock(mlir::Block&);
     std::string eggifyRegion(mlir::Region&);
 
-    std::optional<EggifiedOp> findEggifiedOp(mlir::Operation*);
-    std::optional<EggifiedOp> findEggifiedOp(mlir::Value);
-    std::optional<EggifiedOp> findEggifiedOp(size_t);
-    std::optional<EggifiedOp> findEggifiedOp(const std::string&);
+    EggifiedOp* findEggifiedOp(mlir::Operation*);
+    EggifiedOp* findEggifiedOp(mlir::Value);
+    EggifiedOp* findEggifiedOp(size_t);
+    EggifiedOp* findEggifiedOp(const std::string&);
 
 public:
     size_t opId = 0;
@@ -165,7 +215,7 @@ public:
     const std::map<std::string, EgglogOpDef>& supportedEgglogOps;  // Supported operations
 
     // caches
-    std::vector<EggifiedOp> eggifiedBlock;
+    std::vector<EggifiedOp*> eggifiedBlock;
     std::map<std::string, mlir::Operation*> parsedOps;
 };
 

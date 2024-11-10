@@ -24,8 +24,8 @@ mlir::Attribute parseFastMathFlagsAttr(const std::vector<std::string>& split, Eg
     mlir::Attribute parsedAttr = mlir::parseAttribute(strAttr, &egglog.context);
 
     // dump
-    llvm::outs() << "Parsing mlir::arith::FastMathFlagsAttr: " << strAttr << "\n";
-    llvm::outs() << "Parsed mlir::arith::FastMathFlagsAttr: " << parsedAttr << "\n";
+    // llvm::outs() << "Parsing mlir::arith::FastMathFlagsAttr: " << strAttr << "\n";
+    // llvm::outs() << "Parsed mlir::arith::FastMathFlagsAttr: " << parsedAttr << "\n";
 
     return parsedAttr;
 }
@@ -45,11 +45,11 @@ std::vector<std::string> stringifyFastMathFlagsAttr(mlir::Attribute attr, Egglog
     split.push_back("(" + mlir::arith::stringifyFastMathFlags(flags) + ")");
 
     // dump
-    llvm::outs() << "Stringified mlir::arith::FastMathFlagsAttr: ";
-    for (const std::string& s: split) {
-        llvm::outs() << s << " , ";
-    }
-    llvm::outs() << "\n";
+    // llvm::outs() << "Stringified mlir::arith::FastMathFlagsAttr: ";
+    // for (const std::string& s: split) {
+    //     llvm::outs() << s << " , ";
+    // }
+    // llvm::outs() << "\n";
 
     return split;
 }

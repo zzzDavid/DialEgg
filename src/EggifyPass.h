@@ -5,6 +5,8 @@
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Pass/Pass.h"
 
+// TODO fix this path: we changed the output of an operation in egglog so make sure it is consistent
+
 struct EggifyPass : public mlir::PassWrapper<EggifyPass, mlir::OperationPass<mlir::func::FuncOp>> {
     mlir::StringRef getArgument() const override { return "eggify"; }
     mlir::StringRef getDescription() const override { return "Converts MLIR operations to Egglog Op variants."; }

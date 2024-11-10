@@ -26,15 +26,14 @@
 #include "EqualitySaturationPass.h"
 #include "Egglog.h"
 
-EqualitySaturationPass::EqualitySaturationPass(const std::string& eggFilePath, const EgglogCustomDefs& funcs) {
-    EqualitySaturationPass("egglog", eggFilePath, funcs);
-}
-
-EqualitySaturationPass::EqualitySaturationPass() : egglogExecutable(""), eggFilePath(""), customFunctions({}) {}  // dummy
-
-EqualitySaturationPass::EqualitySaturationPass(const std::string egglogExecutable, const std::string& eggFilePath, const EgglogCustomDefs& funcs)
-    : egglogExecutable(egglogExecutable), eggFilePath(eggFilePath), customFunctions(funcs) {
-
+EqualitySaturationPass::EqualitySaturationPass(const std::string& mlirFile, const std::string& eggFile, const EgglogCustomDefs& funcs)
+    : mlirFilePath(mlirFile), eggFilePath(eggFile), customFunctions(funcs) {
+    
+    // mlirFilePath without extension
+    std::string name = mlirFile.substr(0, mlirFile.find(".mlir"));
+    egglogExtractedFilename = name + "-egglog-extract.log";
+    egglogLogFilename = name + "-egglog.log";
+    
     std::ifstream opFile(eggFilePath);
     std::string line;
 
@@ -64,7 +63,7 @@ EqualitySaturationPass::EqualitySaturationPass(const std::string egglogExecutabl
     llvm::outs() << "\n\n";
 }
 
-void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp>& block, const std::string& blockName) {
+void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp*>& block, const std::string& blockName) {
     std::ifstream eggFile(eggFilePath);
     std::vector<std::string> egglogLines;
 
@@ -82,16 +81,15 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp>& block, con
         egglogLines.push_back(line);
 
         if (!insertedOps && line == opsTarget) {
-            for (const EggifiedOp& op: block) {  // Insert the operations
-                egglogLines.push_back(op.egglogLet());
+            for (const EggifiedOp* op: block) {  // Insert the operations
+                egglogLines.push_back(op->egglogLet());
             }
 
             insertedOps = true;
         } else if (!insertedExtracts && line == extractsTarget) {
-            // TODO extract all ops with side-effects and all root ops
-            for (const EggifiedOp& op: block) {  // Extract the results of the egglog run
-                if (!op.opaque && op.notUsed) {
-                    egglogLines.push_back("(extract " + op.getPrintId() + ")");
+            for (const EggifiedOp* op: block) {  // Extract the results of the egglog run
+                if (op->shouldBeExtracted()) {
+                    egglogLines.push_back("(extract " + op->getPrintId() + ")");
                 }
             }
 
@@ -112,8 +110,7 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp>& block, con
     mlirToEgglogTime += std::chrono::duration<double>(end - start).count();
 
     // Run egglog and extract the results
-    bool svg = false;
-    std::string egglogCmd = egglogExecutable + " " + opsEggFilePath + (svg ? " --to-svg" : "") + " > " + egglogExtractedFilename + " 2> " + egglogLogFilename;
+    std::string egglogCmd = "egglog " + opsEggFilePath + " > " + egglogExtractedFilename + " 2> " + egglogLogFilename;
 
     llvm::outs() << "\nRunning egglog: " << egglogCmd << "\n"
                  << "\n";
@@ -141,33 +138,32 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
 
     // register all block arguments
     for (mlir::Value value: block.getArguments()) {
-        EggifiedOp eggifiedValue = egglog.eggifyValue(value);
-        // eggifiedValue.print(llvm::outs());
+        EggifiedOp* eggifiedValue = egglog.eggifyValue(value);
+        // eggifiedValue->print(llvm::outs());
     }
 
     for (mlir::Operation& op: block.getOperations()) {
-        EggifiedOp eggifiedOp = egglog.eggifyOperation(&op);
-        // eggifiedOp.print(llvm::outs());
+        EggifiedOp* eggifiedOp = egglog.eggifyOperation(&op);
+        // eggifiedOp->print(llvm::outs());
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     mlirToEgglogTime += std::chrono::duration<double>(end - start).count();
 
     // dump all ops
-    for (EggifiedOp& eggOp: egglog.eggifiedBlock) {
-        eggOp.print(llvm::outs());
+    for (const EggifiedOp* eggOp: egglog.eggifiedBlock) {
+        eggOp->print(llvm::outs());
     }
 
     runEgglog(egglog.eggifiedBlock, blockName); // Run egglog on the block
-
-    // Parse the extracted egglog file and replace the MLIR operations
 
     start = std::chrono::high_resolution_clock::now();
 
     std::ifstream file(egglogExtractedFilename);
 
-    for (EggifiedOp& eggOp: egglog.eggifiedBlock) {
-        if (eggOp.opaque || !eggOp.notUsed) {
+    // Parse the extracted egglog file and replace the MLIR operations
+    for (const EggifiedOp* eggOp: egglog.eggifiedBlock) {
+        if (!eggOp->shouldBeExtracted()) {
             continue;
         }
 
@@ -178,21 +174,15 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
 
         // llvm::outs() << eggOp.getPrintId() << " = " << line << "\n";
 
-        mlir::Operation* prevOp = eggOp.mlirOp;
+        mlir::Operation* prevOp = eggOp->mlirOp;
         mlir::OpBuilder builder(prevOp);
         mlir::Operation* newOp = egglog.parseOperation(line, builder);
 
-        // llvm::outs() << "NEW OPERATION [ "
-        //              << "] : ";
-        // newOp->print(llvm::outs());
-        // llvm::outs() << "\n";
-
-        // llvm::outs() << "OLD OPERATION [" << eggOp.id << "] : ";
-        // prevOp->print(llvm::outs());
-        // llvm::outs() << "\n";
-
-        // Check if the whole operation is different, if so, replace it
-        if (newOp != prevOp) {
+        if(newOp == nullptr) { // If the operation is an opaque value, replace it with the value
+            mlir::Value value = egglog.parseValue(line);
+            prevOp->getResult(0).replaceAllUsesWith(value);
+            prevOp->erase();
+        } else if (newOp != prevOp) { // Check if the whole operation is different, if so, replace it
             // llvm::outs() << "REPLACING: (" << *prevOp << ") WITH (" << *newOp << ")\n\n";
             prevOp->replaceAllUsesWith(newOp);
             prevOp->erase();
@@ -215,31 +205,30 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
 }
 
 void EqualitySaturationPass::runOnOperation() {
-    if (egglogExecutable.empty() || eggFilePath.empty()) {
-        return;
-    }
-
     mlir::func::FuncOp rootOp = getOperation();
     llvm::StringRef rootOpName = rootOp.getName();
 
     llvm::outs() << "Running on function: " << rootOpName << "\n";
     llvm::outs() << "-----------------------------------------\n";
 
-    // TODO add blocks to a list/queue and process them in order
-
     // Perform equality saturation on all operations of a block.
-    // Re-create the MLIR operations in this block according to the optimization.
     for (mlir::Block& block: rootOp.getRegion().getBlocks()) {
         std::string parentOpName = block.getParentOp()->getName().getStringRef().str();
-        std::string blockName = rootOpName.str() + "_" + parentOpName + "_" + getBlockName(block);
+        std::string blockName = rootOpName.str() + "_" + parentOpName;
         runOnBlock(block, blockName);
 
-        // incorrect dead code elimination (temporary until this PR is merged: https://github.com/llvm/llvm-project/pull/99671)
-        block.walk([&](mlir::Operation* op) {
-            if (mlir::isOpTriviallyDead(op)) {
-                op->erase();
-            }
-        });
+        // Temporary dead code elimination (until this PR is merged: https://github.com/llvm/llvm-project/pull/99671)
+        bool clean = false;
+        while (!clean) {
+            clean = true;
+            
+            block.walk([&](mlir::Operation* op) {
+                if (mlir::isOpTriviallyDead(op)) {
+                    clean = false;
+                    op->erase();
+                }
+            });
+        }
     }
 
     llvm::outs() << "-----------------------------------------\n";
@@ -250,9 +239,6 @@ void EqualitySaturationPass::runOnOperation() {
     llvm::outs() << "-----------------------------------------\n";
 }
 
-std::unique_ptr<mlir::Pass> createEqualitySaturationPass(const std::string& egglogExecutable, const std::string& eggFilePath, const EgglogCustomDefs& funcs) {
-    return std::make_unique<EqualitySaturationPass>(egglogExecutable, eggFilePath, funcs);
-}
-std::unique_ptr<mlir::Pass> createEqualitySaturationPass(const std::string& eggFilePath, const EgglogCustomDefs& funcs) {
-    return std::make_unique<EqualitySaturationPass>(eggFilePath, funcs);
+std::unique_ptr<mlir::Pass> createEqualitySaturationPass(const std::string& mlirFile, const std::string& eggFile, const EgglogCustomDefs& funcs) {
+    return std::make_unique<EqualitySaturationPass>(mlirFile, eggFile, funcs);
 }

@@ -11,6 +11,27 @@
 #include "EgglogCustomDefs.h"
 #include "MatrixMultiplyAssociatePass.h"
 
+std::string getMlirFile(int argc, char** argv) {
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] != '-') {
+            return argv[i];
+        }
+    } 
+}
+
+std::string getEggFile(int argc, char** argv, std::string mlirFile) {
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (i < argc && (arg == "-egg" || arg == "--egg")) {
+            return argv[i + 1];
+        }
+    }
+
+    // Otherwise, use the mlir file name with .egg extension
+    std::string name = mlirFile.substr(0, mlirFile.find(".mlir"));
+    return name + ".egg";
+}
+
 int main(int argc, char** argv) {
     // Register dialects
     mlir::DialectRegistry dialectRegistry;
@@ -22,28 +43,27 @@ int main(int argc, char** argv) {
     mlir::PassRegistration<MatrixMultiplyAssociatePass>();
 
     // Equality Saturation Pass
-    std::string egglogExecutable = "~/dev/lib/egglog/target/debug/egglog";  // Default
-    std::string eggFile = "mm/linalg_nmm.egg";
-    
-    std::string inputFilename;
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-') {
-            inputFilename = argv[i];
-            break;
-        }
+    static llvm::cl::opt<std::string> eggFileOpt(
+        "egg",
+        llvm::cl::desc("Path to egg file"),
+        llvm::cl::value_desc("filename"));
+
+    std::string mlirFile = getMlirFile(argc, argv);
+    std::string eggFile = getEggFile(argc, argv, mlirFile);
+
+    // Make sure both files exist
+    if (!llvm::sys::fs::exists(mlirFile)) {
+        llvm::errs() << "MLIR file does not exist: " << mlirFile << "\n";
+        return 1;
     }
 
-    // If input is <DIR>/abc.mlir, then eggFile is <DIR>/abc.egg (if it exists)
-    if (inputFilename.find(".mlir") != std::string::npos) {
-        std::string newEggFile = inputFilename.substr(0, inputFilename.find(".mlir")) + ".egg";
-        if (llvm::sys::fs::exists(newEggFile)) {
-            eggFile = newEggFile;
-        }
+    if (!llvm::sys::fs::exists(eggFile)) {
+        llvm::errs() << "Egg file does not exist: " << eggFile << "\n";
+        return 1;
     }
 
-    llvm::outs() << "egglogExecutable: " << egglogExecutable << "\n";
+    llvm::outs() << "mlirFile: " << mlirFile << "\n";
     llvm::outs() << "eggFile: " << eggFile << "\n";
-    llvm::outs() << "inputFilename: " << inputFilename << "\n";
     
     std::map<std::string, AttrStringifyFunction> attrStringifiers = {
             {mlir::arith::FastMathFlagsAttr::name.str(), stringifyFastMathFlagsAttr}};
@@ -56,7 +76,9 @@ int main(int argc, char** argv) {
             {"RankedTensor", parseRankedTensorType}};
 
     EgglogCustomDefs funcs = {attrStringifiers, attrParsers, typeStringifiers, typeParsers};
-    mlir::PassRegistration<EqualitySaturationPass>([&] { return createEqualitySaturationPass(egglogExecutable, eggFile, funcs); });
+    mlir::PassRegistration<EqualitySaturationPass>([&] { 
+        return createEqualitySaturationPass(mlirFile, eggFile, funcs); 
+    });
 
     // Run the main MLIR opt
     mlir::LogicalResult result = mlir::MlirOptMain(argc, argv, "EqSat", dialectRegistry);

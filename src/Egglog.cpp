@@ -88,21 +88,6 @@ std::string Egglog::removeComment(const std::string& str) {
     return str;
 }
 
-std::string EggifiedOp::inlinedEgglogOp() const {
-    // insert op1 and op2 into (add op1 op2)
-    std::string inlinedEgglogOp = egglogOp;
-
-    for (const EggifiedOp& operand: operands) {
-        std::string operandPrintId = operand.getPrintId();
-
-        // replace all occurrences of opPrintId with operand.egglogOp
-        std::string inlinedOperandEgglogOp = operand.inlinedEgglogOp();
-        inlinedEgglogOp = std::regex_replace(inlinedEgglogOp, std::regex(operandPrintId), inlinedOperandEgglogOp);
-    }
-
-    return inlinedEgglogOp;
-}
-
 std::vector<std::string> Egglog::splitExpression(std::string opStr) { // linear
     // The expression must be surrounded by parentheses
     if (opStr.front() != '(' || opStr.back() != ')') {
@@ -258,7 +243,7 @@ mlir::Type Egglog::parseType(std::string typeStr) {
         std::string elementTypeStr = split[1];
         mlir::Type elementType = parseType(elementTypeStr);
         return mlir::UnrankedTensorType::get(elementType);
-    } else if (type == "OtherType") {
+    } else if (type == "OpaqueType") {
         return mlir::parseType(unwrap(split[1], '"'), &context);
     } else if (type == "Function") {
         std::string inputTypesStr = split[1];
@@ -387,7 +372,7 @@ std::string Egglog::eggifyType(mlir::Type type) {
         }
         ss << "))";
     } else {
-        ss << "(OtherType \"" << type << "\" \"" << typeStr << "\")";
+        ss << "(OpaqueType \"" << type << "\" \"" << typeStr << "\")";
     }
 
     ss.flush();
@@ -474,7 +459,7 @@ mlir::Attribute Egglog::parseAttribute(const std::string& attrStr) {
         return mlir::DenseFPElementsAttr::get(shapedType, values);
     } else if (attrType == "SymbolRefAttr") {  // (SymbolRefAttr "<name>")
         return mlir::SymbolRefAttr::get(&context, unwrap(split[1], '"'));
-    } else if (attrType == "OtherAttr") {  // TODO add all remaining builtin attrs (check below functions)
+    } else if (attrType == "OpaqueAttr") {  // TODO add all remaining builtin attrs (check below functions)
         return mlir::parseAttribute(unwrap(split[1], '"'), &context);
     } else if (egglogCustom.attrParsers.find(attrType) != egglogCustom.attrParsers.end()) {
         AttrParseFunction parseFunc = egglogCustom.attrParsers.at(attrType);
@@ -590,8 +575,8 @@ std::string Egglog::eggifyAttribute(mlir::Attribute attr) {
         }
         ss << ")";
 
-    } else {  // (OtherAttr "<attr>" "<type-name>")
-        ss << "(OtherAttr \"";
+    } else {  // (OpaqueAttr "<attr>" "<type-name>")
+        ss << "(OpaqueAttr \"";
         attr.print(ss);
         ss << "\" \"" << typeName << "\")";
     }
@@ -621,13 +606,13 @@ mlir::Value Egglog::parseValue(const std::string& valueStr) {
     assert(split[0] == "Value");
 
     size_t id = std::stoll(split[1]);
-    std::optional<EggifiedOp> eggifiedOp = findEggifiedOp(id);
-    if (!eggifiedOp.has_value()) {
+    EggifiedOp* eggifiedOp = findEggifiedOp(id);
+    if (eggifiedOp == nullptr) {
         llvm::outs() << "Value " << id << " not found\n";
         exit(1);
     }
 
-    return eggifiedOp.value().mlirValues[0];
+    return eggifiedOp->mlirValues[0];
 }
 
 mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBuilder& builder) {
@@ -635,26 +620,16 @@ mlir::Operation* Egglog::parseOperation(const std::string& newOpStr, mlir::OpBui
     std::vector<std::string> split = splitExpression(newOpStr);
     std::string opName = split[0];
 
-    bool cacheable = opName.find("func_call") == std::string::npos;  // TODO if no side-effect, then cacheable
-    // bool cacheable = false;
-    if (cacheable) {
-        // if the string is found, then it is an input operation
-
-        // if (eggifiedOp.has_value()) {
-        //     // llvm::outs() << "FOUND EGGIFIED OP: " << eggifiedOp.value().egglogOp << "\n";
-        //     return eggifiedOp.value().mlirOp;
-        //     // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
-        // }
-
-        // otherwise look in the parsed ops cache
-        if (parsedOps.find(newOpStr) != parsedOps.end() && cacheable) {
-            // llvm::outs() << "FOUND OPERATION IN CACHE: " << newOpStr << "\n";
-            return parsedOps[newOpStr];
-            // TODO the better way of doing this would be to have an AST-like structure for the egglog ops
-        }
+    if (opName == "Value") { // If it's am opaque op, no operation to parse
+        return nullptr;
     }
 
-    if (supportedEgglogOps.find(opName) == supportedEgglogOps.end()) {
+    bool cacheable = opName.find("func_call") == std::string::npos; // TODO hacky way to check if cacheable, fix this
+    if (parsedOps.find(newOpStr) != parsedOps.end() && cacheable) { // look in the parsed ops cache
+        return parsedOps[newOpStr];
+    }
+
+    if (supportedEgglogOps.find(opName) == supportedEgglogOps.end()) { // unsupported operation
         llvm::outs() << "Unsupported operation '" << opName << "'.\n";
         exit(1);
     }
@@ -767,23 +742,23 @@ mlir::Block* Egglog::parseBlock(const std::string& blockStr, mlir::OpBuilder& bu
     return block;
 }
 
-EggifiedOp Egglog::eggifyValue(mlir::Value value) {
-    // (Value <id> <type>)
-    std::optional<EggifiedOp> eggifiedOp = findEggifiedOp(value);
-    if (eggifiedOp.has_value()) {
-        return eggifiedOp.value();
+// (Value <id> <type>)
+EggifiedOp* Egglog::eggifyValue(mlir::Value value) {
+    EggifiedOp* foundEggifiedOp = findEggifiedOp(value);
+    if (foundEggifiedOp != nullptr) {
+        return foundEggifiedOp;
     }
 
     std::string type = eggifyType(value.getType());
     size_t id = nextId();
     std::string egglogOp = "(Value " + std::to_string(id) + " " + type + ")";
 
-    EggifiedOp eggifiedValue = EggifiedOp::value(id, egglogOp, value);
+    EggifiedOp* eggifiedValue = EggifiedOp::value(id, egglogOp, value);
     eggifiedBlock.push_back(eggifiedValue);
     return eggifiedValue;
 }
 
-EggifiedOp Egglog::eggifyOpaqueOperation(mlir::Operation* op) {
+EggifiedOp* Egglog::eggifyOpaqueOperation(mlir::Operation* op) {
     if (op->getNumResults() == 1) {
         return eggifyValue(op->getResult(0)); // backwards compatibility
     }
@@ -791,17 +766,17 @@ EggifiedOp Egglog::eggifyOpaqueOperation(mlir::Operation* op) {
     size_t id = nextId();
     std::string egglogOp = "(Value " + std::to_string(id) + " (None))";
 
-    EggifiedOp eggifiedValue = EggifiedOp::opaqueOp(id, egglogOp, op);
+    EggifiedOp* eggifiedValue = EggifiedOp::opaqueOp(id, egglogOp, op);
     eggifiedBlock.push_back(eggifiedValue);
     return eggifiedValue;
 }
 
-EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
-    // (<op> <operand1> <operand2> ... <operandN> <attr1> <attr2> ... <attrM> <region1> <region2> ... <regionR> <type1> <type2> ... <typeT>)
+// (<op> <operand1> <operand2> ... <operandN> <attr1> <attr2> ... <attrM> <region1> <region2> ... <regionR> <type1> <type2> ... <typeT>)
+EggifiedOp* Egglog::eggifyOperation(mlir::Operation* op) {
 
-    std::optional<EggifiedOp> eggifiedOpOpt = findEggifiedOp(op);
-    if (eggifiedOpOpt.has_value()) {
-        return eggifiedOpOpt.value();
+    EggifiedOp* foundEggifiedOp = findEggifiedOp(op);
+    if (foundEggifiedOp != nullptr) {
+        return foundEggifiedOp;
     }
 
     std::string opName = op->getName().getStringRef().str();
@@ -809,6 +784,7 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
 
     if (!isSupported) {
         // check is supported if we add the number of operands
+        // TODO change to lookup in the map for the appropriate operation name 
         std::string opNameWithNumOperands = opName + "." + std::to_string(op->getNumOperands());
         isSupported = supportedEgglogOps.find(opNameWithNumOperands) != supportedEgglogOps.end();
 
@@ -828,7 +804,7 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
         return eggifyOpaqueOperation(op);
     }
 
-    op->removeAttr("linalg.memoized_indexing_maps");
+    op->removeAttr("linalg.memoized_indexing_maps"); // temporary fix for linalg ops
 
     std::stringstream ss;
 
@@ -838,11 +814,11 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
     ss << "(" << cleanOpName;  // (<op>
 
     // <operand1> <operand2> ... <operandN>
-    std::vector<EggifiedOp> operands;
+    std::vector<EggifiedOp*> operands;
     for (size_t i = 0; i < egglogOpDef.nOperands; i++) {
-        EggifiedOp eggifiedOperand = eggifyValue(op->getOperand(i));
+        EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));
         operands.push_back(eggifiedOperand);
-        ss << " " << eggifiedOperand.getPrintId();
+        ss << " " << eggifiedOperand->getPrintId();
     }
 
     // <attr1> <attr2> ... <attrM>
@@ -863,9 +839,11 @@ EggifiedOp Egglog::eggifyOperation(mlir::Operation* op) {
 
     ss << ")";
 
-    EggifiedOp eggifiedOp = EggifiedOp::op(nextId(), ss.str(), operands, op);
-    eggifiedOp.notUsed = op->use_empty();
-    // eggifiedOp.notUsed = true;
+    EggifiedOp* eggifiedOp = EggifiedOp::op(nextId(), ss.str(), operands, op);
+    for (EggifiedOp* operand: eggifiedOp->operands) {
+        operand->addUser(eggifiedOp);
+    }
+
     eggifiedBlock.push_back(eggifiedOp);
     return eggifiedOp;
 }
@@ -881,7 +859,7 @@ std::string Egglog::eggifyBlock(mlir::Block& block) {
             llvm::outs() << "Skipping operation with more than one result: " << op.getName() << "\n";
         }
 
-        ss << " " << eggifyOperation(&op).getPrintId();
+        ss << " " << eggifyOperation(&op)->getPrintId();
     }
     ss << "))";
     return ss.str();
@@ -900,37 +878,36 @@ std::string Egglog::eggifyRegion(mlir::Region& region) {
     return ss.str();
 }
 
-std::optional<EggifiedOp> Egglog::findEggifiedOp(mlir::Operation* op) {
-    for (EggifiedOp& eggifiedOp: eggifiedBlock) {
-        if (eggifiedOp.mlirOp == op) {
-            return std::optional<EggifiedOp>(eggifiedOp);
+EggifiedOp* Egglog::findEggifiedOp(mlir::Operation* op) {
+    for (EggifiedOp* eggifiedOp: eggifiedBlock) {
+        if (eggifiedOp->mlirOp == op) {
+            return eggifiedOp;
         }
     }
-    return std::nullopt;
+    return nullptr;
 }
-std::optional<EggifiedOp> Egglog::findEggifiedOp(mlir::Value value) {
-    for (EggifiedOp& eggifiedOp: eggifiedBlock) {
-        if (std::find(eggifiedOp.mlirValues.begin(), eggifiedOp.mlirValues.end(), value) != eggifiedOp.mlirValues.end()) {
-            return std::optional<EggifiedOp>(eggifiedOp);
+EggifiedOp* Egglog::findEggifiedOp(mlir::Value value) {
+    for (EggifiedOp* eggifiedOp: eggifiedBlock) {
+        std::vector<mlir::Value>& mlirValues = eggifiedOp->mlirValues;
+        if (std::find(mlirValues.begin(), mlirValues.end(), value) != mlirValues.end()) {
+            return eggifiedOp;
         }
     }
-    return std::nullopt;
+    return nullptr;
 }
-std::optional<EggifiedOp> Egglog::findEggifiedOp(size_t id) {
-    for (EggifiedOp& eggifiedOp: eggifiedBlock) {
-        if (eggifiedOp.id == id) {
-            return std::optional<EggifiedOp>(eggifiedOp);
+EggifiedOp* Egglog::findEggifiedOp(size_t id) {
+    for (EggifiedOp* eggifiedOp: eggifiedBlock) {
+        if (eggifiedOp->id == id) {
+            return eggifiedOp;
         }
     }
-    return std::nullopt;
+    return nullptr;
 }
-std::optional<EggifiedOp> Egglog::findEggifiedOp(const std::string& egglogOp) {
-    for (EggifiedOp& eggifiedOp: eggifiedBlock) {
-        if (eggifiedOp.egglogOp == egglogOp) {
-            return std::optional<EggifiedOp>(eggifiedOp);
-        } else if (eggifiedOp.inlinedEgglogOp() == egglogOp) {
-            return std::optional<EggifiedOp>(eggifiedOp);
+EggifiedOp* Egglog::findEggifiedOp(const std::string& egglogOp) {
+    for (EggifiedOp* eggifiedOp: eggifiedBlock) {
+        if (eggifiedOp->egglogOp == egglogOp) {
+            return eggifiedOp;
         }
     }
-    return std::nullopt;
+    return nullptr;
 }

@@ -1,6 +1,0 @@
-name,opt,-O3
-math_inv_sqrt,canon,2581.5
-math_inv_sqrt,canon+eqsat,2792.5
-math_inv_sqrt,noopt,2660.0
-math_inv_sqrt,eqsat+canon,2771.0
-math_inv_sqrt,eqsat,2794.0

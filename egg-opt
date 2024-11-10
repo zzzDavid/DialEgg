@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# Script to run the egg-opt tool
+# Usage: ./egg-opt <pass> <path-to-mlir-file> [<path-to-egg-file>]
+# Example ./egg-opt --eq-sat test/3mm.mlir test/3mm.egg
+
+PASS=$1
+MLIR_FILE=$2
+
+# Use provided egg file, otherwise find the egg file in the same directory with the same name
+if [ "$#" -ge 3 ]; then
+    EGG_FILE=$3
+else
+    EGG_FILE="${MLIR_FILE%.*}.egg"
+fi
+
+# Check if the egg file exists
+if [ ! -f $EGG_FILE ]; then
+    echo "Egg file not found: $EGG_FILE"
+    exit 1
+fi
+
+EGGLOG_EXECUTABLE="~/dev/lib/egglog/target/release/egglog"
+
+# Make sure MLIR_FILE, EGG_FILE and EGGLOG_EXECUTABLE are available for the C++ code
+export MLIR_FILE
+export EGG_FILE
+export EGGLOG_EXECUTABLE
+
+# Run the egg-opt tool
+./build/egg-opt --mlir-disable-threading $PASS $MLIR_FILE

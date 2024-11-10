@@ -3,7 +3,8 @@ project(egg-opt LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(LLVM_DIR ~/dev/lib/llvm/build/lib/cmake/llvm)
+set(LLVM_DIR ~/dev/lib/llvm/build-release/lib/cmake/llvm)
+set(CMAKE_BUILD_TYPE Release)  # Set -DCMAKE_BUILD_TYPE to "Release" to build with optimizations
 find_package(LLVM REQUIRED CONFIG)
 if ("${LLVM_VERSION_MAJOR}" VERSION_LESS 18)
     message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 18 or above")
@@ -15,7 +16,7 @@ message(STATUS "LLVM_DEFINITIONS: ${LLVM_DEFINITIONS}")
 message(STATUS "LLVM_INCLUDE_DIRS: ${LLVM_INCLUDE_DIRS}")
 message(STATUS "LLVM_BUILD_LIBRARY_DIR: ${LLVM_BUILD_LIBRARY_DIR}")
 
-set(MLIR_DIR ~/dev/lib/llvm/build/lib/cmake/mlir)
+set(MLIR_DIR ~/dev/lib/llvm/build-release/lib/cmake/mlir)
 find_package(MLIR REQUIRED CONFIG)
 set(MLIR_BINARY_DIR ${CMAKE_BINARY_DIR})
 message(STATUS "Found MLIR ${MLIR_PACKAGE_VERSION}")
@@ -45,21 +46,3 @@ set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib)
 add_llvm_executable(egg-opt src/egg-opt.cpp src/EqualitySaturationPass.cpp src/Egglog.cpp)
 llvm_update_compile_flags(egg-opt)
 target_link_libraries(egg-opt PRIVATE ${OPT_LIBS})
-
-# add_llvm_executable(tester scripts/tester.cpp)
-# llvm_update_compile_flags(tester)
-# target_link_libraries(tester PRIVATE ${OPT_LIBS})
-
-add_llvm_executable(mm scripts/mm.cpp)
-llvm_update_compile_flags(mm)
-target_link_libraries(mm PRIVATE ${OPT_LIBS})
-
-# add_llvm_executable(linalg scripts/linalg.cpp)
-# llvm_update_compile_flags(linalg)
-# target_link_libraries(linalg PRIVATE ${OPT_LIBS})
-
-# add_llvm_executable(attr scripts/attr.cpp)
-# llvm_update_compile_flags(attr)
-# target_link_libraries(attr PRIVATE ${OPT_LIBS})
-
-

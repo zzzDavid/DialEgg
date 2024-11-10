@@ -6,7 +6,6 @@ func.func private @printNewline()
 // C funcs
 func.func private @clock() -> i64
 func.func private @putchar(i32) -> i32
-llvm.func @printf(!llvm.ptr, ...) -> i32
 
 func.func @printI64Tensor1D(%tensor : tensor<?xi64>) {
     %c0 = arith.constant 0 : index
@@ -76,6 +75,7 @@ func.func @printI64Tensor3D(%tensor: tensor<?x?x?xi64>) {
     %c2 = arith.constant 2 : index
 
     %lbracket = arith.constant 91 : i32
+    %rbracket = arith.constant 93 : i32
     func.call @putchar(%lbracket) : (i32) -> i32
 
     %tab = arith.constant 9 : i32
@@ -106,6 +106,7 @@ func.func @printI64Tensor3D(%tensor: tensor<?x?x?xi64>) {
         func.call @printNewline() : () -> ()
     }
 
+    
     func.call @putchar(%rbracket) : (i32) -> i32
 
     func.return
@@ -217,7 +218,6 @@ func.func @fillRandomI64Tensor2D(%tensor: tensor<?x?xi64>) -> tensor<?x?xi64> {
     return %tensor_filled : tensor<?x?xi64>
 }
 
-llvm.mlir.global constant @time("%d us -> %f s")
 func.func @displayTime(%start: i64, %end: i64) {
     %diff = arith.subi %end, %start : i64
     %diff_f64 = arith.uitofp %diff : i64 to f64
@@ -226,18 +226,23 @@ func.func @displayTime(%start: i64, %end: i64) {
     %diff_seconds = arith.divf %diff_f64, %million : f64
 
     // Format: "%f us -> %f s"
-    %time_ptr = llvm.mlir.addressof @time : !llvm.ptr
-    llvm.call @printf(%time_ptr, %diff, %diff_seconds) vararg(!llvm.func<i32 (ptr, ...)>) : (!llvm.ptr, i64, f64) -> i32
+    %u = arith.constant 117 : i32
+    %s = arith.constant 115 : i32
+    %space = arith.constant 32 : i32
+    %dash = arith.constant 45 : i32
+    %gt = arith.constant 62 : i32
+
+    func.call @printF64(%diff_f64) : (f64) -> ()
+    func.call @putchar(%space) : (i32) -> i32
+    func.call @putchar(%u) : (i32) -> i32
+    func.call @putchar(%s) : (i32) -> i32
+    func.call @putchar(%space) : (i32) -> i32
+    func.call @putchar(%dash) : (i32) -> i32
+    func.call @putchar(%gt) : (i32) -> i32
+    func.call @putchar(%space) : (i32) -> i32
+    func.call @printF64(%diff_seconds) : (f64) -> ()
+    func.call @putchar(%space) : (i32) -> i32
+    func.call @putchar(%s) : (i32) -> i32
 
     func.return
-}
-
-func.func @main() -> f32 {
-    %x = tensor.empty() : tensor<10x3xi64>
-    %x_cast = tensor.cast %x : tensor<10x3xi64> to tensor<?x?xi64>
-    %x_filled = func.call @fillRandomI64Tensor2D(%x_cast) : (tensor<?x?xi64>) -> tensor<?x?xi64>
-    func.call @printI64Tensor2D(%x_filled) : (tensor<?x?xi64>) -> ()
-
-    %c0 = arith.constant 0.0 : f32
-    func.return %c0 : f32
 }

@@ -1,4 +1,0 @@
-arith.constant, 0 operands, 1 results, 1 attributes: [value]
-func.call, 0 operands, 1 results, 1 attributes: [callee]
-linalg.matmul, 3 operands, 1 results, 1 attributes: [operandSegmentSizes]
-tensor.empty, 0 operands, 1 results, 0 attributes: []
