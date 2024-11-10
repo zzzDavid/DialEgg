@@ -15,27 +15,23 @@
 (function math_powf (Op Op AttrPair Type) Op :cost 100000)
 
 ;; OPS HERE ;;
+; poly_eval_3_func.func
 (let op0 (Value 0 (F64)))
 (let op1 (Value 1 (F64)))
 (let op2 (Value 2 (F64)))
 (let op3 (Value 3 (F64)))
 (let op4 (Value 4 (F64)))
-(let op5 (Value 5 (F64)))
-(let op6 (arith_constant (NamedAttr "value" (FloatAttr 2.0 (F64))) (F64)))
-(let op7 (arith_constant (NamedAttr "value" (FloatAttr 3.0 (F64))) (F64)))
-(let op8 (arith_constant (NamedAttr "value" (FloatAttr 4.0 (F64))) (F64)))
-(let op9 (math_powf op5 op6 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op10 (math_powf op5 op7 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op11 (math_powf op5 op8 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op12 (arith_mulf op3 op5 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op13 (arith_mulf op2 op9 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op14 (arith_mulf op1 op10 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op15 (arith_mulf op0 op11 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op16 (arith_addf op14 op15 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op17 (arith_addf op13 op16 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op18 (arith_addf op12 op17 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op19 (arith_addf op4 op18 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
-(let op20 (Value 20 (None)))
+(let op5 (arith_constant (NamedAttr "value" (FloatAttr 2.0 (F64))) (F64)))
+(let op6 (arith_constant (NamedAttr "value" (FloatAttr 3.0 (F64))) (F64)))
+(let op7 (math_powf op4 op5 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op8 (math_powf op4 op6 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op9 (arith_mulf op2 op4 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op10 (arith_mulf op1 op7 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op11 (arith_mulf op0 op8 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op12 (arith_addf op10 op11 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op13 (arith_addf op9 op12 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op14 (arith_addf op3 op13 (NamedAttr "fastmath" (arith_fastmath (none))) (F64)))
+(let op15 (Value 15 (None)))
 
 ;; RULES HERE ;;
 (ruleset rules)
@@ -84,4 +80,4 @@
 (run-schedule (saturate rules)) ; search 0.017s, apply 0.002s, rebuild 0.006s, total 0.025s
 
 ;; EXTRACTS HERE ;;
-(extract op19)
+(extract op14)

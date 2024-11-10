@@ -804,6 +804,12 @@ EggifiedOp* Egglog::eggifyOperation(mlir::Operation* op) {
         return eggifyOpaqueOperation(op);
     }
 
+    // check if not the same number of results
+    if (egglogOpDef.nResults != op->getNumResults()) {
+        llvm::outs() << "Unsupported operation '" << opName << "' since it has " << op->getNumResults() << " results but egglog's '" << egglogOpDef.fullName << "' expects " << egglogOpDef.nResults << " results.\n";
+        return eggifyOpaqueOperation(op);
+    }
+
     op->removeAttr("linalg.memoized_indexing_maps"); // temporary fix for linalg ops
 
     std::stringstream ss;

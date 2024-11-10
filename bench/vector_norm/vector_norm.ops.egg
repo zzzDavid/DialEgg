@@ -17,6 +17,7 @@
 (function func_call (Op AttrPair Type) Op)
 
 ;; OPS HERE ;;
+; normalize_vector_func.func
 (let op0 (Value 0 (F32)))
 (let op1 (Value 1 (F32)))
 (let op2 (Value 2 (F32)))

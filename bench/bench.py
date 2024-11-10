@@ -1,6 +1,9 @@
 import os
 import re
-import mlir_run
+import sys
+sys.path.append('.')
+
+from mlir.run import run_mlir_file
 import pandas as pd
 import statistics
 
@@ -10,8 +13,8 @@ def same_name_files(name, directory):
 def benchmark_file(filename, directory):
     all_mlir_files = same_name_files(filename, directory)
     all_opt_levels = ["-O3"]
-    n_runs = 50  # number of runs, first run is warmup
-    regex_time = re.compile(r"(\d+) us -> (\d+\.\d+) s")  # format "53926 us -> 0.053926 s"
+    n_runs = 10  # number of runs
+    regex_time = re.compile(r"(\d+) us ->")  # format "53926 us -> 0.053926 s"
 
     # Persist data, cols are: the name of the opt type, and each opt level
     data = {
@@ -22,6 +25,7 @@ def benchmark_file(filename, directory):
         data[opt_level] = []
 
     print(f"--------------------------- Running {filename} ---------------------------")
+    print(f"Found {len(all_mlir_files)} files: {all_mlir_files}")
 
     for mlir_file in all_mlir_files:
         ext = mlir_file.split(".")[-2]
@@ -34,10 +38,12 @@ def benchmark_file(filename, directory):
 
             times = []
             for i in range(n_runs):
-                time = mlir_run.run_mlir_file(f"{directory}/{mlir_file}", opt=opt_level, verbose=False)
+                time = run_mlir_file(os.path.join(directory, mlir_file), opt=opt_level, verbose=False)
                 match = regex_time.search(time)
                 if match:
                     times.append(float(match.group(1)))
+                else:
+                    print(f"Error: no match")
 
             avg_time = statistics.mean(times)
             median_time = statistics.median(times)
@@ -49,11 +55,11 @@ def benchmark_file(filename, directory):
 
     print(data)
     df = pd.DataFrame(data)
-    df.to_csv(f"bench/{filename}.csv", index=False)
+    df.to_csv(os.path.join(directory, f"{filename}.csv"), index=False)
 
 if __name__ == "__main__":
-    # benchmark_file("arith_rgb_to_gray", "bench")  # bench/arith_rgb_to_gray.mlir
-    # benchmark_file("linalg_assoc", "bench")  # bench/linalg_assoc.mlir
-    # benchmark_file("linalg_3mm", "bench")  # bench/linalg_3mm.mlir
-    benchmark_file("math_inv_sqrt", "bench")  # bench/math_inv_sqrt.mlir
-    # benchmark_file("math_horners_method", "bench")  # bench/math_horners_method.mlir
+    # benchmark_file("image_conversion", "bench/image_conversion")
+    # benchmark_file("vector_norm", "bench/vector_norm")
+    benchmark_file("polynomial", "bench/polynomial")
+    # benchmark_file("2mm", "bench/2mm")
+    # benchmark_file("3mm", "bench/3mm")

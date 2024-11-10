@@ -81,6 +81,7 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp*>& block, co
         egglogLines.push_back(line);
 
         if (!insertedOps && line == opsTarget) {
+            egglogLines.push_back("; " + blockName);
             for (const EggifiedOp* op: block) {  // Insert the operations
                 egglogLines.push_back(op->egglogLet());
             }

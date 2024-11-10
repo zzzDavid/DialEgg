@@ -84,11 +84,6 @@
 [INFO ] Declared function op13.
 [INFO ] Declared function op14.
 [INFO ] Declared function op15.
-[INFO ] Declared function op16.
-[INFO ] Declared function op17.
-[INFO ] Declared function op18.
-[INFO ] Declared function op19.
-[INFO ] Declared function op20.
 [INFO ] Declared ruleset rules.
 [INFO ] Declared rule (rewrite (arith_addf ?x ?y ?a ?t) (arith_addf ?y ?x ?a ?t)).
 [INFO ] Declared rule (rewrite (arith_mulf ?x ?y ?a ?t) (arith_mulf ?y ?x ?a ?t)).
@@ -102,14 +97,14 @@
              ).
 [INFO ] Declared rule (rewrite (arith_addf (arith_mulf ?m ?x ?a ?t) (arith_mulf ?n ?x ?a ?t) ?a ?t) (arith_mulf ?x (arith_addf ?m ?n ?a ?t) ?a ?t)).
 [INFO ] Ran schedule (seq (saturate (seq (run rules)))).
-[INFO ] Report: Rule (rule ((= rewrite_var__ (arith_addf (arith_addf ?x ?y ?a ?t) ?z ?a ?t)))       (...: search 0.000s, apply 0.000s, num matches 608
-    Rule (rule ((= rewrite_var__ (arith_mulf (arith_mulf ?x ?y ?a ?t) ?z ?a ?t)))       (...: search 0.000s, apply 0.000s, num matches 1080
+[INFO ] Report: Rule (rule ((= rewrite_var__ (arith_mulf ?x ?y ?a ?t)))       ((union rewrite_var__ (...: search 0.000s, apply 0.000s, num matches 206
+    Rule (rule ((= rewrite_var__ (arith_addf (arith_mulf ?m ?x ?a ?t) (arith_mulf ?n ?x ?...: search 0.000s, apply 0.000s, num matches 88
+    Rule (rule ((= rewrite_var__ (arith_mulf ?x (arith_constant (NamedAttr "value" (Float...: search 0.000s, apply 0.000s, num matches 37
+    Rule (rule ((= rewrite_var__ (arith_addf (arith_addf ?x ?y ?a ?t) ?z ?a ?t)))       (...: search 0.000s, apply 0.000s, num matches 83
+    Rule (rule ((= ?lhs (math_powf ?x (arith_constant (NamedAttr "value" (FloatAttr ?n ?t...: search 0.000s, apply 0.000s, num matches 9
+    Rule (rule ((= rewrite_var__ (arith_mulf (arith_mulf ?x ?y ?a ?t) ?z ?a ?t)))       (...: search 0.000s, apply 0.000s, num matches 446
+    Rule (rule ((= rewrite_var__ (arith_addf ?x ?y ?a ?t)))       ((union rewrite_var__ (...: search 0.000s, apply 0.000s, num matches 98
     Rule (rule ((= rewrite_var__ (math_powf ?x (arith_constant (NamedAttr "value" (FloatA...: search 0.000s, apply 0.000s, num matches 3
-    Rule (rule ((= rewrite_var__ (arith_addf ?x ?y ?a ?t)))       ((union rewrite_var__ (...: search 0.000s, apply 0.000s, num matches 385
-    Rule (rule ((= ?lhs (math_powf ?x (arith_constant (NamedAttr "value" (FloatAttr ?n ?t...: search 0.000s, apply 0.000s, num matches 12
-    Rule (rule ((= rewrite_var__ (arith_mulf ?x (arith_constant (NamedAttr "value" (Float...: search 0.000s, apply 0.000s, num matches 63
-    Rule (rule ((= rewrite_var__ (arith_addf (arith_mulf ?m ?x ?a ?t) (arith_mulf ?n ?x ?...: search 0.001s, apply 0.000s, num matches 350
-    Rule (rule ((= rewrite_var__ (arith_mulf ?x ?y ?a ?t)))       ((union rewrite_var__ (...: search 0.000s, apply 0.000s, num matches 447
-    Ruleset rules: search 0.003s, apply 0.000s, rebuild 0.000s
+    Ruleset rules: search 0.002s, apply 0.000s, rebuild 0.000s
     
-[INFO ] extracted with cost 471: (arith_addf (Value 4 (F64)) (arith_mulf (Value 5 (F64)) (arith_addf (Value 3 (F64)) (arith_mulf (Value 5 (F64)) (arith_addf (arith_mulf (Value 5 (F64)) (arith_addf (Value 1 (F64)) (arith_mulf (Value 0 (F64)) (Value 5 (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (Value 2 (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64))
+[INFO ] extracted with cost 354: (arith_addf (Value 3 (F64)) (arith_mulf (arith_addf (Value 2 (F64)) (arith_mulf (arith_addf (Value 1 (F64)) (arith_mulf (Value 4 (F64)) (Value 0 (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (Value 4 (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (Value 4 (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64)) (NamedAttr "fastmath" (arith_fastmath (none))) (F64))

@@ -5,3 +5,7 @@ build/
 __pycache__/
 .vscode/
 .dialegg.venv/
+*.log
+*.out
+**/*.log
+**/*.out

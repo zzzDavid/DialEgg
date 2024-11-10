@@ -6,6 +6,7 @@
 (function arith_shrsi (Op Op Type) Op)
 
 ;; OPS HERE ;;
+; rgb_to_grayscale_func.func
 (let op0 (Value 0 (I64)))
 (let op1 (Value 1 (I64)))
 (let op2 (Value 2 (I64)))

@@ -7,6 +7,7 @@
 (function tensor_empty (Type) Op)
 
 ;; OPS HERE ;;
+; _2mm_func.func
 (let op0 (Value 0 (RankedTensor (vec-of 100 10) (I64))))
 (let op1 (Value 1 (RankedTensor (vec-of 10 150) (I64))))
 (let op2 (Value 2 (RankedTensor (vec-of 150 8) (I64))))

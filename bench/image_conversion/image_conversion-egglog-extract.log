@@ -1,6 +1,0 @@
-(arith_constant (NamedAttr "value" (IntegerAttr 77 (I64))) (I64))
-(arith_constant (NamedAttr "value" (IntegerAttr 150 (I64))) (I64))
-(arith_constant (NamedAttr "value" (IntegerAttr 29 (I64))) (I64))
-(arith_shrsi (Value 7 (I64)) (arith_constant (NamedAttr "value" (IntegerAttr 8 (I64))) (I64)) (I64))
-(arith_shrsi (Value 8 (I64)) (arith_constant (NamedAttr "value" (IntegerAttr 8 (I64))) (I64)) (I64))
-(arith_shrsi (Value 9 (I64)) (arith_constant (NamedAttr "value" (IntegerAttr 8 (I64))) (I64)) (I64))
