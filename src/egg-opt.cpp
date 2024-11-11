@@ -51,17 +51,6 @@ int main(int argc, char** argv) {
     std::string mlirFile = getMlirFile(argc, argv);
     std::string eggFile = getEggFile(argc, argv, mlirFile);
 
-    // Make sure both files exist
-    if (!llvm::sys::fs::exists(mlirFile)) {
-        llvm::errs() << "MLIR file does not exist: " << mlirFile << "\n";
-        return 1;
-    }
-
-    if (!llvm::sys::fs::exists(eggFile)) {
-        llvm::errs() << "Egg file does not exist: " << eggFile << "\n";
-        return 1;
-    }
-
     llvm::outs() << "mlirFile: " << mlirFile << "\n";
     llvm::outs() << "eggFile: " << eggFile << "\n";
     

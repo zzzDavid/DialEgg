@@ -1,6 +1,0 @@
-name,opt,-O3
-polynomial,noopt,2948.0
-polynomial,canon+eqsat,2964.5
-polynomial,eqsat+canon,3016.0
-polynomial,eqsat,2910.5
-polynomial,canon,2912.5

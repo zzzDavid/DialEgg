@@ -58,6 +58,7 @@ func.func @main() -> i32 {
     func.return %c0 : i32
 }
 
+// 2 func, 2 tensor, 2 linalg
 func.func @_2mm(%x: tensor<100x10xi64>, %y: tensor<10x150xi64>, %z: tensor<150x8xi64>) -> tensor<100x8xi64> {
     // xy_z cost ac(b+d) = 100*150*(10+8) = 2,700,000
     // x_yz cost bd(c+a) = 10*8*(150+100) = 2,000
@@ -69,5 +70,5 @@ func.func @_2mm(%x: tensor<100x10xi64>, %y: tensor<10x150xi64>, %z: tensor<150x8
     %xy_z = linalg.matmul ins(%xy, %z : tensor<100x150xi64>, tensor<150x8xi64>) 
                           outs(%xy_z_init : tensor<100x8xi64>) -> tensor<100x8xi64>
     
-    return %xy_z : tensor<100x8xi64>
+    func.return %xy_z : tensor<100x8xi64>
 }

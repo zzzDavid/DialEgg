@@ -1,6 +1,0 @@
-name,opt,-O3
-image_conversion,noopt,21944.0
-image_conversion,eqsat+canon,19411.0
-image_conversion,canon+eqsat,19349.0
-image_conversion,eqsat,21735.5
-image_conversion,canon,21436.0

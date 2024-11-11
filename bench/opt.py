@@ -18,11 +18,11 @@ def opt_file(file_path):
         subprocess.run(["./build/egg-opt", "--mlir-disable-threading", "--matmul-associate", file_path, "-o", f"{file_path_no_ext}.cpp.mlir"])
 
 def main():
-    # opt_file("bench/image_conversion/image_conversion.mlir")
-    # opt_file("bench/vector_norm/vector_norm.mlir")
+    opt_file("bench/image_conversion/image_conversion.mlir")
+    opt_file("bench/vector_norm/vector_norm.mlir")
     opt_file("bench/polynomial/polynomial.mlir")
-    # opt_file("bench/2mm/2mm.mlir")
-    # opt_file("bench/3mm/3mm.mlir")
+    opt_file("bench/2mm/2mm.mlir")
+    opt_file("bench/3mm/3mm.mlir")
 
 if __name__ == "__main__":
     main()

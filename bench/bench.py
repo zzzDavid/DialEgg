@@ -58,8 +58,8 @@ def benchmark_file(filename, directory):
     df.to_csv(os.path.join(directory, f"{filename}.csv"), index=False)
 
 if __name__ == "__main__":
-    # benchmark_file("image_conversion", "bench/image_conversion")
-    # benchmark_file("vector_norm", "bench/vector_norm")
+    benchmark_file("image_conversion", "bench/image_conversion")
+    benchmark_file("vector_norm", "bench/vector_norm")
     benchmark_file("polynomial", "bench/polynomial")
-    # benchmark_file("2mm", "bench/2mm")
-    # benchmark_file("3mm", "bench/3mm")
+    benchmark_file("2mm", "bench/2mm")
+    benchmark_file("3mm", "bench/3mm")

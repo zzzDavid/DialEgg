@@ -1,6 +1,0 @@
-name,opt,-O3
-vector_norm,canon,3302.0
-vector_norm,eqsat,3225.5
-vector_norm,eqsat+canon,3465.5
-vector_norm,canon+eqsat,3157.0
-vector_norm,noopt,3526.5

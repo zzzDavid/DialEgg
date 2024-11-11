@@ -27,41 +27,7 @@
 #include "Egglog.h"
 
 EqualitySaturationPass::EqualitySaturationPass(const std::string& mlirFile, const std::string& eggFile, const EgglogCustomDefs& funcs)
-    : mlirFilePath(mlirFile), eggFilePath(eggFile), customFunctions(funcs) {
-    
-    // mlirFilePath without extension
-    std::string name = mlirFile.substr(0, mlirFile.find(".mlir"));
-    egglogExtractedFilename = name + "-egglog-extract.log";
-    egglogLogFilename = name + "-egglog.log";
-    
-    std::ifstream opFile(eggFilePath);
-    std::string line;
-
-    while (std::getline(opFile, line)) {
-        if (EgglogOpDef::isOpFunction(line)) {
-            EgglogOpDef parsedOp = EgglogOpDef::parseOpFunction(line);
-
-            supportedOps.emplace(parsedOp.dialect + "." + parsedOp.name + (parsedOp.version.empty() ? "" : "." + parsedOp.version), parsedOp);
-            supportedOps.emplace(parsedOp.dialect + "_" + parsedOp.name + (parsedOp.version.empty() ? "" : "_" + parsedOp.version), parsedOp);
-            supportedDialects.insert(parsedOp.dialect);
-        }
-    }
-
-    opFile.close();
-
-    // dump
-    llvm::outs() << "Supported ops: ";
-    for (const auto& [op, _]: supportedOps) {
-        llvm::outs() << op << ", ";
-    }
-
-    llvm::outs() << "\nSupported dialects: ";
-    for (const std::string& dialect: supportedDialects) {
-        llvm::outs() << dialect << ", ";
-    }
-
-    llvm::outs() << "\n\n";
-}
+    : mlirFilePath(mlirFile), eggFilePath(eggFile), customFunctions(funcs) {}
 
 void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp*>& block, const std::string& blockName) {
     std::ifstream eggFile(eggFilePath);
@@ -205,7 +171,54 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
     llvm::outs() << "\n";
 }
 
+void EqualitySaturationPass::init() {
+    // Make sure both files exist
+    if (!llvm::sys::fs::exists(mlirFilePath)) {
+        llvm::errs() << "MLIR file does not exist: " << mlirFilePath << "\n";
+        exit(1);
+    }
+    if (!llvm::sys::fs::exists(eggFilePath)) {
+        llvm::errs() << "Egg file does not exist: " << eggFilePath << "\n";
+        exit(1);
+    }
+    
+    // mlirFilePath without extension
+    std::string name = mlirFilePath.substr(0, mlirFilePath.find(".mlir"));
+    egglogExtractedFilename = name + "-egglog-extract.log";
+    egglogLogFilename = name + "-egglog.log";
+    
+    std::ifstream opFile(eggFilePath);
+    std::string line;
+
+    while (std::getline(opFile, line)) {
+        if (EgglogOpDef::isOpFunction(line)) {
+            EgglogOpDef parsedOp = EgglogOpDef::parseOpFunction(line);
+
+            supportedOps.emplace(parsedOp.dialect + "." + parsedOp.name + (parsedOp.version.empty() ? "" : "." + parsedOp.version), parsedOp);
+            supportedOps.emplace(parsedOp.dialect + "_" + parsedOp.name + (parsedOp.version.empty() ? "" : "_" + parsedOp.version), parsedOp);
+            supportedDialects.insert(parsedOp.dialect);
+        }
+    }
+
+    opFile.close();
+
+    // dump
+    llvm::outs() << "Supported ops: ";
+    for (const auto& [op, _]: supportedOps) {
+        llvm::outs() << op << ", ";
+    }
+
+    llvm::outs() << "\nSupported dialects: ";
+    for (const std::string& dialect: supportedDialects) {
+        llvm::outs() << dialect << ", ";
+    }
+
+    llvm::outs() << "\n\n";
+}
+
 void EqualitySaturationPass::runOnOperation() {
+    init();
+
     mlir::func::FuncOp rootOp = getOperation();
     llvm::StringRef rootOpName = rootOp.getName();
 

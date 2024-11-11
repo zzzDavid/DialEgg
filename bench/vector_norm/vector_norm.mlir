@@ -16,6 +16,7 @@ func.func @fillRandomF64Tensor2D(%tensor: tensor<?x?xf64>) -> tensor<?x?xf64> {
     return %tensor_filled : tensor<?x?xf64>
 }
 
+// 3 func, 4 arith, 7 tensor, 2 scf
 func.func @normalize_distance_vectors(%vectors: tensor<1000000x3xf32>) -> tensor<1000000x3xf32> {
     // Distance between multiple 3D points and normalizing the resulting vectors. This is a common operation in computer graphics and physics simulations.
 
@@ -64,6 +65,7 @@ func.func @main() -> i32 {
     func.return %c0 : i32
 }
 
+// 2 func, 13 arith
 func.func @fast_inv_sqrt(%x: f32) -> f32 {
     // C code from https://en.wikipedia.org/wiki/Fast_inverse_square_root
     // float Q_rsqrt(float number) {
@@ -101,6 +103,7 @@ func.func @fast_inv_sqrt(%x: f32) -> f32 {
     func.return %y_it : f32
 }
 
+// 2 func, 10 arith, 1 math
 func.func @normalize_vector(%x: f32, %y: f32, %z: f32) -> (f32, f32, f32) {
     %c1_f32 = arith.constant 1.0 : f32
 

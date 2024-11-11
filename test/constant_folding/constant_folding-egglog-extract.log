@@ -1,1 +1,0 @@
-(arith_constant (NamedAttr "value" (IntegerAttr 5 (I32))) (I32))

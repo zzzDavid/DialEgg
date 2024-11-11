@@ -16,6 +16,7 @@ func.func @fillRandomF64Tensor2D(%tensor: tensor<?x?xf64>) -> tensor<?x?xf64> {
     return %tensor_filled : tensor<?x?xf64>
 }
 
+// 5 arith, 6 tensor, 2 scf, 1 func
 func.func @main() -> i32 {
     // polynomial a + bx + cx^2 + dx^3
     %c1000000 = arith.constant 1000000 : index
@@ -56,6 +57,7 @@ func.func @main() -> i32 {
     func.return %c0_i32 : i32
 }
 
+// 2 func, 8 arith, 2 math
 func.func @poly_eval_3(%a: f64, %b: f64, %c: f64, %d: f64, %x: f64) -> f64 {
     %c2 = arith.constant 2.0 : f64
     %c3 = arith.constant 3.0 : f64

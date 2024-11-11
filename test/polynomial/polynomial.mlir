@@ -1,14 +1,24 @@
-func.func @poly_eval_2(%a: f64, %b: f64, %c: f64, %x: f64) -> f64 {
-    %c2 = arith.constant 2.0 : f64
-    %x_2 = math.powf %x, %c2 : f64
+func.func @eval_polys(%tensor: tensor<1000000x4xf64>) -> tensor<1000000xf64> {
+    %x = arith.constant 5.0 : f64
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %c2 = arith.constant 2 : index
+    %c3 = arith.constant 3 : index
+    %c1000000 = arith.constant 1000000 : index
 
-    %t1 = arith.mulf %b, %x  : f64 // bx
-    %t2 = arith.mulf %a, %x_2  : f64 // ax^2
+    %poly_eval_init = tensor.empty() : tensor<1000000xf64>
+    %poly_eval = scf.for %i = %c0 to %c1000000 step %c1 iter_args(%current_poly_eval = %poly_eval_init) -> (tensor<1000000xf64>) {
+        %a = tensor.extract %tensor[%i, %c0] : tensor<1000000x4xf64>
+        %b = tensor.extract %tensor[%i, %c1] : tensor<1000000x4xf64>
+        %c = tensor.extract %tensor[%i, %c2] : tensor<1000000x4xf64>
+        %d = tensor.extract %tensor[%i, %c3] : tensor<1000000x4xf64>
 
-    %t3 = arith.addf %t1, %t2 : f64 // bx + ax^2
-    %t4 = arith.addf %c, %t3 : f64 // c + bx + ax^2
+        %num = func.call @poly_eval_3(%a, %b, %c, %d, %x) : (f64, f64, f64, f64, f64) -> f64
+        %updated_poly_eval = tensor.insert %num into %current_poly_eval[%i] : tensor<1000000xf64>
+        scf.yield %updated_poly_eval : tensor<1000000xf64>
+    }
 
-    func.return %t4 : f64
+   func.return %poly_eval : tensor<1000000xf64>
 }
 
 func.func @poly_eval_3(%a: f64, %b: f64, %c: f64, %d: f64, %x: f64) -> f64 {
@@ -27,26 +37,4 @@ func.func @poly_eval_3(%a: f64, %b: f64, %c: f64, %d: f64, %x: f64) -> f64 {
     %t6 = arith.addf %d, %t5 : f64 // d + cx + ax^3 + bx^2
 
     func.return %t6 : f64
-}
-
-func.func @poly_eval_4(%a: f64, %b: f64, %c: f64, %d: f64, %e: f64, %x: f64) -> f64 {
-    %c2 = arith.constant 2.0 : f64
-    %c3 = arith.constant 3.0 : f64
-    %c4 = arith.constant 4.0 : f64
-
-    %x_2 = math.powf %x, %c2 : f64 // x^2
-    %x_3 = math.powf %x, %c3 : f64 // x^3
-    %x_4 = math.powf %x, %c4 : f64 // x^4
-
-    %t1 = arith.mulf %d, %x  : f64 // dx
-    %t2 = arith.mulf %c, %x_2  : f64 // cx^2
-    %t3 = arith.mulf %b, %x_3  : f64 // bx^3
-    %t4 = arith.mulf %a, %x_4  : f64 // ax^4
-
-    %t5 = arith.addf %t3, %t4 : f64 // bx^3 + ax^4
-    %t6 = arith.addf %t2, %t5 : f64 // cx^2 + bx^3 + ax^4
-    %t7 = arith.addf %t1, %t6 : f64 // dx + cx^2 + bx^3 + ax^4
-    %t8 = arith.addf %e, %t7 : f64 // e + dx + cx^2 + bx^3 + ax^4
-
-    func.return %t8 : f64
 }

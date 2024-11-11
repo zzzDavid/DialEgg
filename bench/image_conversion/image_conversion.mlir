@@ -7,6 +7,7 @@ func.func @blackhole4k(%tensor: tensor<3840x2160x3xi64>) -> tensor<3840x2160x3xi
     func.return %tensor : tensor<3840x2160x3xi64>
 }
 
+// 1 func, 7 arith, 5 tensor
 func.func @main() -> i64 { // convert 4K RGB image to grayscale
     %val = arith.constant 100 : i64
     %image = tensor.empty() : tensor<3840x2160x3xi64>  // 3840x2160 image with 3 channels (r, g, b)
@@ -48,6 +49,7 @@ func.func @main() -> i64 { // convert 4K RGB image to grayscale
     func.return %c0_i64 : i64
 }
 
+// 2 func, 12 arith
 func.func @rgb_to_grayscale(%r: i64, %g: i64, %b: i64) -> i64 {
 	%c256 = arith.constant 256 : i64
 	

@@ -1,7 +1,0 @@
-name,opt,-O3
-3mm,canon,9434.5
-3mm,cpp,3894.5
-3mm,eqsat,516.0
-3mm,canon+eqsat,516.0
-3mm,noopt,8802.5
-3mm,eqsat+canon,516.0
