@@ -5,6 +5,8 @@
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "mlir/AsmParser/AsmParser.h"
 
+#include "stablehlo/dialect/Register.h"
+
 #include "Egglog.h"
 #include "EqualitySaturationPass.h"
 #include "EggifyPass.h"
@@ -36,6 +38,7 @@ int main(int argc, char** argv) {
     // Register dialects
     mlir::DialectRegistry dialectRegistry;
     mlir::registerAllDialects(dialectRegistry);
+    mlir::stablehlo::registerAllDialects(dialectRegistry);
 
     // Register passes
     mlir::registerAllPasses();
