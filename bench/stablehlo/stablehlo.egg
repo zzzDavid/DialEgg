@@ -1,0 +1,38 @@
+(include "src/base.egg")
+
+;;;; StableHLO Dialect ;;;;
+(function stablehlo_multiply (Op Op Type) Op)
+(function stablehlo_add (Op Op Type) Op)
+(function stablehlo_constant (AttrPair Type) Op)
+
+; Only supports concat of 2 inputs
+(function stablehlo_concatenate (Op Op AttrPair Type) Op :cost 100)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset rules)
+(let c2f (stablehlo_constant
+  (NamedAttr "value"
+             (DenseFPElementsAttr (vec-of 2.0 2.0 2.0 2.0) (RankedTensor (vec-of 4) (F64))))
+  (RankedTensor (vec-of 4) (F64))))
+
+(rewrite ; x * 2 = x + x
+  (stablehlo_multiply ?x c2 ?a)
+  (stablehlo_add ?x ?x ?a)
+  :ruleset rules)
+
+(rewrite ; a * (b + c) = a * b + a * c
+  (stablehlo_multiply ?a (stablehlo_add ?b ?c ?t) ?t)
+  (stablehlo_add (stablehlo_multiply ?a ?b ?t) (stablehlo_multiply ?a ?c ?t) ?t)
+  :ruleset rules)
+
+(rewrite ; concat(a, b) + concat(c, d) = concat(a + c, b + d)
+  (stablehlo_add (stablehlo_concatenate ?a ?b ?dim ?t) (stablehlo_concatenate ?c ?d ?dim ?t) ?t)
+  ; TODO: How to access the type here?
+  (stablehlo_concatenate (stablehlo_add ?a ?c (type-of ?a)) (stablehlo_add ?b ?d (type-of ?b)) ?dim ?t)
+  :ruleset rules)
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;
