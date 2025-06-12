@@ -30,6 +30,10 @@ include(HandleLLVMOptions)
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
 include(AddMLIR)
 
+set(STABLEHLO_BUILD_EMBEDDED ON)
+add_subdirectory(${STABLEHLO_DIR} ${CMAKE_CURRENT_BINARY_DIR}/stablehlo EXCLUDE_FROM_ALL)
+include_directories(${STABLEHLO_DIR})
+
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${MLIR_INCLUDE_DIRS})
 
