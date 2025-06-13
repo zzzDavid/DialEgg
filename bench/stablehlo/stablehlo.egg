@@ -12,6 +12,8 @@
 
 ;; RULES HERE ;;
 (ruleset rules)
+(rule ((= ?A (Value ?id ?t))) ((set (type-of ?A) ?t)) :ruleset rules)
+
 (let c2f (stablehlo_constant
   (NamedAttr "value"
              (DenseFPElementsAttr (vec-of 2.0 2.0 2.0 2.0) (RankedTensor (vec-of 4) (F64))))
