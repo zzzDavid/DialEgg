@@ -49,4 +49,4 @@ inline void printFileContents(const std::string& filename, llvm::raw_ostream& ro
     }
 }
 
-#endif //UTILS_H
+#endif  //UTILS_H

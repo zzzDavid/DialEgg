@@ -24,7 +24,7 @@
 mlir::func::FuncOp buildNMMFunction(mlir::OpBuilder builder, uint8_t n) {
     int64_t a = 100, b = 100;
     mlir::RankedTensorType tensorType = mlir::RankedTensorType::get({a, b}, builder.getI32Type());
-    
+
     // create function type
     std::vector<mlir::Type> inputTypes;
     for (uint8_t i = 0; i < n + 1; i++) {
@@ -34,20 +34,20 @@ mlir::func::FuncOp buildNMMFunction(mlir::OpBuilder builder, uint8_t n) {
     // Create the function inside the module.
     std::string funcName = "_" + std::to_string(n) + "mm";
     mlir::func::FuncOp func = builder.create<mlir::func::FuncOp>(builder.getUnknownLoc(), funcName, builder.getFunctionType(inputTypes, {tensorType}));
-    
+
     mlir::Block* entryBlock = func.addEntryBlock();
-    builder.setInsertionPointToStart(entryBlock); // Set the insertion point to the function's entry block.
+    builder.setInsertionPointToStart(entryBlock);  // Set the insertion point to the function's entry block.
 
     mlir::BlockArgument x = entryBlock->getArgument(0);
     mlir::BlockArgument y = entryBlock->getArgument(1);
 
-    mlir::Value xy_init = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
+    mlir::Value xy_init = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange {});
     mlir::linalg::MatmulOp xy = builder.create<mlir::linalg::MatmulOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange {x, y}, xy_init);
 
     mlir::linalg::MatmulOp mult = xy;
     for (uint8_t i = 0; i < n - 1; i++) {
         mlir::BlockArgument z = entryBlock->getArgument(i + 2);
-        mlir::Value xy_z_init = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange{});
+        mlir::Value xy_z_init = builder.create<mlir::tensor::EmptyOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange {});
         mlir::linalg::MatmulOp xy_z = builder.create<mlir::linalg::MatmulOp>(builder.getUnknownLoc(), tensorType, mlir::ValueRange {mult.getResult(0), z}, xy_z_init);
 
         mult = xy_z;
@@ -59,11 +59,11 @@ mlir::func::FuncOp buildNMMFunction(mlir::OpBuilder builder, uint8_t n) {
 }
 
 int main() {
-    int n; // Number of matrix multiplications.
+    int n;  // Number of matrix multiplications.
     std::cin >> n;
     llvm::outs() << n << "MM \n";
 
-    mlir::MLIRContext context; // Initialize an MLIR context.
+    mlir::MLIRContext context;  // Initialize an MLIR context.
     context.getOrLoadDialect<mlir::linalg::LinalgDialect>();
     context.getOrLoadDialect<mlir::tensor::TensorDialect>();
     context.getOrLoadDialect<mlir::func::FuncDialect>();

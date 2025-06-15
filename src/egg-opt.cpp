@@ -13,12 +13,15 @@
 #include "EgglogCustomDefs.h"
 #include "MatrixMultiplyAssociatePass.h"
 
+#define DEBUG_TYPE "dialegg"
+
 std::string getMlirFile(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] != '-') {
             return argv[i];
         }
-    } 
+    }
+    llvm_unreachable("mlir file not found");
 }
 
 std::string getEggFile(int argc, char** argv, std::string mlirFile) {
@@ -47,16 +50,16 @@ int main(int argc, char** argv) {
 
     // Equality Saturation Pass
     static llvm::cl::opt<std::string> eggFileOpt(
-        "egg",
-        llvm::cl::desc("Path to egg file"),
-        llvm::cl::value_desc("filename"));
+            "egg",
+            llvm::cl::desc("Path to egg file"),
+            llvm::cl::value_desc("filename"));
 
     std::string mlirFile = getMlirFile(argc, argv);
     std::string eggFile = getEggFile(argc, argv, mlirFile);
 
-    llvm::outs() << "mlirFile: " << mlirFile << "\n";
-    llvm::outs() << "eggFile: " << eggFile << "\n";
-    
+    LLVM_DEBUG(llvm::dbgs() << "mlirFile: " << mlirFile << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "eggFile: " << eggFile << "\n");
+
     std::map<std::string, AttrStringifyFunction> attrStringifiers = {
             {mlir::arith::FastMathFlagsAttr::name.str(), stringifyFastMathFlagsAttr}};
     std::map<std::string, AttrParseFunction> attrParsers = {
@@ -68,8 +71,8 @@ int main(int argc, char** argv) {
             {"RankedTensor", parseRankedTensorType}};
 
     EgglogCustomDefs funcs = {attrStringifiers, attrParsers, typeStringifiers, typeParsers};
-    mlir::PassRegistration<EqualitySaturationPass>([&] { 
-        return createEqualitySaturationPass(mlirFile, eggFile, funcs); 
+    mlir::PassRegistration<EqualitySaturationPass>([&] {
+        return createEqualitySaturationPass(mlirFile, eggFile, funcs);
     });
 
     // Run the main MLIR opt

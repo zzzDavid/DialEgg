@@ -88,7 +88,7 @@ struct EggifiedOp {
      * Operations with a non-opaque user may not be extracted, as the optimized operation will be inlined in the user.
      */
     bool shouldBeExtracted() const {
-        if (opaque) { // do no extract opaque operations
+        if (opaque) {  // do no extract opaque operations
             return false;
         }
 
