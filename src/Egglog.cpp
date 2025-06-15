@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/Debug.h"
 #include "mlir/IR/Value.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/Builders.h"
@@ -13,6 +14,8 @@
 #include "Egglog.h"
 #include "EqualitySaturationPass.h"
 #include "Utils.h"
+
+#define DEBUG_TYPE "dialegg"
 
 EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
     std::string newOpStr = Egglog::removeComment(opStr);
@@ -789,7 +792,7 @@ EggifiedOp* Egglog::eggifyOperation(mlir::Operation* op) {
         isSupported = supportedEgglogOps.find(opNameWithNumOperands) != supportedEgglogOps.end();
 
         if (!isSupported) {
-            llvm::outs() << "Unsupported operation '" << opName << "' and '" << opNameWithNumOperands << "' but using the result as a variable.\n";
+            LLVM_DEBUG(llvm::dbgs() << "Unsupported operation '" << opName << "' and '" << opNameWithNumOperands << "' but using the result as a variable.\n");
             return eggifyOpaqueOperation(op);
         }
 
