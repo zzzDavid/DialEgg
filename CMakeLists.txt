@@ -30,12 +30,16 @@ include(HandleLLVMOptions)
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
 include(AddMLIR)
 
+set(DIALEGG_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+set(DIALEGG_BINARY_DIR ${PROJECT_BINARY_DIR})
+
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${MLIR_INCLUDE_DIRS})
 
 link_directories(${LLVM_BUILD_LIBRARY_DIR})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND ${LLVM_DEFINITIONS})
 add_definitions(${LLVM_DEFINITIONS_LIST})
+add_definitions(${LLVM_DEFINITIONS})
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
@@ -44,3 +48,5 @@ set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib)
 add_llvm_executable(egg-opt src/egg-opt.cpp src/EqualitySaturationPass.cpp src/Egglog.cpp)
 llvm_update_compile_flags(egg-opt)
 target_link_libraries(egg-opt PRIVATE ${OPT_LIBS})
+
+add_subdirectory(test)
