@@ -9,7 +9,6 @@
 #include "EqualitySaturationPass.h"
 #include "EggifyPass.h"
 #include "EgglogCustomDefs.h"
-#include "MatrixMultiplyAssociatePass.h"
 
 std::string getMlirFile(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
@@ -40,7 +39,6 @@ int main(int argc, char** argv) {
     // Register passes
     mlir::registerAllPasses();
     mlir::PassRegistration<EggifyPass>();
-    mlir::PassRegistration<MatrixMultiplyAssociatePass>();
 
     // Equality Saturation Pass
     static llvm::cl::opt<std::string> eggFileOpt(
