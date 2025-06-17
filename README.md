@@ -32,9 +32,8 @@ If you have issues building, follow the [build guide](https://llvm.org/docs/Gett
 Egglog is the equality saturation engine. This [PR](https://github.com/egraphs-good/egglog/pull/355) has a feature DialEgg needs.
 
 ```bash
-git clone https://github.com/saulshanabrook/egg-smol.git egglog
+git clone -b cost-action https://github.com/saulshanabrook/egg-smol.git egglog
 cd egglog
-git checkout cost-action
 git checkout b6e1c96ed7335366e90056ea0a24ef425dfbb8fb
 ```
 
