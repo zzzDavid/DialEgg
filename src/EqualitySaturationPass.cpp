@@ -28,8 +28,10 @@
 
 #define DEBUG_TYPE "dialegg"
 
-EqualitySaturationPass::EqualitySaturationPass(const std::string& mlirFile, const std::string& eggFile, const EgglogCustomDefs& funcs)
-    : mlirFilePath(mlirFile), eggFilePath(eggFile), customFunctions(funcs) {}
+static llvm::cl::opt<std::string> eggFileOpt("egg-file", llvm::cl::desc("Path to egg file"));
+
+EqualitySaturationPass::EqualitySaturationPass(const std::string& mlirFile, const EgglogCustomDefs& funcs)
+    : mlirFilePath(mlirFile), eggFilePath(eggFileOpt), customFunctions(funcs) {}
 
 void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp*>& block, const std::string& blockName) {
     std::ifstream eggFile(eggFilePath);
@@ -68,7 +70,8 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp*>& block, co
     eggFile.close();
 
     // Write the extracted egglog to a new file with the same name and ext .ops.egg
-    std::string opsEggFilePath = eggFilePath.substr(0, eggFilePath.find_last_of(".")) + ".ops.egg";
+    std::string name = mlirFilePath.substr(0, mlirFilePath.find(".mlir"));
+    std::string opsEggFilePath = name + ".ops.egg";
     std::ofstream eggFileOut(opsEggFilePath);
     for (const std::string& line: egglogLines) {
         eggFileOut << line << "\n";
@@ -188,7 +191,14 @@ void EqualitySaturationPass::init() {
     }
     if (!llvm::sys::fs::exists(eggFilePath)) {
         llvm::errs() << "Egg file does not exist: " << eggFilePath << "\n";
-        exit(1);
+
+        std::string name = mlirFilePath.substr(0, mlirFilePath.find(".mlir"));
+        eggFilePath = name + ".egg";
+        if (!llvm::sys::fs::exists(eggFilePath)) {
+            exit(1);
+        }
+        
+        llvm::errs() << "Using default egg file: " << eggFilePath << "\n";
     }
 
     // mlirFilePath without extension
@@ -260,8 +270,4 @@ void EqualitySaturationPass::runOnOperation() {
     LLVM_DEBUG(llvm::dbgs() << "egglogExecTime = " << egglogExecTime << "s\n");
     LLVM_DEBUG(llvm::dbgs() << "egglogToMlirTime = " << egglogToMlirTime << "s\n");
     LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
-}
-
-std::unique_ptr<mlir::Pass> createEqualitySaturationPass(const std::string& mlirFile, const std::string& eggFile, const EgglogCustomDefs& funcs) {
-    return std::make_unique<EqualitySaturationPass>(mlirFile, eggFile, funcs);
 }
