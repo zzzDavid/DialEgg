@@ -1,6 +1,17 @@
-rm -rf test/**/run
+rm test/*.ll
+rm test/*.ll.mlir
+rm test/*.o
+rm test/*.exec
 
-rm test/**/*.log
+rm test/*-egglog-extract.log
+rm test/*-egglog.log
+rm test/*.ops.egg
+
+rm test/**/*.ll
+rm test/**/*.ll.mlir
+rm test/**/*.o
+rm test/**/*.exec
+
+rm test/**/*-egglog-extract.log
+rm test/**/*-egglog.log
 rm test/**/*.ops.egg
-rm test/**/*.eqsat.mlir
-rm test/**/*.cpp.mlir

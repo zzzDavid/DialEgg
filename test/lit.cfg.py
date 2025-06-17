@@ -43,7 +43,6 @@ config.excludes = [
     "README.txt",
     "LICENSE.txt",
 ] + [
-    "2mm",
     "3mm",
     "arith",
     "classic",
