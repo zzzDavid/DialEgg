@@ -11,7 +11,8 @@
 #include "EqualitySaturationPass.h"
 #include "EggifyPass.h"
 #include "EgglogCustomDefs.h"
-#include "MatrixMultiplyAssociatePass.h"
+
+#define DEBUG_TYPE "dialegg"
 
 #define DEBUG_TYPE "dialegg"
 
@@ -24,19 +25,6 @@ std::string getMlirFile(int argc, char** argv) {
     llvm_unreachable("mlir file not found");
 }
 
-std::string getEggFile(int argc, char** argv, std::string mlirFile) {
-    for (int i = 1; i < argc; i++) {
-        std::string arg = argv[i];
-        if (i < argc && (arg == "-egg" || arg == "--egg")) {
-            return argv[i + 1];
-        }
-    }
-
-    // Otherwise, use the mlir file name with .egg extension
-    std::string name = mlirFile.substr(0, mlirFile.find(".mlir"));
-    return name + ".egg";
-}
-
 int main(int argc, char** argv) {
     // Register dialects
     mlir::DialectRegistry dialectRegistry;
@@ -46,19 +34,6 @@ int main(int argc, char** argv) {
     // Register passes
     mlir::registerAllPasses();
     mlir::PassRegistration<EggifyPass>();
-    mlir::PassRegistration<MatrixMultiplyAssociatePass>();
-
-    // Equality Saturation Pass
-    static llvm::cl::opt<std::string> eggFileOpt(
-            "egg",
-            llvm::cl::desc("Path to egg file"),
-            llvm::cl::value_desc("filename"));
-
-    std::string mlirFile = getMlirFile(argc, argv);
-    std::string eggFile = getEggFile(argc, argv, mlirFile);
-
-    LLVM_DEBUG(llvm::dbgs() << "mlirFile: " << mlirFile << "\n");
-    LLVM_DEBUG(llvm::dbgs() << "eggFile: " << eggFile << "\n");
 
     std::map<std::string, AttrStringifyFunction> attrStringifiers = {
             {mlir::arith::FastMathFlagsAttr::name.str(), stringifyFastMathFlagsAttr}};
@@ -72,7 +47,7 @@ int main(int argc, char** argv) {
 
     EgglogCustomDefs funcs = {attrStringifiers, attrParsers, typeStringifiers, typeParsers};
     mlir::PassRegistration<EqualitySaturationPass>([&] {
-        return createEqualitySaturationPass(mlirFile, eggFile, funcs);
+        return std::make_unique<EqualitySaturationPass>(getMlirFile(argc, argv), funcs);
     });
 
     // Run the main MLIR opt

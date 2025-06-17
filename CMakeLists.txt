@@ -3,7 +3,7 @@ project(egg-opt LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_BUILD_TYPE Release)  # Set -DCMAKE_BUILD_TYPE to "Release" to build with optimizations
+set(CMAKE_BUILD_TYPE Debug)  # Set -DCMAKE_BUILD_TYPE to "Release" to build with optimizations
 find_package(LLVM REQUIRED CONFIG)
 if ("${LLVM_VERSION_MAJOR}" VERSION_LESS 18)
     message(FATAL_ERROR "Found LLVM ${LLVM_VERSION_MAJOR}, but need LLVM 18 or above")
@@ -26,7 +26,7 @@ include(TableGen)
 include(AddLLVM)
 include(HandleLLVMOptions)
 
-# Find AddMLIR cmake at ~/dev/lib/llvm/mlir/cmake/modules
+# Find AddMLIR cmake at llvm-project/mlir/cmake/modules
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
 include(AddMLIR)
 
@@ -54,7 +54,3 @@ llvm_update_compile_flags(egg-opt)
 target_link_libraries(egg-opt PRIVATE ${OPT_LIBS})
 
 add_subdirectory(test)
-
-# add_llvm_executable(mm src/random_mm.cpp)
-# llvm_update_compile_flags(mm)
-# target_link_libraries(mm PRIVATE ${OPT_LIBS})
