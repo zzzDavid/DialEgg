@@ -48,7 +48,7 @@ Within the root directory of this repo, build DialEgg:
 
 ```bash
 mkdir build
-cmake -S . -B build
+cmake -S . -B build -DLLVM_DIR=[path to llvm cmake dir] -DMLIR_DIR=[path to mlir cmake dir]
 cmake --build build
 ```
 
