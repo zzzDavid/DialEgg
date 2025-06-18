@@ -264,10 +264,10 @@ void EqualitySaturationPass::runOnOperation() {
         }
     }
 
-    llvm::outs() << "-----------------------------------------\n";
-    llvm::outs() << "Done running on function: " << rootOpName << "\n";
-    llvm::outs() << "mlirToEgglogTime = " << mlirToEgglogTime << "s\n";
-    llvm::outs() << "egglogExecTime = " << egglogExecTime << "s\n";
-    llvm::outs() << "egglogToMlirTime = " << egglogToMlirTime << "s\n";
-    llvm::outs() << "-----------------------------------------\n";
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+    LLVM_DEBUG(llvm::dbgs() << "Done running on function: " << rootOpName << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "mlirToEgglogTime = " << mlirToEgglogTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "egglogExecTime = " << egglogExecTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "egglogToMlirTime = " << egglogToMlirTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
 }
