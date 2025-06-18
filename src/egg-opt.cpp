@@ -14,15 +14,13 @@
 
 #define DEBUG_TYPE "dialegg"
 
-#define DEBUG_TYPE "dialegg"
-
 std::string getMlirFile(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] != '-') {
             return argv[i];
         }
     }
-    llvm_unreachable("mlir file not found");
+    return "";
 }
 
 int main(int argc, char** argv) {
