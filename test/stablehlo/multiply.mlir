@@ -1,4 +1,4 @@
-// RUN: %eggopt %s --egg %testsrc/stablehlo/multiply.egg --eq-sat | FileCheck %s
+// RUN: %eggopt %s --eq-sat | FileCheck %s
 
 func.func @mul2(%x: tensor<4xf64>) -> tensor<4xf64> {
 	%cst = stablehlo.constant dense<2.0> : tensor<4xf64>

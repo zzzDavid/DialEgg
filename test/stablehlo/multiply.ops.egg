@@ -1,18 +1,19 @@
-(include "src/base.egg")
+(include "../../../src/base.egg") ; The tests are run from "build/test/stablehlo"
 
 ;;;; StableHLO Dialect ;;;;
 (function stablehlo_multiply (Op Op Type) Op)
 (function stablehlo_add (Op Op Type) Op)
 (function stablehlo_constant (AttrPair Type) Op)
 
-; Only supports concat of 2 inputs
-(function stablehlo_concatenate (Op Op AttrPair Type) Op :cost 100)
-
 ;; OPS HERE ;;
+; mul2_func.func
+(let op0 (Value 0 (RankedTensor (vec-of 4) (F64))))
+(let op1 (stablehlo_constant (NamedAttr "value" (DenseFPElementsAttr (vec-of 2.000000e+00 2.000000e+00 2.000000e+00 2.000000e+00) (RankedTensor (vec-of 4) (F64)))) (RankedTensor (vec-of 4) (F64))))
+(let op2 (stablehlo_multiply op0 op1 (RankedTensor (vec-of 4) (F64))))
+(let op3 (Value 3 (None)))
 
 ;; RULES HERE ;;
 (ruleset rules)
-(rule ((= ?A (Value ?id ?t))) ((set (type-of ?A) ?t)) :ruleset rules)
 
 (let c2f (stablehlo_constant
   (NamedAttr "value"
@@ -20,7 +21,7 @@
   (RankedTensor (vec-of 4) (F64))))
 
 (rewrite ; x * 2 = x + x
-  (stablehlo_multiply ?x c2 ?a)
+  (stablehlo_multiply ?x c2f ?a)
   (stablehlo_add ?x ?x ?a)
   :ruleset rules)
 
@@ -29,12 +30,7 @@
   (stablehlo_add (stablehlo_multiply ?a ?b ?t) (stablehlo_multiply ?a ?c ?t) ?t)
   :ruleset rules)
 
-(rewrite ; concat(a, b) + concat(c, d) = concat(a + c, b + d)
-  (stablehlo_add (stablehlo_concatenate ?a ?b ?dim ?t) (stablehlo_concatenate ?c ?d ?dim ?t) ?t)
-  ; TODO: How to access the type here?
-  (stablehlo_concatenate (stablehlo_add ?a ?c (type-of ?a)) (stablehlo_add ?b ?d (type-of ?b)) ?dim ?t)
-  :ruleset rules)
-
 (run-schedule (saturate rules))
 
 ;; EXTRACTS HERE ;;
+(extract op2)

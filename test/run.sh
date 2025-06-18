@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Script to compile and execute an MLIR file with llc.
+
 # Usage: ./test/interpret.sh <file>
 MLIR_FILE="$1"
 MLIR_FILEPATH=$(dirname $MLIR_FILE) # directory of the MLIR file

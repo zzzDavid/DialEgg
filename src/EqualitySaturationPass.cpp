@@ -271,7 +271,3 @@ void EqualitySaturationPass::runOnOperation() {
     llvm::outs() << "egglogToMlirTime = " << egglogToMlirTime << "s\n";
     llvm::outs() << "-----------------------------------------\n";
 }
-
-std::unique_ptr<mlir::Pass> createEqualitySaturationPass(const std::string& mlirFile, const std::string& eggFile, const EgglogCustomDefs& funcs) {
-    return std::make_unique<EqualitySaturationPass>(mlirFile, eggFile, funcs);
-}

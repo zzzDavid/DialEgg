@@ -1,0 +1,32 @@
+(include "../../../src/base.egg") ; The tests are run from "build/test/stablehlo"
+
+;;;; StableHLO Dialect ;;;;
+(function stablehlo_add (Op Op Type) Op)
+
+; Only supports concat of 2 inputs
+(function stablehlo_concatenate (Op Op AttrPair Type) Op :cost 100)
+
+;; OPS HERE ;;
+; concat_func.func
+(let op0 (Value 0 (RankedTensor (vec-of 3 2) (F32))))
+(let op1 (Value 1 (RankedTensor (vec-of 1 2) (F32))))
+(let op2 (Value 2 (RankedTensor (vec-of 3 2) (F32))))
+(let op3 (Value 3 (RankedTensor (vec-of 1 2) (F32))))
+(let op4 (stablehlo_concatenate op0 op1 (NamedAttr "dimension" (IntegerAttr 0 (I64))) (RankedTensor (vec-of 4 2) (F32))))
+(let op5 (stablehlo_concatenate op2 op3 (NamedAttr "dimension" (IntegerAttr 0 (I64))) (RankedTensor (vec-of 4 2) (F32))))
+(let op6 (stablehlo_add op4 op5 (RankedTensor (vec-of 4 2) (F32))))
+(let op7 (Value 7 (None)))
+
+;; RULES HERE ;;
+(ruleset rules)
+(rule ((= ?A (Value ?id ?t))) ((set (type-of ?A) ?t)) :ruleset rules)
+
+(rewrite ; concat(a, b) + concat(c, d) = concat(a + c, b + d)
+  (stablehlo_add (stablehlo_concatenate ?a ?b ?dim ?t) (stablehlo_concatenate ?c ?d ?dim ?t) ?t)
+  (stablehlo_concatenate (stablehlo_add ?a ?c (type-of ?a)) (stablehlo_add ?b ?d (type-of ?b)) ?dim ?t)
+  :ruleset rules)
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;
+(extract op6)
