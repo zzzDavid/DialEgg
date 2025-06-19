@@ -43,7 +43,6 @@ config.excludes = [
     "README.txt",
     "LICENSE.txt",
 ] + [
-    "2mm",
     "3mm",
     "arith",
     "classic",
@@ -52,6 +51,7 @@ config.excludes = [
     "nmm",
     "polynomial",
     "scf",
+    "util",
     "vector_norm",
 ]
 

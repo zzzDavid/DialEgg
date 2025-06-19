@@ -2,6 +2,8 @@
 .idea/
 cmake-build-*/
 build/
+build-debug/
+build-release/
 __pycache__/
 .vscode/
 .dialegg.venv/

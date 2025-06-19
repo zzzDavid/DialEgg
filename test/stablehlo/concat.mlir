@@ -1,4 +1,4 @@
-// RUN: %eggopt %s --egg %testsrc/stablehlo/concat.egg --eq-sat | FileCheck %s
+// RUN: %eggopt %s --eq-sat | FileCheck %s
 
 func.func @concat(%a: tensor<3x2xf32>, %b: tensor<1x2xf32>, %c: tensor<3x2xf32>, %d: tensor<1x2xf32>) -> tensor<4x2xf32> {
 	%ab = stablehlo.concatenate %a, %b, dim = 0 : (tensor<3x2xf32>, tensor<1x2xf32>) -> tensor<4x2xf32>
