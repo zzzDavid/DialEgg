@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Script to interpret an MLIR file with lli.
+
 # Usage: ./test/interpret.sh <file>
 MLIR_FILE="$1"
 MLIR_FILEPATH=$(dirname $MLIR_FILE) # directory of the MLIR file

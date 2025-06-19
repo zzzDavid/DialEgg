@@ -5,6 +5,8 @@
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "mlir/AsmParser/AsmParser.h"
 
+#include "stablehlo/dialect/Register.h"
+
 #include "Egglog.h"
 #include "EqualitySaturationPass.h"
 #include "EggifyPass.h"
@@ -18,13 +20,14 @@ std::string getMlirFile(int argc, char** argv) {
             return argv[i];
         }
     }
-    llvm_unreachable("mlir file not found");
+    return "";
 }
 
 int main(int argc, char** argv) {
     // Register dialects
     mlir::DialectRegistry dialectRegistry;
     mlir::registerAllDialects(dialectRegistry);
+    mlir::stablehlo::registerAllDialects(dialectRegistry);
 
     // Register passes
     mlir::registerAllPasses();

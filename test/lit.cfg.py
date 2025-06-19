@@ -51,6 +51,7 @@ config.excludes = [
     "nmm",
     "polynomial",
     "scf",
+    "util",
     "vector_norm",
 ]
 
