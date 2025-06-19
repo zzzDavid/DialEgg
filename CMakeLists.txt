@@ -26,9 +26,13 @@ include(TableGen)
 include(AddLLVM)
 include(HandleLLVMOptions)
 
-# Find AddMLIR cmake at ~/dev/lib/llvm/mlir/cmake/modules
+# Find AddMLIR cmake at llvm-project/mlir/cmake/modules
 list(APPEND CMAKE_MODULE_PATH "${MLIR_CMAKE_DIR}")
 include(AddMLIR)
+
+set(STABLEHLO_BUILD_EMBEDDED ON)
+add_subdirectory(${STABLEHLO_DIR} ${CMAKE_CURRENT_BINARY_DIR}/stablehlo EXCLUDE_FROM_ALL)
+include_directories(${STABLEHLO_DIR})
 
 set(DIALEGG_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 set(DIALEGG_BINARY_DIR ${PROJECT_BINARY_DIR})
