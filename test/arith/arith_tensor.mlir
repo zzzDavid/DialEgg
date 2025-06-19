@@ -29,6 +29,7 @@ func.func @main() -> i64 {
 
     %end = func.call @clock() : () -> i64  // End measuring time
     func.call @displayTime(%start, %end) : (i64, i64) -> ()
+    func.call @printNewline() : () -> ()
 
     %zero = arith.constant 0 : i64
     func.return %zero : i64
