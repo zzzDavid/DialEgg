@@ -141,6 +141,7 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
     std::ifstream file(egglogExtractedFilename);
 
     // Parse the extracted egglog file and replace the MLIR operations
+    std::vector<std::string> lines;
     for (const EggifiedOp* eggOp: egglog.eggifiedBlock) {
         if (!eggOp->shouldBeExtracted()) {
             continue;
@@ -148,17 +149,17 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
 
         // eggOp.print(llvm::outs());
 
-        std::string line;
-        std::getline(file, line);
+        lines.emplace_back();
+        std::getline(file, lines.back());
 
         // llvm::outs() << eggOp.getPrintId() << " = " << line << "\n";
 
         mlir::Operation* prevOp = eggOp->mlirOp;
         mlir::OpBuilder builder(prevOp);
-        mlir::Operation* newOp = egglog.parseOperation(line, builder);
+        mlir::Operation* newOp = egglog.parseOperation(lines.back(), builder);
 
         if (newOp == nullptr) {  // If the operation is an opaque value, replace it with the value
-            mlir::Value value = egglog.parseValue(line);
+            mlir::Value value = egglog.parseValue(lines.back());
             prevOp->getResult(0).replaceAllUsesWith(value);
             prevOp->erase();
         } else if (newOp != prevOp) {  // Check if the whole operation is different, if so, replace it
@@ -183,21 +184,71 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
     LLVM_DEBUG(llvm::dbgs() << "\n");
 }
 
-void EqualitySaturationPass::init() {
+void EqualitySaturationPass::runOnFunction(mlir::func::FuncOp& func) {
+    llvm::StringRef funcName = func.getName();
+
+    LLVM_DEBUG(llvm::dbgs() << "Running on function: " << funcName << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+
+    // Perform equality saturation on all operations of a block.
+    for (mlir::Block& block: func.getRegion().getBlocks()) {
+        std::string parentOpName = block.getParentOp()->getName().getStringRef().str();
+        std::string blockName = funcName.str() + "_" + parentOpName;
+        runOnBlock(block, blockName);
+    }
+
+
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+    LLVM_DEBUG(llvm::dbgs() << "Done running on function: " << funcName << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "mlirToEgglogTime = " << mlirToEgglogTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "egglogExecTime = " << egglogExecTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "egglogToMlirTime = " << egglogToMlirTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+}
+
+void EqualitySaturationPass::runOnOperation() {
+    mlir::ModuleOp module = getOperation();
+    
+    // find all functions in the module
+    for (mlir::Operation& op: module.getOps()) {
+        if (auto funcOp = llvm::dyn_cast<mlir::func::FuncOp>(&op)) {
+            runOnFunction(funcOp);
+        } else {
+            llvm::errs() << "Skipping non-function operation: " << op.getName() << "\n";
+        }
+    }
+
+    // Temporary dead code elimination (until this PR is merged: https://github.com/llvm/llvm-project/pull/99671)
+    bool clean = false;
+    while (!clean) {
+        clean = true;
+
+        module.walk([&](mlir::Operation* op) {
+            bool deadFunctionCall = mlir::isa<mlir::func::CallOp>(op) && op->use_empty(); // we assume for our use case that function calls have no side effects (BAD)
+            if (mlir::isOpTriviallyDead(op) || deadFunctionCall) {
+                clean = false;
+                op->erase();
+            }
+        });
+    }
+}
+
+llvm::LogicalResult EqualitySaturationPass::initialize(mlir::MLIRContext* context) {
     // Make sure both files exist
     if (!llvm::sys::fs::exists(mlirFilePath)) {
         llvm::errs() << "MLIR file does not exist: " << mlirFilePath << "\n";
-        exit(1);
+        return llvm::failure();
     }
     if (!llvm::sys::fs::exists(eggFilePath)) {
         llvm::errs() << "Egg file does not exist: " << eggFilePath << "\n";
 
+        // try to find egg file with the same name as the mlir file (default egg file)
         std::string name = mlirFilePath.substr(0, mlirFilePath.find(".mlir"));
         eggFilePath = name + ".egg";
         if (!llvm::sys::fs::exists(eggFilePath)) {
-            exit(1);
+            return llvm::failure();
         }
-        
+
         llvm::errs() << "Using default egg file: " << eggFilePath << "\n";
     }
 
@@ -213,8 +264,7 @@ void EqualitySaturationPass::init() {
         if (EgglogOpDef::isOpFunction(line)) {
             EgglogOpDef parsedOp = EgglogOpDef::parseOpFunction(line);
 
-            supportedOps.emplace(parsedOp.dialect + "." + parsedOp.name + (parsedOp.version.empty() ? "" : "." + parsedOp.version), parsedOp);
-            supportedOps.emplace(parsedOp.dialect + "_" + parsedOp.name + (parsedOp.version.empty() ? "" : "_" + parsedOp.version), parsedOp);
+            supportedOps.emplace(parsedOp.egglogName(), parsedOp);
             supportedDialects.insert(parsedOp.dialect);
         }
     }
@@ -233,41 +283,6 @@ void EqualitySaturationPass::init() {
     }
 
     LLVM_DEBUG(llvm::dbgs() << "\n\n");
-}
 
-void EqualitySaturationPass::runOnOperation() {
-    init();
-
-    mlir::func::FuncOp rootOp = getOperation();
-    llvm::StringRef rootOpName = rootOp.getName();
-
-    LLVM_DEBUG(llvm::dbgs() << "Running on function: " << rootOpName << "\n");
-    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
-
-    // Perform equality saturation on all operations of a block.
-    for (mlir::Block& block: rootOp.getRegion().getBlocks()) {
-        std::string parentOpName = block.getParentOp()->getName().getStringRef().str();
-        std::string blockName = rootOpName.str() + "_" + parentOpName;
-        runOnBlock(block, blockName);
-
-        // Temporary dead code elimination (until this PR is merged: https://github.com/llvm/llvm-project/pull/99671)
-        bool clean = false;
-        while (!clean) {
-            clean = true;
-
-            block.walk([&](mlir::Operation* op) {
-                if (mlir::isOpTriviallyDead(op)) {
-                    clean = false;
-                    op->erase();
-                }
-            });
-        }
-    }
-
-    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
-    LLVM_DEBUG(llvm::dbgs() << "Done running on function: " << rootOpName << "\n");
-    LLVM_DEBUG(llvm::dbgs() << "mlirToEgglogTime = " << mlirToEgglogTime << "s\n");
-    LLVM_DEBUG(llvm::dbgs() << "egglogExecTime = " << egglogExecTime << "s\n");
-    LLVM_DEBUG(llvm::dbgs() << "egglogToMlirTime = " << egglogToMlirTime << "s\n");
-    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+    return llvm::success();
 }

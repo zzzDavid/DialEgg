@@ -12,6 +12,33 @@
 #include "mlir/IR/Operation.h"
 #include "mlir/IR/Value.h"
 
+inline long long svtoll(std::string_view str) {
+    return std::stoll(std::string(str));
+}
+
+inline int svtoi(std::string_view str) {
+    return std::stoi(std::string(str));
+}
+
+inline double svtod(std::string_view str) {
+    return std::stod(std::string(str));
+}
+
+inline float svtof(std::string_view str) {
+    return std::stof(std::string(str));
+}
+
+inline bool svtob(std::string_view str) {
+    if (str == "true" || str == "1") {
+        return true;
+    } else if (str == "false" || str == "0") {
+        return false;
+    } else {
+        llvm::outs() << "Invalid boolean string: " << str << "\n";
+        exit(1);
+    }
+}
+
 inline std::string doubleToString(double d) {
     std::ostringstream ss;
     ss << std::fixed << d;
@@ -27,8 +54,16 @@ inline std::string doubleToString(double d) {
 }
 
 /** Returns the given string without the wrapping character */
-inline std::string unwrap(const std::string& str, char c = ' ') {
+inline std::string_view unwrap(std::string_view str, char c = ' ') {
     if (str.front() == c && str.back() == c) {
+        return str.substr(1, str.size() - 2);
+    }
+    return str;
+}
+
+/** Returns the given string without being wrapped in brackets */
+inline std::string_view unwrapBrackets(std::string_view str) {
+    if (str.front() == '(' && str.back() == ')') {
         return str.substr(1, str.size() - 2);
     }
     return str;
@@ -36,6 +71,10 @@ inline std::string unwrap(const std::string& str, char c = ' ') {
 
 inline bool isBlank(const std::string& str) {
     return str.find_first_not_of(' ') == std::string::npos;
+}
+
+inline bool isBlank(const std::string_view& str) {
+    return str.find_first_not_of(' ') == std::string_view::npos;
 }
 
 inline void printFileContents(const std::string& filename, llvm::raw_ostream& ros = llvm::outs()) {
