@@ -12,7 +12,10 @@
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/Linalg/IR/LinalgInterfaces.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
+// Temporarily commenting out StableHLO include for compatibility
+#ifdef ENABLE_STABLEHLO
 #include "stablehlo/dialect/StablehloOps.h"
+#endif
 
 #include "Egglog.h"
 #include "EqualitySaturationPass.h"
@@ -472,6 +475,7 @@ mlir::Attribute Egglog::parseAttribute(std::string_view attrStr) {
         }
     } else if (attrType == "SymbolRefAttr") {  // (SymbolRefAttr "<name>")
         return mlir::SymbolRefAttr::get(&context, unwrap(split[1], '"'));
+#ifdef ENABLE_STABLEHLO
     } else if (attrType == "PrecisionAttr") {  // (PrecisionAttr (DEFAULT | HIGH | HIGHEST))
         std::string_view precisionStr = unwrapBrackets(split[1]);
         mlir::stablehlo::Precision precision = mlir::stablehlo::symbolizePrecision(precisionStr).value();
@@ -484,6 +488,8 @@ mlir::Attribute Egglog::parseAttribute(std::string_view attrStr) {
         std::string_view typeStr = unwrapBrackets(split[1]);
         mlir::stablehlo::ComparisonType type = mlir::stablehlo::symbolizeComparisonType(typeStr).value();
         return mlir::stablehlo::ComparisonTypeAttr::get(&context, type);
+#endif
+#ifdef ENABLE_STABLEHLO
     } else if (attrType == "DotAlgorithmAttr") {  // (DotAlgorithmAttr <type1> <type2> <type3> <int1> <int2> <int3> <bool>)
         mlir::Type type1 = parseType(split[1]);
         mlir::Type type2 = parseType(split[2]);
@@ -519,6 +525,7 @@ mlir::Attribute Egglog::parseAttribute(std::string_view attrStr) {
         }
 
         return mlir::stablehlo::DotDimensionNumbersAttr::get(&context, lhsBatchingDimensions, rhsBatchingDimensions, lhsContractingDimensions, rhsContractingDimensions);
+#endif
     } else if (attrType == "OpaqueAttr") {  // TODO add all remaining builtin attrs (check below functions)
         return mlir::parseAttribute(unwrap(split[1], '"'), &context);
     } else if (egglogCustom.attrParsers.find(attrType) != egglogCustom.attrParsers.end()) {
@@ -670,6 +677,7 @@ std::string Egglog::eggifyAttribute(mlir::Attribute attr) {
         mlir::SymbolRefAttr symbolRefAttr = mlir::cast<mlir::SymbolRefAttr>(attr);
         std::string value = symbolRefAttr.getRootReference().str();
         ss << "(SymbolRefAttr \"" << value << "\")";
+#ifdef ENABLE_STABLEHLO
     } else if (typeId == mlir::TypeID::get<mlir::stablehlo::ComparisonDirectionAttr>()) {  
         mlir::stablehlo::ComparisonDirectionAttr comparisonDirectionAttr = mlir::cast<mlir::stablehlo::ComparisonDirectionAttr>(attr);
         ss << "(ComparisonDirectionAttr (" << mlir::stablehlo::stringifyComparisonDirection(comparisonDirectionAttr.getValue()) << "))";
@@ -708,6 +716,7 @@ std::string Egglog::eggifyAttribute(mlir::Attribute attr) {
             ss << " " << dim;
         }
         ss << "))";
+#endif
     
     } else if (egglogCustom.attrStringifiers.find(typeName) != egglogCustom.attrStringifiers.end()) {  // custom attr by user
         AttrStringifyFunction stringifyFunc = egglogCustom.attrStringifiers.at(typeName);
