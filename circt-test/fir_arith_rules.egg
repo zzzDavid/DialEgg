@@ -1,0 +1,60 @@
+(include "src/base.egg")
+
+;;;; Additional Type Definitions ;;;;
+(function I3 () Type)
+(function Int3 () Type)
+(function I18 () Type)
+
+;;;; Arith Dialect Functions ;;;;
+(function arith_constant (AttrPair Type) Op)
+(function arith_cmpi (AttrPair Op Op Type) Op)
+(function arith_ori (Op Op Type) Op)
+(function arith_andi (Op Op Type) Op)
+(function arith_xori (Op Op Type) Op)
+(function arith_addi (Op Op Type) Op)
+(function arith_shli (Op Op Type) Op)
+
+;;;; Func Dialect Functions ;;;;
+(function func_return (OpVec TypeVec) Op)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset fir_arith_rules)
+
+;; Basic Boolean algebra rules
+;; Idempotent: a & a = a
+(rewrite (arith_andi ?x ?x ?t) ?x :ruleset fir_arith_rules)
+
+;; Idempotent: a | a = a  
+(rewrite (arith_ori ?x ?x ?t) ?x :ruleset fir_arith_rules)
+
+;; Identity with 0: a | 0 = a
+(rewrite (arith_ori ?x (arith_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) ?x :ruleset fir_arith_rules)
+
+;; Identity with 0: a + 0 = a
+(rewrite (arith_addi ?x (arith_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) ?x :ruleset fir_arith_rules)
+
+;; Commutative: 0 + a = a
+(rewrite (arith_addi (arith_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?x ?t2) ?x :ruleset fir_arith_rules)
+
+;; Absorption: a & (a | b) = a
+(rewrite (arith_andi ?a (arith_ori ?a ?b ?t1) ?t2) ?a :ruleset fir_arith_rules)
+
+;; Absorption: a | (a & b) = a
+(rewrite (arith_ori ?a (arith_andi ?a ?b ?t1) ?t2) ?a :ruleset fir_arith_rules)
+
+;; Commutative property for AND
+(rewrite (arith_andi ?a ?b ?t) (arith_andi ?b ?a ?t) :ruleset fir_arith_rules)
+
+;; Commutative property for OR
+(rewrite (arith_ori ?a ?b ?t) (arith_ori ?b ?a ?t) :ruleset fir_arith_rules)
+
+;; Commutative property for ADD
+(rewrite (arith_addi ?a ?b ?t) (arith_addi ?b ?a ?t) :ruleset fir_arith_rules)
+
+(run-schedule (saturate fir_arith_rules))
+
+;; EXTRACTS HERE ;;
+;; Extract the final result
+(extract op5) 
