@@ -1,0 +1,47 @@
+(include "../src/base.egg")
+
+;;;; HW Dialect ;;;;
+(function hw_constant (AttrPair Type) Op)
+(function hw_output (Op Type) Op)
+(function hw_module (Op) Op)
+
+;;;; Comb Dialect ;;;;
+(function comb_mux (Op Op Op Type) Op)
+(function comb_and (Op Op Type) Op)
+(function comb_or (Op Op Type) Op)
+(function comb_xor (Op Op Type) Op)
+(function comb_icmp (AttrPair Op Op Type) Op)
+(function comb_concat (Op Op Type) Op)
+
+;; OPTIMIZATION RULES ;;
+(ruleset hw_rules)
+
+;; Basic Boolean algebra rules
+;; Idempotent: a & a = a
+(rewrite (comb_and ?x ?x ?t) ?x :ruleset hw_rules)
+
+;; Idempotent: a | a = a  
+(rewrite (comb_or ?x ?x ?t) ?x :ruleset hw_rules)
+
+;; Absorption: a & (a | b) = a
+(rewrite (comb_and ?a (comb_or ?a ?b ?t1) ?t2) ?a :ruleset hw_rules)
+
+;; Absorption: a | (a & b) = a
+(rewrite (comb_or ?a (comb_and ?a ?b ?t1) ?t2) ?a :ruleset hw_rules)
+
+;; Commutative property for AND
+(rewrite (comb_and ?a ?b ?t) (comb_and ?b ?a ?t) :ruleset hw_rules)
+
+;; Commutative property for OR
+(rewrite (comb_or ?a ?b ?t) (comb_or ?b ?a ?t) :ruleset hw_rules)
+
+;; XOR with self: a ^ a = 0
+;; TODO: Need to define constants properly
+
+;; Mux optimizations
+;; If both mux inputs are the same: mux(sel, a, a) = a
+(rewrite (comb_mux ?sel ?a ?a ?t) ?a :ruleset hw_rules)
+
+(run-schedule (saturate hw_rules))
+
+;; EXTRACTS HERE ;; 
