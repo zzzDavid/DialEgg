@@ -18,18 +18,22 @@
 (function func_return (OpVec TypeVec) Op)
 
 ;; OPS HERE ;;
-; fir_optimizable_func.func
+; fir_input_func.func
 (let op0 (Value 0 (I16)))
 (let op1 (Value 1 (I16)))
 (let op2 (Value 2 (I16)))
-(let op3 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I16))) (I16)))
-(let op4 (arith_constant (NamedAttr "value" (IntegerAttr 1 (I16))) (I16)))
-(let op5 (arith_shli op1 op4 (I16)))
-(let op6 (arith_ori op5 op3 (I16)))
-(let op7 (arith_addi op0 op6 (I16)))
-(let op8 (arith_addi op7 op2 (I16)))
-(let op9 (arith_addi op8 op3 (I16)))
-(let op10 (Value 10 (None)))
+(let op3 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I1))) (I1)))
+(let op4 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I16))) (I16)))
+(let op5 (Value 5 (I16)))
+(let op6 (Value 6 (Int15)))
+(let op7 (arith_constant (NamedAttr "value" (IntegerAttr 0 (I16))) (I16)))
+(let op8 (arith_constant (NamedAttr "value" (IntegerAttr 1 (I16))) (I16)))
+(let op9 (Value 9 (I16)))
+(let op10 (arith_shli op9 op8 (I16)))
+(let op11 (arith_ori op10 op7 (I16)))
+(let op12 (arith_addi op0 op11 (I16)))
+(let op13 (arith_addi op12 op2 (I16)))
+(let op14 (Value 14 (None)))
 
 ;; RULES HERE ;;
 (ruleset fir_arith_rules)
@@ -68,6 +72,8 @@
 (run-schedule (saturate fir_arith_rules))
 
 ;; EXTRACTS HERE ;;
-(extract op9)
+(extract op3)
+(extract op4)
+(extract op13)
 ;; Extract the final result
 (extract op5) 
