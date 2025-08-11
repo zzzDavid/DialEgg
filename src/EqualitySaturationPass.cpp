@@ -206,15 +206,38 @@ void EqualitySaturationPass::runOnFunction(mlir::func::FuncOp& func) {
     LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
 }
 
+void EqualitySaturationPass::runOnHWModule(circt::hw::HWModuleOp& hwModule) {
+    llvm::StringRef moduleName = hwModule.getName();
+
+    LLVM_DEBUG(llvm::dbgs() << "Running on HW module: " << moduleName << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+
+    // Perform equality saturation on all operations of a block.
+    for (mlir::Block& block: hwModule.getBodyRegion().getBlocks()) {
+        std::string parentOpName = block.getParentOp()->getName().getStringRef().str();
+        std::string blockName = moduleName.str() + "_" + parentOpName;
+        runOnBlock(block, blockName);
+    }
+
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+    LLVM_DEBUG(llvm::dbgs() << "Done running on HW module: " << moduleName << "\n");
+    LLVM_DEBUG(llvm::dbgs() << "mlirToEgglogTime = " << mlirToEgglogTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "egglogExecTime = " << egglogExecTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "egglogToMlirTime = " << egglogToMlirTime << "s\n");
+    LLVM_DEBUG(llvm::dbgs() << "-----------------------------------------\n");
+}
+
 void EqualitySaturationPass::runOnOperation() {
     mlir::ModuleOp module = getOperation();
     
-    // find all functions in the module
+    // find all functions and hw modules in the module
     for (mlir::Operation& op: module.getOps()) {
         if (auto funcOp = llvm::dyn_cast<mlir::func::FuncOp>(&op)) {
             runOnFunction(funcOp);
+        } else if (auto hwModuleOp = llvm::dyn_cast<circt::hw::HWModuleOp>(&op)) {
+            runOnHWModule(hwModuleOp);
         } else {
-            llvm::errs() << "Skipping non-function operation: " << op.getName() << "\n";
+            llvm::errs() << "Skipping non-function/non-hw-module operation: " << op.getName() << "\n";
         }
     }
 

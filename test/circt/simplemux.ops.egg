@@ -1,0 +1,23 @@
+(include "src/base.egg")
+
+;;;; comb dialect ;;;;
+(function comb_mux (Op Op Op Type) Op)
+
+;;;; hw dialect ;;;;
+(function hw_output (Op) Op)
+
+;; OPS HERE ;;
+; SimpleMux_hw.module
+(let op0 (Value 0 (I32)))
+(let op1 (Value 1 (I32)))
+(let op2 (Value 2 (I1)))
+(let op3 (comb_mux op2 op1 op0 (I32)))
+(let op4 (hw_output op3))
+
+;; RULES HERE ;;
+(ruleset rules)
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;
+(extract op4)

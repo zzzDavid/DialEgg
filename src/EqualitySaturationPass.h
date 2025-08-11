@@ -7,6 +7,7 @@
 
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "circt/Dialect/HW/HWOps.h"
 #include "mlir/Pass/Pass.h"
 
 #include "Egglog.h"
@@ -36,6 +37,7 @@ struct EqualitySaturationPass : public mlir::PassWrapper<EqualitySaturationPass,
     llvm::LogicalResult initialize(mlir::MLIRContext*) override;
     void runOnOperation() override;
     void runOnFunction(mlir::func::FuncOp&);
+    void runOnHWModule(circt::hw::HWModuleOp&);
     void runOnBlock(mlir::Block&, const std::string&);
     void runEgglog(const std::vector<EggifiedOp*>&, const std::string&);
 };
