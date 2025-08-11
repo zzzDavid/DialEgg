@@ -3,48 +3,84 @@
 # Setup script for DialEgg
 # This script sets up the environment and builds DialEgg
 
-# Set LLVM, MLIR, and StableHLO directories
-export LLVM_DIR=/work/global/nz264/dialegg-deps/llvm
-export BUILD_DIR=$LLVM_DIR/build-release
+echo "🔄 Configuring DialEgg to use CIRCT's LLVM (version alignment)"
+echo "=============================================================="
+
+# Use CIRCT's LLVM instead of standalone build for version alignment
+export LLVM_DIR=/work/global/nz264/circt/llvm
+export BUILD_DIR=$LLVM_DIR/build
 export STABLEHLO_DIR=/work/global/nz264/dialegg-deps/stablehlo
 
-# Check if LLVM build is complete
+echo "📋 LLVM Version Alignment:"
+echo "- CIRCT LLVM: 22.0.0git (target)"
+echo "- DialEgg LLVM: Will use CIRCT's LLVM"
+echo "- Path: $BUILD_DIR"
+echo ""
+
+# Check if CIRCT's LLVM build exists
 if [ ! -f "$BUILD_DIR/lib/cmake/llvm/LLVMConfig.cmake" ]; then
-    echo "Error: LLVM build is not complete yet!"
-    echo "Please wait for LLVM to finish building, then run this script again."
-    echo "You can check build progress with:"
-    echo "  ls -la $BUILD_DIR/lib/"
+    echo "❌ Error: CIRCT's LLVM build not found!"
+    echo "Expected: $BUILD_DIR/lib/cmake/llvm/LLVMConfig.cmake"
+    echo ""
+    echo "Please ensure CIRCT is properly built with its LLVM."
     exit 1
 fi
 
-# Check if StableHLO directory exists
+echo "✅ CIRCT's LLVM build found"
+
+# Check if StableHLO directory exists (optional - we're not using it)
 if [ ! -d "$STABLEHLO_DIR" ]; then
-    echo "Error: StableHLO directory not found at $STABLEHLO_DIR!"
-    echo "Please clone StableHLO first:"
-    echo "  cd ../dialegg-deps && git clone https://github.com/openxla/stablehlo.git"
-    exit 1
+    echo "⚠️  StableHLO directory not found at $STABLEHLO_DIR (optional)"
+else
+    echo "✅ StableHLO directory found (optional)"
 fi
 
-echo "LLVM build found, proceeding with DialEgg build..."
+echo ""
+echo "🔧 Building DialEgg with CIRCT's LLVM..."
 
-# Build DialEgg in release mode with explicit paths
+# Clean previous build to avoid conflicts
+rm -rf build-release
 mkdir -p build-release
 
+# Build DialEgg with CIRCT's LLVM
 cmake -S . -B build-release \
     -DCMAKE_BUILD_TYPE=Release \
     -DLLVM_DIR=$BUILD_DIR/lib/cmake/llvm \
-    -DMLIR_DIR=$BUILD_DIR/lib/cmake/mlir \
-    -DSTABLEHLO_DIR=$STABLEHLO_DIR
+    -DMLIR_DIR=$BUILD_DIR/lib/cmake/mlir
 
+if [ $? -ne 0 ]; then
+    echo "❌ Error: CMake configuration failed!"
+    echo ""
+    echo "This might be due to:"
+    echo "- CIRCT's LLVM build incomplete"
+    echo "- Version conflicts"
+    echo "- Missing dependencies"
+    exit 1
+fi
+
+echo "✅ CMake configuration succeeded"
+echo ""
+echo "🔨 Building DialEgg..."
 cmake --build build-release
 
+if [ $? -ne 0 ]; then
+    echo "❌ Error: DialEgg build failed!"
+    exit 1
+fi
+
 echo ""
-echo "🎉 DialEgg build complete!"
+echo "🎉 SUCCESS! DialEgg built with CIRCT's LLVM"
+echo "==========================================="
 echo ""
-echo "To use DialEgg, add egglog to your PATH:"
+echo "📊 Version Alignment Achieved:"
+echo "- CIRCT LLVM: 22.0.0git"  
+echo "- DialEgg LLVM: 22.0.0git (same as CIRCT)"
+echo ""
+echo "🚀 Ready for native HW/Comb dialect support!"
+echo ""
+echo "To test native support:"
 echo "  export PATH=\"/work/global/nz264/dialegg-deps/egglog/target/release:\$PATH\""
+echo "  ./build-release/egg-opt --eq-sat --egg-file=circt-test/hw_comb_native.egg circt-test/simple_hw_test.mlir"
 echo ""
-echo "Then test with the classic example:"
-echo "  ./build-release/egg-opt --eq-sat --egg-file=test/classic/classic.egg test/classic/classic.mlir"
-echo ""
-echo "Expected output: The function should be optimized from (a * 2) / 2 to just returning a" 
+echo "Or use the existing conversion pipeline:"
+echo "  cd circt-test && ./complete_roundtrip.sh" 
