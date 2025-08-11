@@ -237,7 +237,7 @@ echo "optimization pipeline using CIRCT + automated dialect conversion!"
 echo ""
 
 # Cleanup intermediate files
-rm -f step2_hw.mlir step3_arith.mlir step4_func.mlir step5_optimized.mlir step6_hw.mlir step7_comb.mlir
+# rm -f step2_hw.mlir step3_arith.mlir step4_func.mlir step5_optimized.mlir step6_hw.mlir step7_comb.mlir
 
 echo "📁 Files generated:"
 echo "- $OUTPUT_SV (Final optimized SystemVerilog - ready for synthesis!)"

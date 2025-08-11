@@ -5,6 +5,10 @@
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "mlir/AsmParser/AsmParser.h"
 
+// CIRCT dialect includes (now with aligned LLVM versions)
+#include "circt/Dialect/HW/HWDialect.h"
+#include "circt/Dialect/Comb/CombDialect.h"
+
 // Temporarily commenting out StableHLO includes due to compatibility issues
 // #include "stablehlo/dialect/Register.h"
 // #include "stablehlo/conversions/linalg/transforms/Passes.h"
@@ -33,6 +37,11 @@ int main(int argc, char** argv) {
     // Register dialects
     mlir::DialectRegistry dialectRegistry;
     mlir::registerAllDialects(dialectRegistry);
+    
+    // Register CIRCT dialects (now with aligned LLVM versions)
+    dialectRegistry.insert<circt::hw::HWDialect>();
+    dialectRegistry.insert<circt::comb::CombDialect>();
+    
     // Temporarily commenting out StableHLO dialect registration
     // mlir::stablehlo::registerAllDialects(dialectRegistry);
 

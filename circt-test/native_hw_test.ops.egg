@@ -1,0 +1,148 @@
+(include "../src/base.egg")
+
+;;;; HW Dialect Native Support ;;;;
+
+;; HW Module structure (we'll skip this for now and focus on operations)
+;; Note: hw.module and hw.output are structural, not computational
+;; We'll focus on the operations within modules
+
+;; HW operations
+(function hw_constant (AttrPair Type) Op)
+
+;;;; Func Dialect Support ;;;;
+(function func_return (Op Type) Op)
+
+;;;; Comb Dialect Native Support ;;;;
+
+;; Comb arithmetic operations  
+(function comb_add (Op Op Type) Op)     ; Binary add
+(function comb_add3 (Op Op Op Type) Op) ; Ternary add (e.g., a + b + c)
+
+;; Comb shift operations
+(function comb_shl (Op Op Type) Op)     ; Shift left
+(function comb_shr (Op Op Type) Op)     ; Shift right (logical)
+
+;; Comb bitwise operations
+(function comb_and (Op Op Type) Op)     ; Bitwise AND
+(function comb_or (Op Op Type) Op)      ; Bitwise OR  
+(function comb_xor (Op Op Type) Op)     ; Bitwise XOR
+
+;; Comb bit manipulation
+(function comb_extract (Op AttrPair Type Type) Op)  ; Extract bits: extract(input, from_attr, result_type)
+(function comb_concat (Op Op Type Type Type) Op)    ; Concatenate bits: concat(high, low, high_type, low_type, result_type)
+
+;; Comb control operations
+(function comb_mux (Op Op Op Type) Op)  ; Multiplexer: mux(sel, true_val, false_val, type)
+
+;; Comb comparison operations  
+(function comb_icmp (AttrPair Op Op Type) Op)  ; Integer comparison
+
+;;;; Optimization Rules for Comb Operations ;;;;
+
+(ruleset hw_comb_optimizations)
+
+;; Identity rules for addition
+;; a + 0 = a (when 0 is a constant)
+(rewrite (comb_add ?a (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; 0 + a = a (when 0 is a constant)  
+(rewrite (comb_add (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?a ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; Identity rules for OR
+;; a | 0 = a
+(rewrite (comb_or ?a (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; 0 | a = a  
+(rewrite (comb_or (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?a ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; Identity rules for AND
+;; a & ones = a (all 1s)
+;; Note: This would need the actual all-1s value for the bit width
+
+;; Absorption laws
+;; a & (a | b) = a
+(rewrite (comb_and ?a (comb_or ?a ?b ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; a | (a & b) = a  
+(rewrite (comb_or ?a (comb_and ?a ?b ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; Idempotency
+;; a & a = a
+(rewrite (comb_and ?a ?a ?t) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; a | a = a
+(rewrite (comb_or ?a ?a ?t) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; Commutativity for addition (built into egglog for associative-commutative functions)
+;; a + b = b + a - We can make this explicit if needed
+(rewrite (comb_add ?a ?b ?t) 
+         (comb_add ?b ?a ?t) 
+         :ruleset hw_comb_optimizations)
+
+;; Associativity for addition: (a + b) + c = a + (b + c)
+(rewrite (comb_add (comb_add ?a ?b ?t1) ?c ?t2)
+         (comb_add ?a (comb_add ?b ?c ?t1) ?t2)
+         :ruleset hw_comb_optimizations)
+
+;; Convert ternary adds to binary when one operand is 0
+;; add3(a, b, 0) = add(a, b)  
+(rewrite (comb_add3 ?a ?b (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2)
+         (comb_add ?a ?b ?t2)
+         :ruleset hw_comb_optimizations)
+
+;; add3(a, 0, c) = add(a, c)
+(rewrite (comb_add3 ?a (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?c ?t2)
+         (comb_add ?a ?c ?t2)
+         :ruleset hw_comb_optimizations)
+
+;; add3(0, b, c) = add(b, c)  
+(rewrite (comb_add3 (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?b ?c ?t2)
+         (comb_add ?b ?c ?t2)
+         :ruleset hw_comb_optimizations)
+
+;; Shift optimizations
+;; a << 0 = a
+(rewrite (comb_shl ?a (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; Mux optimizations  
+;; mux(sel, a, a) = a (same value on both branches)
+(rewrite (comb_mux ?sel ?a ?a ?t) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; XOR optimizations
+;; a ^ 0 = a
+(rewrite (comb_xor ?a (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; a ^ a = 0  
+(rewrite (comb_xor ?a ?a ?t) 
+         (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t)) ?t) 
+         :ruleset hw_comb_optimizations)
+
+;; Run the optimization rules
+(run-schedule (saturate hw_comb_optimizations))
+
+;; Extract optimized result
+;; This will need to be customized based on the specific MLIR input
+;; For now, we'll extract a generic result  
+;; (extract result) 

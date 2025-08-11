@@ -47,10 +47,28 @@ add_definitions(${LLVM_DEFINITIONS})
 
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
+# Add CIRCT support (now with aligned LLVM versions)
+set(CIRCT_SOURCE_DIR "/work/global/nz264/circt")
+set(CIRCT_BUILD_DIR "/work/global/nz264/circt/build")
+
+# Add CIRCT include directories
+include_directories(${CIRCT_SOURCE_DIR}/include)
+include_directories(${CIRCT_BUILD_DIR}/include)
+
+# Add CIRCT library directory
+link_directories(${CIRCT_BUILD_DIR}/lib)
+
 set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib)
+
+# Add CIRCT libraries (compatible with aligned LLVM)
+set(CIRCT_LIBS
+    CIRCTHW
+    CIRCTComb
+    CIRCTSupport
+)
 
 add_llvm_executable(egg-opt src/egg-opt.cpp src/EqualitySaturationPass.cpp src/Egglog.cpp)
 llvm_update_compile_flags(egg-opt)
-target_link_libraries(egg-opt PRIVATE ${OPT_LIBS})
+target_link_libraries(egg-opt PRIVATE ${OPT_LIBS} ${CIRCT_LIBS})
 
 add_subdirectory(test)
