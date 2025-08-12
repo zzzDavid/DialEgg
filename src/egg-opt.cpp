@@ -8,6 +8,7 @@
 // CIRCT dialect includes (now with aligned LLVM versions)
 #include "circt/Dialect/HW/HWDialect.h"
 #include "circt/Dialect/Comb/CombDialect.h"
+#include "circt/Dialect/Seq/SeqDialect.h"
 
 // Temporarily commenting out StableHLO includes due to compatibility issues
 // #include "stablehlo/dialect/Register.h"
@@ -41,6 +42,7 @@ int main(int argc, char** argv) {
     // Register CIRCT dialects (now with aligned LLVM versions)
     dialectRegistry.insert<circt::hw::HWDialect>();
     dialectRegistry.insert<circt::comb::CombDialect>();
+    dialectRegistry.insert<circt::seq::SeqDialect>();
     
     // Temporarily commenting out StableHLO dialect registration
     // mlir::stablehlo::registerAllDialects(dialectRegistry);

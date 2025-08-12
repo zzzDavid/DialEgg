@@ -64,6 +64,7 @@ set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib)
 set(CIRCT_LIBS
     CIRCTHW
     CIRCTComb
+    CIRCTSeq
     CIRCTSupport
 )
 
