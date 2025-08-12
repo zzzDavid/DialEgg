@@ -1,0 +1,32 @@
+(include "src/base.egg")
+
+;;;; Additional Type Definitions ;;;;
+(function Int2 () Type)
+(function Int3 () Type)
+(function Int9 () Type)
+(function Int10 () Type)
+(function Int18 () Type)
+
+;;;; comb dialect ;;;;
+(function comb_mux (Op Op Op Type) Op)
+(function comb_add (Op Op Op Op Op Op Op Op Op Op Op Op Op Op Op Op Op Op Type) Op)
+(function comb_concat (Op Op Type) Op)
+(function comb_extract (Op AttrPair Type) Op)
+(function comb_mul (Op Op Type) Op)
+
+;;;; hw dialect ;;;;
+(function hw_output (Op) Op)
+(function hw_constant (AttrPair Type) Op)
+
+;;;; seq dialect ;;;;
+(function seq_to_clock (Op Type) Op)
+(function seq_firreg (Op Op Type) Op)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset rules)
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;

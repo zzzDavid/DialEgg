@@ -183,16 +183,38 @@ mlir::Type Egglog::parseType(std::string_view typeStr) {
         return mlir::FloatTF32Type::get(&context);
     } else if (type == "I1") {
         return mlir::IntegerType::get(&context, 1);
+    } else if (type == "I2") {
+        return mlir::IntegerType::get(&context, 2);
+    } else if (type == "I3") {
+        return mlir::IntegerType::get(&context, 3);
+    } else if (type == "I4") {
+        return mlir::IntegerType::get(&context, 4);
     } else if (type == "I8") {
         return mlir::IntegerType::get(&context, 8);
+    } else if (type == "I9") {
+        return mlir::IntegerType::get(&context, 9);
+    } else if (type == "I10") {
+        return mlir::IntegerType::get(&context, 10);
     } else if (type == "I16") {
         return mlir::IntegerType::get(&context, 16);
+    } else if (type == "I18") {
+        return mlir::IntegerType::get(&context, 18);
     } else if (type == "I32") {
         return mlir::IntegerType::get(&context, 32);
     } else if (type == "I64") {
         return mlir::IntegerType::get(&context, 64);
     } else if (type == "Int") {
         return mlir::IntegerType::get(&context, svtoll(split[1]), mlir::IntegerType::SignednessSemantics::Signless);
+    } else if (type == "Int2") {
+        return mlir::IntegerType::get(&context, 2);
+    } else if (type == "Int3") {
+        return mlir::IntegerType::get(&context, 3);
+    } else if (type == "Int9") {
+        return mlir::IntegerType::get(&context, 9);
+    } else if (type == "Int10") {
+        return mlir::IntegerType::get(&context, 10);
+    } else if (type == "Int18") {
+        return mlir::IntegerType::get(&context, 18);
     } else if (type == "SInt") {
         return mlir::IntegerType::get(&context, svtoll(split[1]), mlir::IntegerType::SignednessSemantics::Signed);
     } else if (type == "UInt") {
