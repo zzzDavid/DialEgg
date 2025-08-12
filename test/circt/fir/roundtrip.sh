@@ -1,0 +1,1 @@
+circt-verilog fir.v | circt-opt --lower-seq-to-sv | circt-opt --export-split-verilog --prettify-verilog
