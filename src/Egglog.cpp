@@ -205,16 +205,11 @@ mlir::Type Egglog::parseType(std::string_view typeStr) {
         return mlir::IntegerType::get(&context, 64);
     } else if (type == "Int") {
         return mlir::IntegerType::get(&context, svtoll(split[1]), mlir::IntegerType::SignednessSemantics::Signless);
-    } else if (type == "Int2") {
-        return mlir::IntegerType::get(&context, 2);
-    } else if (type == "Int3") {
-        return mlir::IntegerType::get(&context, 3);
-    } else if (type == "Int9") {
-        return mlir::IntegerType::get(&context, 9);
-    } else if (type == "Int10") {
-        return mlir::IntegerType::get(&context, 10);
-    } else if (type == "Int18") {
-        return mlir::IntegerType::get(&context, 18);
+    } else if (type.starts_with("Int")) {
+        // Extract number after "Int" prefix
+        std::string_view numStr = type.substr(3);
+        int64_t width = svtoll(numStr);
+        return mlir::IntegerType::get(&context, width);
     } else if (type == "SInt") {
         return mlir::IntegerType::get(&context, svtoll(split[1]), mlir::IntegerType::SignednessSemantics::Signed);
     } else if (type == "UInt") {
