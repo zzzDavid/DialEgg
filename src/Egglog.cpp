@@ -45,10 +45,19 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
 
     std::string_view version = "";
     std::string_view name = fullName.substr(firstUnderscore + 1);
-    if (fullName[fullName.size() - 2] == '_' && isdigit(fullName.back())) {
-        size_t lastUnderscore = fullName.find_last_of('_');
-        version = fullName.substr(lastUnderscore + 1);
-        name = fullName.substr(firstUnderscore + 1, lastUnderscore - firstUnderscore - 1);
+    
+    // Check if the function name ends with _<digits> (support multi-digit numbers)
+    size_t lastUnderscore = fullName.find_last_of('_');
+    if (lastUnderscore != std::string_view::npos && lastUnderscore > firstUnderscore) {
+        std::string_view potentialVersion = fullName.substr(lastUnderscore + 1);
+        // Check if all characters after the last underscore are digits
+        bool allDigits = !potentialVersion.empty() && 
+                        std::all_of(potentialVersion.begin(), potentialVersion.end(), 
+                                   [](char c) { return std::isdigit(c); });
+        if (allDigits) {
+            version = potentialVersion;
+            name = fullName.substr(firstUnderscore + 1, lastUnderscore - firstUnderscore - 1);
+        }
     }
 
     LLVM_DEBUG(llvm::dbgs() << "Parsing EgglogOpDef: " << newOpStr << "\n"
