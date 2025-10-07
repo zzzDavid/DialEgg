@@ -41,6 +41,16 @@ struct EgglogOpDef {
 
     size_t cost = 1;
 
+    // Variadic operands support
+    // If true, the operation accepts a variable number of operands.
+    // In that case, 'minOperands' represents the minimum required operands
+    // (e.g., for an 'Op+' spec) and 'nOperands' is the number of fixed
+    // leading operands before the variadic tail.
+    bool hasVariadicOperands = false;
+    size_t minOperands = 0;
+    // If true, the variadic tail is encoded as a single OpVec argument.
+    bool usesOpVec = false;
+
     std::string egglogName() const {
         return dialect + "_" + name + (version.empty() ? "" : "_" + version);
     }
@@ -53,9 +63,12 @@ struct EgglogOpDef {
         if (op->getName().getStringRef() != mlirName()) {
             return false;
         }
-        if (op->getNumOperands() != nOperands || op->getNumResults() != nResults) {
-            return false;
+        if (!hasVariadicOperands) {
+            if (op->getNumOperands() != nOperands) return false;
+        } else {
+            if (op->getNumOperands() < minOperands) return false;
         }
+        if (op->getNumResults() != nResults) return false;
         return true;
     }
 

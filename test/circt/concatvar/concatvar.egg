@@ -1,0 +1,16 @@
+(include "../../../src/base.egg")
+
+;;;; comb dialect ;;;;
+(function comb_concat (Op OpVec Type) Op)
+
+;;;; hw dialect ;;;;
+(function hw_output (Op) Op)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset rules)
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;

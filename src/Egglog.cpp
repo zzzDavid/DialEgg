@@ -70,9 +70,25 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
     size_t nAttributes = 0;
     size_t nRegions = 0;
     size_t nResults = 0;
+    bool hasVariadicOperands = false;
+    bool usesOpVec = false;
+    size_t minOperands = 0;
     for (std::string_view arg: args) {
         if (arg == "Op") {
-            nOperands++;
+            if (!hasVariadicOperands) {
+                nOperands++;
+                minOperands++;
+            }
+        } else if (arg == "OpVec" || arg == "Ops" || arg == "Op*" || arg == "Ops*" || arg == "Op+" || arg == "Ops+") {
+            // Variadic tail for operands; allow multiple names for convenience.
+            hasVariadicOperands = true;
+            if (arg == "OpVec") {
+                usesOpVec = true;
+            }
+            // If '+' form is used, require at least one additional operand beyond the fixed ones.
+            if (arg.back() == '+') {
+                minOperands++;
+            }
         } else if (arg == "AttrPair") {
             nAttributes++;
         } else if (arg == "Region") {
@@ -93,6 +109,9 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
             .nRegions = nRegions,
             .nResults = nResults,
             .cost = cost,
+            .hasVariadicOperands = hasVariadicOperands,
+            .minOperands = minOperands,
+            .usesOpVec = usesOpVec,
     };
 }
 
@@ -333,11 +352,11 @@ std::string Egglog::eggifyType(mlir::Type type) {
         size_t width = intType.getWidth();
 
         if (intType.isSignless()) {
-            ss << "(Int" << width << ")";
+            ss << "(Int " << width << ")";
         } else if (intType.isSigned()) {
-            ss << "(SInt" << width << ")";
+            ss << "(SInt " << width << ")";
         } else if (intType.isUnsigned()) {
-            ss << "(UInt" << width << ")";
+            ss << "(UInt " << width << ")";
         } else {
             ss << "(OtherInt \"" << type << "\")";
         }
@@ -830,16 +849,53 @@ mlir::Operation* Egglog::parseOperation(std::string_view newOpStr, mlir::OpBuild
 
     // Operands
     std::vector<mlir::Value> operands;
-    for (size_t i = 0; i < egglogOpDef.nOperands; i++, index++) {
-        std::string_view operandStr = split[index + 1];  // get the operand string
-
-        if (operandStr.find("(Value ") == 0) {
-            mlir::Value operand = parseValue(operandStr);
-            operands.push_back(operand);
-        } else {  // new operation
-            mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
-            mlir::Value operand = nestedOperand->getResult(0);  // TODO support multiple results?
-            operands.push_back(operand);
+    // Determine how many operand tokens to parse: if variadic via OpVec, parse fixed tokens,
+    // then expand OpVec token; else if variadic by trailing Ops, parse until trailing section.
+    size_t totalTokensAfterName = split.size() - 1;
+    size_t trailingCount = egglogOpDef.nAttributes + egglogOpDef.nRegions + egglogOpDef.nResults;
+    if (egglogOpDef.hasVariadicOperands && egglogOpDef.usesOpVec) {
+        // Parse fixed leading operands
+        for (size_t i = 0; i < egglogOpDef.nOperands; i++, index++) {
+            std::string_view operandStr = split[index + 1];
+            if (operandStr.find("(Value ") == 0) {
+                mlir::Value operand = parseValue(operandStr);
+                operands.push_back(operand);
+            } else {
+                mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
+                mlir::Value operand = nestedOperand->getResult(0);
+                operands.push_back(operand);
+            }
+        }
+        // The next token is the OpVec list of operands; expand it
+        if (index + 1 < split.size() - trailingCount) {
+            std::vector<std::string_view> vec = splitExpression(split[index + 1]);
+            // vec is like (vec-of <op> <op> ...)
+            for (size_t vi = 1; vi < vec.size(); vi++) {
+                std::string_view operandStr = vec[vi];
+                if (operandStr.find("(Value ") == 0) {
+                    mlir::Value operand = parseValue(operandStr);
+                    operands.push_back(operand);
+                } else {
+                    mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
+                    mlir::Value operand = nestedOperand->getResult(0);
+                    operands.push_back(operand);
+                }
+            }
+            index++; // consumed OpVec token
+        }
+    } else {
+        size_t availableOperandTokens = (totalTokensAfterName > trailingCount) ? (totalTokensAfterName - trailingCount) : 0;
+        size_t operandsToParse = egglogOpDef.hasVariadicOperands ? availableOperandTokens : egglogOpDef.nOperands;
+        for (size_t i = 0; i < operandsToParse; i++, index++) {
+            std::string_view operandStr = split[index + 1];  // get the operand string
+            if (operandStr.find("(Value ") == 0) {
+                mlir::Value operand = parseValue(operandStr);
+                operands.push_back(operand);
+            } else {  // new operation
+                mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
+                mlir::Value operand = nestedOperand->getResult(0);  // TODO support multiple results?
+                operands.push_back(operand);
+            }
         }
     }
 
@@ -982,10 +1038,29 @@ EggifiedOp* Egglog::eggifyOperation(mlir::Operation* op) {
 
     // <operand1> <operand2> ... <operandN>
     std::vector<EggifiedOp*> operands;
-    for (size_t i = 0; i < egglogOpDef.nOperands; i++) {
-        EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));
-        operands.push_back(eggifiedOperand);
-        ss << " " << eggifiedOperand->getPrintId();
+    size_t operandCount = op->getNumOperands();
+    if (egglogOpDef.hasVariadicOperands && egglogOpDef.usesOpVec) {
+        // Emit fixed leading operands
+        size_t fixed = egglogOpDef.nOperands;
+        for (size_t i = 0; i < std::min(fixed, operandCount); i++) {
+            EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));
+            operands.push_back(eggifiedOperand);
+            ss << " " << eggifiedOperand->getPrintId();
+        }
+        // Emit remaining operands as a single OpVec token
+        ss << " (vec-of";
+        for (size_t i = fixed; i < operandCount; i++) {
+            EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));
+            operands.push_back(eggifiedOperand);
+            ss << " " << eggifiedOperand->getPrintId();
+        }
+        ss << ")";
+    } else {
+        for (size_t i = 0; i < operandCount; i++) {
+            EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));
+            operands.push_back(eggifiedOperand);
+            ss << " " << eggifiedOperand->getPrintId();
+        }
     }
 
     // <attr1> <attr2> ... <attrM>
@@ -1054,7 +1129,7 @@ std::optional<EgglogOpDef> Egglog::findEgglogOpDef(mlir::Operation* op) {
         }
     }
 
-    // check is supported if we add the number of operands
+    // Backward compatibility: try name with operand-count suffix (e.g., op_3)
     std::string opNameWithNumOperands = opName + "_" + std::to_string(op->getNumOperands());
     if (supportedEgglogOps.find(opNameWithNumOperands) != supportedEgglogOps.end()) {
         EgglogOpDef egglogOpDef = supportedEgglogOps.at(opNameWithNumOperands);
@@ -1063,10 +1138,10 @@ std::optional<EgglogOpDef> Egglog::findEgglogOpDef(mlir::Operation* op) {
         }
     }
 
-    // check if another version of the op supports the given number of operands/results (maybe the number at the end is version and not number of operands)
+    // Also check for any numeric-suffixed versions (multi-digit supported)
     for (const auto& [name, egglogOpDef]: supportedEgglogOps) {
-        if (name.find(opName + "_") == 0 && name.size() == opName.size() + 2 && std::isdigit(name.back()) && egglogOpDef.matches(op)) {
-            return egglogOpDef;  // found the operation definition
+        if (name.rfind(opName + "_", 0) == 0 && egglogOpDef.matches(op)) {
+            return egglogOpDef;  // found a matching suffixed definition
         }
     }
 
