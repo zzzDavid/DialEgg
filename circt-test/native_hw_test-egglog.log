@@ -1,0 +1,112 @@
+[INFO ] Declared sort IntVec.
+[INFO ] Declared sort FloatVec.
+[INFO ] Declared sort Type.
+[INFO ] Declared sort TypeVec.
+[INFO ] Declared sort Attr.
+[INFO ] Declared sort AttrDict.
+[INFO ] Declared sort AttrVec.
+[INFO ] Declared sort AttrPair.
+[INFO ] Declared function NamedAttr.
+[INFO ] Declared function ValueAttr.
+[INFO ] Declared sort Op.
+[INFO ] Declared function Value.
+[INFO ] Declared function OpaqueOp.
+[INFO ] Declared function NoOp.
+[INFO ] Declared sort OpVec.
+[INFO ] Declared sort Block.
+[INFO ] Declared function Blk.
+[INFO ] Declared sort BlockVec.
+[INFO ] Declared sort Region.
+[INFO ] Declared function Reg.
+[INFO ] Declared sort RegionVec.
+[INFO ] Declared function type-of.
+[INFO ] Declared function dims.
+[INFO ] Declared function F16.
+[INFO ] Declared function F32.
+[INFO ] Declared function F64.
+[INFO ] Declared function F80.
+[INFO ] Declared function F128.
+[INFO ] Declared function TF32.
+[INFO ] Declared function I1.
+[INFO ] Declared function I4.
+[INFO ] Declared function I8.
+[INFO ] Declared function I16.
+[INFO ] Declared function I32.
+[INFO ] Declared function I64.
+[INFO ] Declared function Int.
+[INFO ] Declared function SInt.
+[INFO ] Declared function UInt.
+[INFO ] Declared function OtherInt.
+[INFO ] Declared function Index.
+[INFO ] Declared function None.
+[INFO ] Declared function Complex.
+[INFO ] Declared function Tuple.
+[INFO ] Declared function Function.
+[INFO ] Declared function Vector.
+[INFO ] Declared function RankedTensor.
+[INFO ] Declared function UnrankedTensor.
+[INFO ] Declared function OpaqueType.
+[INFO ] Declared function NoAttr.
+[INFO ] Declared function IntegerAttr.
+[INFO ] Declared function FloatAttr.
+[INFO ] Declared function StringAttr.
+[INFO ] Declared function UnitAttr.
+[INFO ] Declared function TypeAttr.
+[INFO ] Declared function ArrayAttr.
+[INFO ] Declared function DenseIntArrayAttr.
+[INFO ] Declared function DenseFloatArrayAttr.
+[INFO ] Declared function DenseIntElementsAttr.
+[INFO ] Declared function DenseFPElementsAttr.
+[INFO ] Declared function SymbolRefAttr.
+[INFO ] Declared function OpaqueAttr.
+[INFO ] Declared function hw_constant.
+[INFO ] Declared function func_return.
+[INFO ] Declared function comb_add.
+[INFO ] Declared function comb_add3.
+[INFO ] Declared function comb_shl.
+[INFO ] Declared function comb_shr.
+[INFO ] Declared function comb_and.
+[INFO ] Declared function comb_or.
+[INFO ] Declared function comb_xor.
+[INFO ] Declared function comb_extract.
+[INFO ] Declared function comb_concat.
+[INFO ] Declared function comb_mux.
+[INFO ] Declared function comb_icmp.
+[INFO ] Declared ruleset hw_comb_optimizations.
+[INFO ] Declared rule (rewrite (comb_add ?a (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_add (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?a ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_or ?a (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_or (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?a ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_and ?a (comb_or ?a ?b ?t1) ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_or ?a (comb_and ?a ?b ?t1) ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_and ?a ?a ?t) ?a).
+[INFO ] Declared rule (rewrite (comb_or ?a ?a ?t) ?a).
+[INFO ] Declared rule (rewrite (comb_add ?a ?b ?t) (comb_add ?b ?a ?t)).
+[INFO ] Declared rule (rewrite (comb_add (comb_add ?a ?b ?t1) ?c ?t2) (comb_add ?a (comb_add ?b ?c ?t1) ?t2)).
+[INFO ] Declared rule (rewrite (comb_add3 ?a ?b (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?t2) (comb_add ?a ?b ?t2)).
+[INFO ] Declared rule (rewrite (comb_add3 ?a (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?c ?t2) (comb_add ?a ?c ?t2)).
+[INFO ] Declared rule (rewrite (comb_add3 (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?b ?c ?t2) (comb_add ?b ?c ?t2)).
+[INFO ] Declared rule (rewrite (comb_shl ?a (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_mux ?sel ?a ?a ?t) ?a).
+[INFO ] Declared rule (rewrite (comb_xor ?a (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t1)) ?t1) ?t2) ?a).
+[INFO ] Declared rule (rewrite (comb_xor ?a ?a ?t) (hw_constant (NamedAttr 'value' (IntegerAttr 0 ?t)) ?t)).
+[INFO ] Ran schedule (seq (saturate (seq (run hw_comb_optimizations)))).
+[INFO ] Report: Rule (rule ((= rewrite_var__ (comb_xor ?a (hw_constant (NamedAttr "value" (IntegerAtt...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_xor ?a ?a ?t)))       ((union rewrite_var__ (hw_co...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_or ?a (hw_constant (NamedAttr "value" (IntegerAttr...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_or ?a ?a ?t)))       ((union rewrite_var__ ?a))   ...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_add ?a ?b ?t)))       ((union rewrite_var__ (comb_...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_add (comb_add ?a ?b ?t1) ?c ?t2)))       ((union r...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_add3 ?a ?b (hw_constant (NamedAttr "value" (Intege...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_add3 (hw_constant (NamedAttr "value" (IntegerAttr ...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_or (hw_constant (NamedAttr "value" (IntegerAttr 0 ...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_and ?a (comb_or ?a ?b ?t1) ?t2)))       ((union re...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_add3 ?a (hw_constant (NamedAttr "value" (IntegerAt...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_shl ?a (hw_constant (NamedAttr "value" (IntegerAtt...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_add ?a (hw_constant (NamedAttr "value" (IntegerAtt...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_mux ?sel ?a ?a ?t)))       ((union rewrite_var__ ?...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_add (hw_constant (NamedAttr "value" (IntegerAttr 0...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_or ?a (comb_and ?a ?b ?t1) ?t2)))       ((union re...: search 0.000s, apply 0.000s, num matches 0
+    Rule (rule ((= rewrite_var__ (comb_and ?a ?a ?t)))       ((union rewrite_var__ ?a))  ...: search 0.000s, apply 0.000s, num matches 0
+    Ruleset hw_comb_optimizations: search 0.000s, apply 0.000s, rebuild 0.000s
+    

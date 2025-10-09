@@ -1,0 +1,1 @@
+(hw_output (comb_concat (Value 0 (I8)) (vec-of (Value 1 (I8)) (Value 2 (I8)) (Value 0 (I8)) (Value 1 (I8)) (Value 2 (I8)) (Value 0 (I8)) (Value 1 (I8)) (Value 2 (I8))) (Int 72)))

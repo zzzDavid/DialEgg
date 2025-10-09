@@ -1,0 +1,45 @@
+(include "src/base.egg")
+
+;;;; Additional Type Definitions ;;;;
+(function I3 () Type)
+(function Int3 () Type)
+
+;;;; Arith Dialect Functions ;;;;
+(function arith_constant (AttrPair Type) Op)
+(function arith_cmpi (AttrPair Op Op Type) Op)
+(function arith_extui (Op Type Type) Op)
+(function arith_ori (Op Op Type) Op)
+(function arith_andi (Op Op Type) Op)
+
+;;;; Func Dialect Functions ;;;;
+(function func_return (OpVec TypeVec) Op)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset arith_rules)
+
+;; Basic Boolean algebra rules for arith operations
+;; Idempotent: a & a = a
+(rewrite (arith_andi ?x ?x ?t) ?x :ruleset arith_rules)
+
+;; Idempotent: a | a = a  
+(rewrite (arith_ori ?x ?x ?t) ?x :ruleset arith_rules)
+
+;; Absorption: a & (a | b) = a
+(rewrite (arith_andi ?a (arith_ori ?a ?b ?t1) ?t2) ?a :ruleset arith_rules)
+
+;; Absorption: a | (a & b) = a
+(rewrite (arith_ori ?a (arith_andi ?a ?b ?t1) ?t2) ?a :ruleset arith_rules)
+
+;; Commutative property for AND
+(rewrite (arith_andi ?a ?b ?t) (arith_andi ?b ?a ?t) :ruleset arith_rules)
+
+;; Commutative property for OR
+(rewrite (arith_ori ?a ?b ?t) (arith_ori ?b ?a ?t) :ruleset arith_rules)
+
+(run-schedule (saturate arith_rules))
+
+;; EXTRACTS HERE ;;
+;; Extract the optimized result - should be simplified due to absorption
+(extract op3) 

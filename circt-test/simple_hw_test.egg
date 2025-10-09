@@ -1,0 +1,36 @@
+(include "src/base.egg")
+
+;;;; HW Dialect Native Support ####
+
+;; HW operations
+(function hw_constant (AttrPair Type) Op)
+
+;;;; Comb Dialect Native Support ;;;;
+
+;; Comb arithmetic operations  
+(function comb_add (Op Op Type) Op)     ; Binary add
+
+;; Comb bitwise operations
+(function comb_or (Op Op Type) Op)      ; Bitwise OR  
+
+;;;; Optimization Rules for Comb Operations ;;;;
+
+(ruleset hw_comb_optimizations)
+
+;; Identity rules for addition
+;; a + 0 = a (when 0 is a constant)
+(rewrite (comb_add ?a (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; Identity rules for OR
+;; a | 0 = a
+(rewrite (comb_or ?a (hw_constant (NamedAttr "value" (IntegerAttr 0 ?t1)) ?t1) ?t2) 
+         ?a 
+         :ruleset hw_comb_optimizations)
+
+;; Run the optimization rules
+(run-schedule (saturate hw_comb_optimizations))
+
+;; Extract the final result (should be optimized to just %a)
+(extract op3) 
