@@ -28,7 +28,7 @@
 
 #define DEBUG_TYPE "dialegg"
 
-static llvm::cl::opt<std::string> eggFileOpt("egg-file", llvm::cl::desc("Path to egg file"));
+extern llvm::cl::opt<std::string> eggFileOpt;
 
 EqualitySaturationPass::EqualitySaturationPass(const std::string& mlirFile, const EgglogCustomDefs& funcs)
     : mlirFilePath(mlirFile), eggFilePath(eggFileOpt), customFunctions(funcs) {}

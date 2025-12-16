@@ -11,7 +11,7 @@
  * Parse the attribute (function arith_fastmath (FastMathFlags) Attr)
  * Where (datatype FastMathFlags (none) (reassoc) (nnan) ...)
  */
-mlir::Attribute parseFastMathFlagsAttr(const std::vector<std::string_view>& split, Egglog& egglog) {
+inline mlir::Attribute parseFastMathFlagsAttr(const std::vector<std::string_view>& split, Egglog& egglog) {
     std::string_view attrType = split[0];
     assert(attrType == "arith_fastmath");
 
@@ -34,7 +34,7 @@ mlir::Attribute parseFastMathFlagsAttr(const std::vector<std::string_view>& spli
  * Serialize the attribute (function arith_fastmath (FastMathFlags) Attr)
  * Where (datatype FastMathFlags (none) (reassoc) (nnan) ...)
  */
-std::vector<std::string> stringifyFastMathFlagsAttr(mlir::Attribute attr, Egglog& egglog) {
+inline std::vector<std::string> stringifyFastMathFlagsAttr(mlir::Attribute attr, Egglog& egglog) {
     std::vector<std::string> split;
 
     split.push_back("arith_fastmath");
@@ -55,7 +55,7 @@ std::vector<std::string> stringifyFastMathFlagsAttr(mlir::Attribute attr, Egglog
 }
 
 /** Parse the type (function RankedTensor (IntVec Type) Type) */
-mlir::Type parseRankedTensorType(const std::vector<std::string_view>& split, Egglog& egglog) {
+inline mlir::Type parseRankedTensorType(const std::vector<std::string_view>& split, Egglog& egglog) {
     std::string_view attrType = split[0];
     assert(attrType == "RankedTensor");
 
@@ -74,7 +74,7 @@ mlir::Type parseRankedTensorType(const std::vector<std::string_view>& split, Egg
 }
 
 /** Serialize the type (function RankedTensor (IntVec Type) Type) */
-std::vector<std::string> stringifyRankedTensorType(mlir::Type type, Egglog& egglog) {
+inline std::vector<std::string> stringifyRankedTensorType(mlir::Type type, Egglog& egglog) {
     std::vector<std::string> split;
     split.push_back("RankedTensor");
 

@@ -352,11 +352,11 @@ std::string Egglog::eggifyType(mlir::Type type) {
         size_t width = intType.getWidth();
 
         if (intType.isSignless()) {
-            ss << "(Int " << width << ")";
+            ss << "(Int" << width << ")";
         } else if (intType.isSigned()) {
-            ss << "(SInt " << width << ")";
+            ss << "(SInt" << width << ")";
         } else if (intType.isUnsigned()) {
-            ss << "(UInt " << width << ")";
+            ss << "(UInt" << width << ")";
         } else {
             ss << "(OtherInt \"" << type << "\")";
         }

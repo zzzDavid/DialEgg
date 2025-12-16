@@ -21,9 +21,14 @@
 #include "Egglog.h"
 #include "EqualitySaturationPass.h"
 #include "EggifyPass.h"
+#include "EggifyOnlyPass.h"
+#include "ReconstructFromExtractionPass.h"
 #include "EgglogCustomDefs.h"
 
 #define DEBUG_TYPE "dialegg"
+
+// Global command-line option for egg file (shared by all passes)
+llvm::cl::opt<std::string> eggFileOpt("egg-file", llvm::cl::desc("Path to egg file"));
 
 std::string getMlirFile(int argc, char** argv) {
     for (int i = 1; i < argc; i++) {
@@ -67,8 +72,20 @@ int main(int argc, char** argv) {
             {"RankedTensor", parseRankedTensorType}};
 
     EgglogCustomDefs funcs = {attrStringifiers, attrParsers, typeStringifiers, typeParsers};
+    
+    // Register the full equality saturation pass (MLIR -> Egglog -> Extract -> MLIR)
     mlir::PassRegistration<EqualitySaturationPass>([&] {
         return std::make_unique<EqualitySaturationPass>(getMlirFile(argc, argv), funcs);
+    });
+
+    // Register the eggify-only pass (MLIR -> Egglog -> JSON, no extraction)
+    mlir::PassRegistration<EggifyOnlyPass>([&] {
+        return std::make_unique<EggifyOnlyPass>(getMlirFile(argc, argv), funcs);
+    });
+
+    // Register the reconstruction pass (Extraction results -> MLIR)
+    mlir::PassRegistration<ReconstructFromExtractionPass>([&] {
+        return std::make_unique<ReconstructFromExtractionPass>(getMlirFile(argc, argv), funcs);
     });
 
     // Run the main MLIR opt

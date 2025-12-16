@@ -68,7 +68,13 @@ set(CIRCT_LIBS
     CIRCTSupport
 )
 
-add_llvm_executable(egg-opt src/egg-opt.cpp src/EqualitySaturationPass.cpp src/Egglog.cpp)
+add_llvm_executable(egg-opt 
+    src/egg-opt.cpp 
+    src/EqualitySaturationPass.cpp 
+    src/EggifyOnlyPass.cpp 
+    src/ReconstructFromExtractionPass.cpp 
+    src/Egglog.cpp
+)
 llvm_update_compile_flags(egg-opt)
 target_link_libraries(egg-opt PRIVATE ${OPT_LIBS} ${CIRCT_LIBS})
 
