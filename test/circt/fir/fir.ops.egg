@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 (include "../../../src/base.egg")
+=======
+(include "src/base.egg")
+>>>>>>> 2c8ee9d7d95be3f2f8dda456af0cfd703ff6b2e0
 
 ;;;; Additional Type Definitions ;;;;
 (function Int2 () Type)

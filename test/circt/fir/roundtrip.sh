@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #!/bin/bash
 
 # Add egglog to PATH
@@ -18,3 +19,6 @@ echo "📤 Step 3: Generating optimized Verilog from MLIR..."
 circt-opt --lower-seq-to-sv fir_optimized.mlir | circt-opt --export-split-verilog --prettify-verilog
 
 echo "🎉 Roundtrip pipeline completed!"
+=======
+circt-verilog fir.v | circt-opt --lower-seq-to-sv | circt-opt --export-split-verilog --prettify-verilog
+>>>>>>> 2c8ee9d7d95be3f2f8dda456af0cfd703ff6b2e0

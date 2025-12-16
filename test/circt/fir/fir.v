@@ -13,6 +13,10 @@ module top_module (
     parameter taps        = 32;
     parameter num_bits    = 8;
     parameter input_size  = 8;
+<<<<<<< HEAD
+=======
+    // parameter output_size = (2*num_bits) + 1;
+>>>>>>> 2c8ee9d7d95be3f2f8dda456af0cfd703ff6b2e0
     parameter output_size = 10;
     
     // I/O Ports
