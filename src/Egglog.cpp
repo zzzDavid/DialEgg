@@ -2,6 +2,7 @@
 #include <chrono>
 #include <algorithm>
 #include <string_view>
+#include <functional>
 
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Debug.h"
@@ -137,9 +138,16 @@ std::string Egglog::removeComment(const std::string& str) {
 }
 
 std::vector<std::string_view> Egglog::splitExpression(std::string_view opStr) {
+    if (opStr.empty()) {
+        llvm::outs() << "Invalid expression: empty string\n";
+        llvm::outs() << "Stack trace: " << __PRETTY_FUNCTION__ << "\n";
+        exit(1);
+    }
     // The expression must be surrounded by parentheses
     if (opStr.front() != '(' || opStr.back() != ')') {
         llvm::outs() << "Invalid expression: " << opStr << "\n";
+        llvm::outs() << "Called from: " << __PRETTY_FUNCTION__ << "\n";
+        llvm::outs() << "Note: If this is 'OpVec', it may be a type placeholder from extraction\n";
         exit(1);
     }
 
@@ -194,6 +202,12 @@ std::vector<std::string_view> Egglog::splitExpression(std::string_view opStr) {
 
 /** Parses the given type string into an MLIR type Form (F16) or (Complex <type>) */
 mlir::Type Egglog::parseType(std::string_view typeStr) {
+    // Handle standalone OpVec as a placeholder type (appears in extractions)
+    // OpVec is not a real MLIR type, so we return NoneType as a placeholder
+    if (typeStr == "OpVec") {
+        return mlir::NoneType::get(&context);
+    }
+    
     std::vector<std::string_view> split = splitExpression(typeStr);
 
     std::string_view type = split[0];
@@ -868,26 +882,56 @@ mlir::Operation* Egglog::parseOperation(std::string_view newOpStr, mlir::OpBuild
         }
         // The next token is the OpVec list of operands; expand it
         if (index + 1 < split.size() - trailingCount) {
-            std::vector<std::string_view> vec = splitExpression(split[index + 1]);
-            // vec is like (vec-of <op> <op> ...)
-            for (size_t vi = 1; vi < vec.size(); vi++) {
-                std::string_view operandStr = vec[vi];
-                if (operandStr.find("(Value ") == 0) {
-                    mlir::Value operand = parseValue(operandStr);
-                    operands.push_back(operand);
-                } else {
-                    mlir::Operation* nestedOperand = parseOperation(operandStr, builder);
-                    mlir::Value operand = nestedOperand->getResult(0);
-                    operands.push_back(operand);
-                }
+            std::string_view opVecToken = split[index + 1];
+            
+            // Handle standalone "OpVec" as an empty vector (from extraction)
+            if (opVecToken == "OpVec") {
+                // This is a placeholder for an empty OpVec, no operands to add
+                index++; // consumed OpVec token
+            } else {
+                std::function<void(std::string_view)> flattenOpVec = [&](std::string_view vecExpr) {
+                    std::vector<std::string_view> vecSplit = splitExpression(vecExpr);
+                    std::string_view head = vecSplit[0];
+                    if (head == "vec-of") {
+                        for (size_t vi = 1; vi < vecSplit.size(); vi++) {
+                            flattenOpVec(vecSplit[vi]);
+                        }
+                    } else if (head == "vec-push" || head == "opvec-push") {
+                        flattenOpVec(vecSplit[1]);
+                        flattenOpVec(vecSplit[2]);
+                    } else if (head == "vec-empty" || head == "opvec-empty") {
+                        return;
+                    } else if (head == "OpVec") {
+                        // Handle (OpVec ...) as a container - recursively flatten its contents
+                        for (size_t vi = 1; vi < vecSplit.size(); vi++) {
+                            flattenOpVec(vecSplit[vi]);
+                        }
+                    } else {
+                        // Treat as operand expression
+                        if (vecExpr.find("(Value ") == 0) {
+                            mlir::Value operand = parseValue(vecExpr);
+                            operands.push_back(operand);
+                        } else {
+                            mlir::Operation* nestedOperand = parseOperation(vecExpr, builder);
+                            mlir::Value operand = nestedOperand->getResult(0);
+                            operands.push_back(operand);
+                        }
+                    }
+                };
+
+                flattenOpVec(opVecToken);
+                index++; // consumed OpVec token
             }
-            index++; // consumed OpVec token
         }
     } else {
         size_t availableOperandTokens = (totalTokensAfterName > trailingCount) ? (totalTokensAfterName - trailingCount) : 0;
         size_t operandsToParse = egglogOpDef.hasVariadicOperands ? availableOperandTokens : egglogOpDef.nOperands;
         for (size_t i = 0; i < operandsToParse; i++, index++) {
             std::string_view operandStr = split[index + 1];  // get the operand string
+            // Skip standalone OpVec tokens (type placeholders from extraction)
+            if (operandStr == "OpVec") {
+                continue;
+            }
             if (operandStr.find("(Value ") == 0) {
                 mlir::Value operand = parseValue(operandStr);
                 operands.push_back(operand);
@@ -1047,14 +1091,19 @@ EggifiedOp* Egglog::eggifyOperation(mlir::Operation* op) {
             operands.push_back(eggifiedOperand);
             ss << " " << eggifiedOperand->getPrintId();
         }
-        // Emit remaining operands as a single OpVec token
-        ss << " (vec-of";
-        for (size_t i = fixed; i < operandCount; i++) {
-            EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));
-            operands.push_back(eggifiedOperand);
-            ss << " " << eggifiedOperand->getPrintId();
+        // Emit remaining operands as a nested vec-push chain to be friendly
+        // with pattern matching on OpVec that is desugared the same way.
+        if (operandCount > fixed) {
+            std::string acc = "(vec-empty)";
+            for (size_t i = fixed; i < operandCount; i++) {
+                EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));
+                operands.push_back(eggifiedOperand);
+                acc = "(vec-push " + acc + " " + eggifiedOperand->getPrintId() + ")";
+            }
+            ss << " " << acc;
+        } else {
+            ss << " (vec-empty)";
         }
-        ss << ")";
     } else {
         for (size_t i = 0; i < operandCount; i++) {
             EggifiedOp* eggifiedOperand = eggifyValue(op->getOperand(i));

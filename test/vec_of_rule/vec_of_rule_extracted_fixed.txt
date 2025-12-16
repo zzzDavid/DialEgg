@@ -1,0 +1,1 @@
+(hw_output (comb_concat (Value 0 (I8)) (OpVec (Value 2 (I4)) (Value 1 (I4))) (I16)) OpVec)

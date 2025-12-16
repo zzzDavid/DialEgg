@@ -28,6 +28,117 @@
 
 #define DEBUG_TYPE "dialegg"
 
+namespace {
+
+// Egglog's vec-of is intended for ground vectors; when it contains pattern
+// variables (e.g., (vec-of ?a ?b)) the engine can crash during query
+// compilation. Rewrite such occurrences into a vec-push chain that is safe
+// for pattern matching.
+std::string desugarVecOfWithVars(std::string_view expr) {
+    if (expr.size() < 2 || expr.front() != '(' || expr.back() != ')') {
+        return std::string(expr);
+    }
+
+    std::vector<std::string_view> parts = Egglog::splitExpression(expr);
+    if (parts.empty()) {
+        return std::string(expr);
+    }
+    if (parts.size() == 1 && parts[0].front() == '(' && parts[0].back() == ')') {
+        return "(" + desugarVecOfWithVars(parts[0]) + ")";
+    }
+
+    std::vector<std::string> rewrittenArgs;
+    rewrittenArgs.reserve(parts.size() > 0 ? parts.size() - 1 : 0);
+    for (size_t i = 1; i < parts.size(); i++) {
+        rewrittenArgs.push_back(desugarVecOfWithVars(parts[i]));
+    }
+
+    if (parts[0] == "vec-of") {
+        bool hasVar = false;
+        for (size_t i = 1; i < parts.size(); i++) {
+            if (parts[i].find('?') != std::string_view::npos) {
+                hasVar = true;
+                break;
+            }
+        }
+
+        if (hasVar) {
+            std::string acc = "(vec-empty)";
+            for (const std::string& arg: rewrittenArgs) {
+                acc = "(vec-push " + acc + " " + arg + ")";
+            }
+            return acc;
+        }
+    }
+
+    std::string rebuilt = "(" + std::string(parts[0]);
+    for (const std::string& arg: rewrittenArgs) {
+        rebuilt += " " + arg;
+    }
+    rebuilt += ")";
+    return rebuilt;
+}
+
+size_t findMatchingParen(const std::string& str, size_t openPos) {
+    int depth = 0;
+    bool inString = false;
+    char prev = '\0';
+    for (size_t i = openPos; i < str.size(); i++) {
+        char c = str[i];
+        if (c == '"' && prev != '\\') {
+            inString = !inString;
+        }
+        if (inString) {
+            prev = c;
+            continue;
+        }
+        if (c == '(') {
+            depth++;
+        } else if (c == ')') {
+            depth--;
+            if (depth == 0) {
+                return i;
+            }
+        }
+        prev = c;
+    }
+    return std::string::npos;
+}
+
+std::string desugarVecOfInContent(const std::string& content) {
+    std::string out = content;
+    size_t pos = 0;
+    while ((pos = out.find("(vec-of", pos)) != std::string::npos) {
+        size_t end = findMatchingParen(out, pos);
+        if (end == std::string::npos) {
+            break;
+        }
+
+        std::string_view expr(out.data() + pos, end - pos + 1);
+        std::vector<std::string_view> parts = Egglog::splitExpression(expr);
+
+        bool hasVar = false;
+        for (size_t i = 1; i < parts.size(); i++) {
+            if (parts[i].find('?') != std::string_view::npos) {
+                hasVar = true;
+                break;
+            }
+        }
+
+        if (hasVar) {
+            std::string replacement = desugarVecOfWithVars(expr);
+            out.replace(pos, end - pos + 1, replacement);
+            pos += replacement.size();
+        } else {
+            pos = end + 1;
+        }
+    }
+
+    return out;
+}
+
+}  // namespace
+
 extern llvm::cl::opt<std::string> eggFileOpt;
 
 EqualitySaturationPass::EqualitySaturationPass(const std::string& mlirFile, const EgglogCustomDefs& funcs)
@@ -70,6 +181,23 @@ void EqualitySaturationPass::runEgglog(const std::vector<EggifiedOp*>& block, co
         }
     }
     eggFile.close();
+
+    // Desugar vec-of patterns containing variables into vec-push chains to
+    // avoid egglog crashes when matching vectors with symbolic elements.
+    std::string egglogContent;
+    for (size_t i = 0; i < egglogLines.size(); i++) {
+        if (i > 0) {
+            egglogContent += "\n";
+        }
+        egglogContent += egglogLines[i];
+    }
+    egglogContent = desugarVecOfInContent(egglogContent);
+    egglogLines.clear();
+    std::stringstream egglogStream(egglogContent);
+    std::string desugaredLine;
+    while (std::getline(egglogStream, desugaredLine)) {
+        egglogLines.push_back(desugaredLine);
+    }
 
     // Write the extracted egglog to a new file with the same name and ext .ops.egg
     std::string name = mlirFilePath.substr(0, mlirFilePath.find(".mlir"));
@@ -156,7 +284,10 @@ void EqualitySaturationPass::runOnBlock(mlir::Block& block, const std::string& b
         lines.emplace_back();
         std::getline(file, lines.back());
 
-        // llvm::outs() << eggOp.getPrintId() << " = " << line << "\n";
+        if (lines.back().empty()) {
+            llvm::errs() << "Empty extraction line for " << eggOp->getPrintId() << ", skipping\n";
+            continue;
+        }
 
         mlir::Operation* prevOp = eggOp->mlirOp;
         mlir::OpBuilder builder(prevOp);

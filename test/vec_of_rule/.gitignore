@@ -1,0 +1,11 @@
+# Generated files (recreated by run_test.sh)
+*.ops.egg
+*.ops.json
+*.updated.json
+*_optimized.mlir
+*_fixed.mlir
+vec_of_rule_extracted.txt
+*.extraction-metadata.txt
+*-egglog.log
+*-egglog-output.log
+*-egglog-extract.log

@@ -28,7 +28,6 @@
 ;; helper functions
 (function type-of (Op) Type)
 (function dims (Type) IntVec)
-(function RootNode (Op) Op)
 
 ;;;; builtin dialect ;;;;
 
