@@ -1,0 +1,41 @@
+(include "base.egg")
+
+;; Note: No need to declare specific IntX types - the generic (Int i64) function
+;; in base.egg handles all integer widths automatically via (Int <width>) syntax.
+
+;;;; comb dialect ;;;;
+(function comb_mux (Op Op Op Type) Op)
+(function comb_and (Op OpVec Type) Op)
+(function comb_or (Op OpVec Type) Op)
+(function comb_xor (Op OpVec Type) Op)
+(function comb_replicate (Op Type) Op)
+(function comb_concat (Op OpVec Type) Op)
+(function comb_icmp (Op Op AttrPair Type) Op)
+(function comb_extract (Op AttrPair Type) Op)
+(function comb_add (Op OpVec Type) Op)
+(function comb_sub (Op OpVec Type) Op)
+(function comb_mul (Op Op Type) Op)
+
+;;;; hw dialect ;;;;
+(function hw_output (Op OpVec) Op)
+(function hw_constant (AttrPair Type) Op)
+
+;;;; seq dialect ;;;;
+(function seq_to_clock (Op Type) Op)
+(function seq_firreg (Op OpVec AttrPair Type) Op)
+
+;;;; RootNode for extraction ;;;;
+(datatype Root
+  (RootNode Op)
+)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset rules)
+
+
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;

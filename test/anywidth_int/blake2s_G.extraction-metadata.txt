@@ -1,0 +1,4 @@
+BLOCK: blake2s_G_hw.module
+op26	hw.output %10, %19, %15, %14 : i32, i32, i32, i32
+END_BLOCK
+

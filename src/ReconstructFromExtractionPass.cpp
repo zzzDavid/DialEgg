@@ -57,7 +57,6 @@ void ReconstructFromExtractionPass::runOnBlock(mlir::Block& block, const std::st
             prevOp->replaceAllUsesWith(newOp);
             prevOp->erase();
         }
-        break;
     }
 
     end = std::chrono::high_resolution_clock::now();
@@ -116,7 +115,8 @@ void ReconstructFromExtractionPass::runOnOperation() {
 
         module.walk([&](mlir::Operation* op) {
             bool deadFunctionCall = mlir::isa<mlir::func::CallOp>(op) && op->use_empty();
-            if (mlir::isOpTriviallyDead(op) || deadFunctionCall) {
+            bool unusedResults = op->getNumResults() > 0 && op->use_empty();
+            if (mlir::isOpTriviallyDead(op) || deadFunctionCall || unusedResults) {
                 clean = false;
                 op->erase();
             }

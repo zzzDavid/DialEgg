@@ -1,0 +1,52 @@
+(include "base.egg")
+
+;;;; Additional Type Definitions ;;;;
+(function Int2 () Type)
+(function Int3 () Type)
+(function Int5 () Type)
+(function Int6 () Type)
+(function Int9 () Type)
+(function Int10 () Type)
+(function Int18 () Type)
+(function Int128() Type)
+(function Int256() Type)
+(function Int384() Type)
+(function Int512() Type)
+(function Int2048 () Type)
+
+;;;; comb dialect ;;;;
+(function comb_mux (Op Op Op Type) Op)
+(function comb_and (Op OpVec Type) Op)
+(function comb_or (Op OpVec Type) Op)
+(function comb_xor (Op OpVec Type) Op)
+(function comb_replicate (Op Type) Op)
+(function comb_concat (Op OpVec Type) Op)
+(function comb_icmp (Op Op AttrPair Type) Op)
+(function comb_extract (Op AttrPair Type) Op)
+(function comb_add (Op OpVec Type) Op)
+(function comb_sub (Op OpVec Type) Op)
+(function comb_mul (Op Op Type) Op)
+
+;;;; hw dialect ;;;;
+(function hw_output (Op OpVec) Op)
+(function hw_constant (AttrPair Type) Op)
+
+;;;; seq dialect ;;;;
+(function seq_to_clock (Op Type) Op)
+(function seq_firreg (Op OpVec AttrPair Type) Op)
+
+;;;; RootNode for extraction ;;;;
+(datatype Root
+  (RootNode Op)
+)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset rules)
+
+ASPEN_REWRITE_RULES
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;

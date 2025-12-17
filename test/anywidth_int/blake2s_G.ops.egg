@@ -1,0 +1,70 @@
+(include "base.egg")
+
+;; Note: No need to declare specific IntX types - the generic (Int i64) function
+;; in base.egg handles all integer widths automatically via (Int <width>) syntax.
+
+;;;; comb dialect ;;;;
+(function comb_mux (Op Op Op Type) Op)
+(function comb_and (Op OpVec Type) Op)
+(function comb_or (Op OpVec Type) Op)
+(function comb_xor (Op OpVec Type) Op)
+(function comb_replicate (Op Type) Op)
+(function comb_concat (Op OpVec Type) Op)
+(function comb_icmp (Op Op AttrPair Type) Op)
+(function comb_extract (Op AttrPair Type) Op)
+(function comb_add (Op OpVec Type) Op)
+(function comb_sub (Op OpVec Type) Op)
+(function comb_mul (Op Op Type) Op)
+
+;;;; hw dialect ;;;;
+(function hw_output (Op OpVec) Op)
+(function hw_constant (AttrPair Type) Op)
+
+;;;; seq dialect ;;;;
+(function seq_to_clock (Op Type) Op)
+(function seq_firreg (Op OpVec AttrPair Type) Op)
+
+;;;; RootNode for extraction ;;;;
+(datatype Root
+  (RootNode Op)
+)
+
+;; OPS HERE ;;
+; blake2s_G_hw.module
+(let op0 (Value 0 (I32)))
+(let op1 (Value 1 (I32)))
+(let op2 (Value 2 (I32)))
+(let op3 (Value 3 (I32)))
+(let op4 (Value 4 (I32)))
+(let op5 (Value 5 (I32)))
+(let op6 (comb_add op0 (vec-push (vec-push (vec-empty) op1) op4) (I32)))
+(let op7 (comb_xor op3 (vec-push (vec-empty) op6) (I32)))
+(let op8 (comb_extract op7 (NamedAttr "lowBit" (IntegerAttr 0 (I32))) (I16)))
+(let op9 (comb_extract op7 (NamedAttr "lowBit" (IntegerAttr 16 (I32))) (I16)))
+(let op10 (comb_concat op8 (vec-push (vec-empty) op9) (I32)))
+(let op11 (comb_add op2 (vec-push (vec-empty) op10) (I32)))
+(let op12 (comb_xor op1 (vec-push (vec-empty) op11) (I32)))
+(let op13 (comb_extract op12 (NamedAttr "lowBit" (IntegerAttr 0 (I32))) (Int 12)))
+(let op14 (comb_extract op12 (NamedAttr "lowBit" (IntegerAttr 12 (I32))) (Int 20)))
+(let op15 (comb_concat op13 (vec-push (vec-empty) op14) (I32)))
+(let op16 (comb_add op6 (vec-push (vec-push (vec-empty) op15) op5) (I32)))
+(let op17 (comb_xor op10 (vec-push (vec-empty) op16) (I32)))
+(let op18 (comb_extract op17 (NamedAttr "lowBit" (IntegerAttr 0 (I32))) (I8)))
+(let op19 (comb_extract op17 (NamedAttr "lowBit" (IntegerAttr 8 (I32))) (Int 24)))
+(let op20 (comb_concat op18 (vec-push (vec-empty) op19) (I32)))
+(let op21 (comb_add op11 (vec-push (vec-empty) op20) (I32)))
+(let op22 (comb_xor op15 (vec-push (vec-empty) op21) (I32)))
+(let op23 (comb_extract op22 (NamedAttr "lowBit" (IntegerAttr 0 (I32))) (Int 7)))
+(let op24 (comb_extract op22 (NamedAttr "lowBit" (IntegerAttr 7 (I32))) (Int 25)))
+(let op25 (comb_concat op23 (vec-push (vec-empty) op24) (I32)))
+(let op26 (hw_output op16 (vec-push (vec-push (vec-push (vec-empty) op25) op21) op20)))
+
+;; RULES HERE ;;
+(ruleset rules)
+
+
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;
+(let root_op26 (RootNode op26))

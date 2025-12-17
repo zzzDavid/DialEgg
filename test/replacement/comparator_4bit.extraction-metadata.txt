@@ -1,0 +1,4 @@
+BLOCK: comparator_4bit_hw.module
+op21	hw.output %A_greater, %A_equal, %A_less : i1, i1, i1
+END_BLOCK
+

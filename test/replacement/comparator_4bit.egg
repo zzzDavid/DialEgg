@@ -1,0 +1,83 @@
+(include "base.egg")
+
+;;;; Additional Type Definitions ;;;;
+(function Int2 () Type)
+(function Int3 () Type)
+(function Int5 () Type)
+(function Int6 () Type)
+(function Int9 () Type)
+(function Int10 () Type)
+(function Int18 () Type)
+(function Int128() Type)
+(function Int256() Type)
+(function Int384() Type)
+(function Int512() Type)
+(function Int2048 () Type)
+
+;;;; comb dialect ;;;;
+(function comb_mux (Op Op Op Type) Op)
+(function comb_and (Op OpVec Type) Op)
+(function comb_or (Op OpVec Type) Op)
+(function comb_xor (Op OpVec Type) Op)
+(function comb_replicate (Op Type) Op)
+(function comb_concat (Op OpVec Type) Op)
+(function comb_icmp (Op Op AttrPair Type) Op)
+(function comb_extract (Op AttrPair Type) Op)
+(function comb_add (Op OpVec Type) Op)
+(function comb_sub (Op OpVec Type) Op)
+(function comb_mul (Op Op Type) Op)
+
+;;;; hw dialect ;;;;
+(function hw_output (Op OpVec) Op)
+(function hw_constant (AttrPair Type) Op)
+
+;;;; seq dialect ;;;;
+(function seq_to_clock (Op Type) Op)
+(function seq_firreg (Op OpVec AttrPair Type) Op)
+
+;;;; RootNode for extraction ;;;;
+(datatype Root
+  (RootNode Op)
+)
+
+;; OPS HERE ;;
+
+;; RULES HERE ;;
+(ruleset rules)
+
+; Rule 1: Diff-based inequality → register inequality (iteration 1)
+; diff != 0 -> A_reg != B_reg
+; op14 in the original design computes diff != 0, but this can be
+; replaced with direct comparison of the registers
+(rewrite
+    op14
+    (comb_icmp op6 op8 (NamedAttr "predicate" (IntegerAttr 1 (I64))) (I1))
+    :ruleset rules)
+
+; Rule 2: Borrow bit → unsigned-less-than (iteration 2)
+; The borrow bit (op11) from A - B indicates A < B
+(rewrite
+    op11
+    (comb_icmp op6 op8 (NamedAttr "predicate" (IntegerAttr 4 (I64))) (I1))
+    :ruleset rules)
+
+; Rule 3: (~borrow) ∧ (diff≠0) → unsigned-greater-than (iterations 1–5)
+; op15 = (~cout) && (diff != 0) can be replaced with A_reg > B_reg
+(rewrite
+    op15
+    (comb_icmp op6 op8 (NamedAttr "predicate" (IntegerAttr 2 (I64))) (I1))
+    :ruleset rules)
+
+; Rule 4: Equality from inverted inequality (iteration 4)
+; A == B -> ~(A != B)
+(rewrite
+    op16
+    (comb_xor
+        (comb_icmp op6 op8 (NamedAttr "predicate" (IntegerAttr 1 (I64))) (I1))
+        (vec-of op3)
+        (I1))
+    :ruleset rules)
+
+(run-schedule (saturate rules))
+
+;; EXTRACTS HERE ;;
