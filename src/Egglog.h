@@ -243,7 +243,7 @@ public:
 
     // caches
     std::vector<EggifiedOp*> eggifiedBlock;
-    std::map<std::string_view, mlir::Operation*> parsedOps;
+    std::map<std::string, mlir::Operation*, std::less<>> parsedOps;
 };
 
 #endif  //EGGLOG_H

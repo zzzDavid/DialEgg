@@ -149,6 +149,12 @@ void EggifyOnlyPass::runOnOperation() {
             }
         } else if (auto hwModuleOp = llvm::dyn_cast<circt::hw::HWModuleOp>(&op)) {
             llvm::StringRef moduleName = hwModuleOp.getName();
+
+            if (hwModuleOp.isPrivate()) {
+                llvm::outs() << "Skipping private HW module: " << moduleName << " (submodule; flatten design to include)\n";
+                continue;
+            }
+
             LLVM_DEBUG(llvm::dbgs() << "Running on HW module: " << moduleName << "\n");
             
             for (mlir::Block& block: hwModuleOp.getBodyRegion().getBlocks()) {

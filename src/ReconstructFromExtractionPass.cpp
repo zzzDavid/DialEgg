@@ -40,22 +40,56 @@ void ReconstructFromExtractionPass::runOnBlock(mlir::Block& block, const std::st
         }
 
         extractedLines.emplace_back();
-        std::getline(extractionFile, extractedLines.back());
+        if (!std::getline(extractionFile, extractedLines.back())) {
+            llvm::errs() << "Warning: extraction file ended before all ops were processed\n";
+            break;
+        }
 
-        LLVM_DEBUG(llvm::dbgs() << "Reconstructing " << eggOp->getPrintId() << " from: " << extractedLines.back() << "\n");
+        if (extractedLines.back().empty()) {
+            llvm::errs() << "Warning: empty extraction line for " << eggOp->getPrintId() << "\n";
+            continue;
+        }
 
         mlir::Operation* prevOp = eggOp->mlirOp;
         mlir::OpBuilder builder(prevOp);
+
+        // Parse shared sub-expression definitions: (let __sN <expr>)
+        while (extractedLines.back().rfind("(let __s", 0) == 0) {
+            std::string_view letLine = extractedLines.back();
+            auto split = Egglog::splitExpression(letLine);
+            if (split.size() >= 3 && split[0] == "let") {
+                std::string alias(split[1]);
+                std::string_view exprStr = split[2];
+                mlir::Operation* defOp = egglog.parseOperation(exprStr, builder);
+                if (defOp != nullptr) {
+                    egglog.parsedOps[alias] = defOp;
+                }
+            }
+            extractedLines.emplace_back();
+            if (!std::getline(extractionFile, extractedLines.back())) {
+                break;
+            }
+        }
+
+        LLVM_DEBUG(llvm::dbgs() << "Reconstructing " << eggOp->getPrintId() << " from: " << extractedLines.back() << "\n");
+
         mlir::Operation* newOp = egglog.parseOperation(extractedLines.back(), builder);
 
-        if (newOp == nullptr) {  // If the operation is an opaque value, replace it with the value
+        if (newOp == nullptr) {
             mlir::Value value = egglog.parseValue(extractedLines.back());
             prevOp->getResult(0).replaceAllUsesWith(value);
             prevOp->erase();
-        } else if (newOp != prevOp) {  // Check if the whole operation is different, if so, replace it
+        } else if (newOp != prevOp) {
             LLVM_DEBUG(llvm::dbgs() << "REPLACING: (" << *prevOp << ") WITH (" << *newOp << ")\n\n");
-            prevOp->replaceAllUsesWith(newOp);
-            prevOp->erase();
+            if (newOp->getNumResults() == prevOp->getNumResults()) {
+                prevOp->replaceAllUsesWith(newOp);
+                prevOp->erase();
+            } else {
+                llvm::errs() << "Warning: result count mismatch for " << eggOp->getPrintId()
+                             << " (expected " << prevOp->getNumResults()
+                             << ", got " << newOp->getNumResults() << "), skipping replacement\n";
+                newOp->erase();
+            }
         }
     }
 
@@ -94,6 +128,11 @@ void ReconstructFromExtractionPass::runOnOperation() {
             }
         } else if (auto hwModuleOp = llvm::dyn_cast<circt::hw::HWModuleOp>(&op)) {
             llvm::StringRef moduleName = hwModuleOp.getName();
+
+            if (hwModuleOp.isPrivate()) {
+                continue;
+            }
+
             LLVM_DEBUG(llvm::dbgs() << "Reconstructing HW module: " << moduleName << "\n");
             
             for (mlir::Block& block: hwModuleOp.getBodyRegion().getBlocks()) {

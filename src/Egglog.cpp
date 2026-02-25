@@ -145,9 +145,10 @@ std::vector<std::string_view> Egglog::splitExpression(std::string_view opStr) {
     }
     // The expression must be surrounded by parentheses
     if (opStr.front() != '(' || opStr.back() != ')') {
+        if (!opStr.empty() && std::isalpha(static_cast<unsigned char>(opStr.front()))) {
+            return {opStr};
+        }
         llvm::outs() << "Invalid expression: " << opStr << "\n";
-        llvm::outs() << "Called from: " << __PRETTY_FUNCTION__ << "\n";
-        llvm::outs() << "Note: If this is 'OpVec', it may be a type placeholder from extraction\n";
         exit(1);
     }
 
@@ -838,16 +839,24 @@ mlir::Value Egglog::parseValue(std::string_view valueStr) {
 }
 
 mlir::Operation* Egglog::parseOperation(std::string_view newOpStr, mlir::OpBuilder& builder) {
-    // llvm::outs() << "PARSING OPERATION: " << newOpStr << "\n";
+    // Handle bare alias references (e.g., __s0 from shared sub-expression defs)
+    if (!newOpStr.empty() && newOpStr.front() != '(') {
+        std::string key(newOpStr);
+        auto it = parsedOps.find(key);
+        if (it != parsedOps.end()) {
+            return it->second;
+        }
+    }
+
     std::vector<std::string_view> split = splitExpression(newOpStr);
     std::string_view opName = split[0];
 
-    if (opName == "Value") {  // If it's am opaque op, no operation to parse
+    if (opName == "Value") {
         return nullptr;
     }
 
-    if (parsedOps.find(newOpStr) != parsedOps.end()) {  // look in the parsed ops cache
-        return parsedOps[newOpStr];
+    if (parsedOps.find(newOpStr) != parsedOps.end()) {
+        return parsedOps.find(newOpStr)->second;
     }
 
     auto it = supportedEgglogOps.find(opName);
@@ -991,7 +1000,7 @@ mlir::Operation* Egglog::parseOperation(std::string_view newOpStr, mlir::OpBuild
         newOp = builder.create(state);
     }
 
-    parsedOps[newOpStr] = newOp;  // cache the parsed operation
+    parsedOps[std::string(newOpStr)] = newOp;
     return newOp;
 }
 
@@ -1051,12 +1060,19 @@ EggifiedOp* Egglog::eggifyOpaqueOperation(mlir::Operation* op) {
         return eggifyValue(op->getResult(0));  // backwards compatibility
     }
 
-    size_t id = nextId();
-    std::string egglogOp = "(Value " + std::to_string(id) + " (None))";
+    if (op->getNumResults() == 0) {
+        size_t id = nextId();
+        std::string egglogOp = "(Value " + std::to_string(id) + " (None))";
+        EggifiedOp* eggifiedValue = EggifiedOp::opaqueOp(id, egglogOp, op);
+        eggifiedBlock.push_back(eggifiedValue);
+        return eggifiedValue;
+    }
 
-    EggifiedOp* eggifiedValue = EggifiedOp::opaqueOp(id, egglogOp, op);
-    eggifiedBlock.push_back(eggifiedValue);
-    return eggifiedValue;
+    EggifiedOp* lastEggifiedOp = nullptr;
+    for (unsigned i = 0; i < op->getNumResults(); i++) {
+        lastEggifiedOp = eggifyValue(op->getResult(i));
+    }
+    return lastEggifiedOp;
 }
 
 // (<op> <operand1> <operand2> ... <operandN> <attr1> <attr2> ... <attrM> <region1> <region2> ... <regionR> <type1> <type2> ... <typeT>)
