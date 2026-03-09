@@ -861,8 +861,8 @@ mlir::Operation* Egglog::parseOperation(std::string_view newOpStr, mlir::OpBuild
 
     auto it = supportedEgglogOps.find(opName);
     if (it == supportedEgglogOps.end()) {  // unsupported operation
-        llvm::outs() << "Unsupported operation '" << opName << "'.\n";
-        exit(1);
+        llvm::errs() << "Warning: Unsupported operation '" << opName << "' in extraction, skipping.\n";
+        return nullptr;
     }
 
     EgglogOpDef egglogOpDef = it->second;
