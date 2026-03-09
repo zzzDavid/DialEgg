@@ -34,6 +34,7 @@
 ;;;; seq dialect ;;;;
 (function seq_to_clock (Op Type) Op)
 (function seq_firreg (Op OpVec AttrPair Type) Op)
+(function seq_clock_inv (Op Type) Op)
 
 ;;;; RootNode for extraction ;;;;
 (datatype Root
