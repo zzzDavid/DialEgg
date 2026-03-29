@@ -51,3 +51,7 @@ ASPEN_REWRITE_RULES
 (run-schedule (saturate rules))
 
 ;; EXTRACTS HERE ;;
+;; Shift operations
+(function comb_shl (Op Op Type) Op)
+(function comb_shru (Op Op Type) Op)
+(function comb_shrs (Op Op Type) Op)

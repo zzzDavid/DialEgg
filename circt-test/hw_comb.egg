@@ -45,3 +45,7 @@
 (run-schedule (saturate hw_rules))
 
 ;; EXTRACTS HERE ;; 
+;; Shift operations
+(function comb_shl (Op Op Type) Op)
+(function comb_shru (Op Op Type) Op)
+(function comb_shrs (Op Op Type) Op)
