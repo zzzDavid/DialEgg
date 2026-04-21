@@ -48,8 +48,8 @@ add_definitions(${LLVM_DEFINITIONS})
 get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 # Add CIRCT support (now with aligned LLVM versions)
-set(CIRCT_SOURCE_DIR "/work/global/aspen/circt")
-set(CIRCT_BUILD_DIR "/work/global/aspen/circt/build")
+set(CIRCT_SOURCE_DIR "/work/global/aspen/circt" CACHE PATH "Path to CIRCT source tree")
+set(CIRCT_BUILD_DIR "/work/global/aspen/circt/build" CACHE PATH "Path to CIRCT build directory")
 
 # Add CIRCT include directories
 include_directories(${CIRCT_SOURCE_DIR}/include)
