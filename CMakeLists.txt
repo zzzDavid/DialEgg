@@ -58,7 +58,7 @@ include_directories(${CIRCT_BUILD_DIR}/include)
 # Add CIRCT library directory
 link_directories(${CIRCT_BUILD_DIR}/lib)
 
-set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib)
+set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib MLIRMlirOptMain)
 
 # Add CIRCT libraries (compatible with aligned LLVM)
 set(CIRCT_LIBS
