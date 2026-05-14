@@ -5,10 +5,9 @@
 #include "mlir/Tools/mlir-opt/MlirOptMain.h"
 #include "mlir/AsmParser/AsmParser.h"
 
-// CIRCT dialect includes (now with aligned LLVM versions)
-#include "circt/Dialect/HW/HWDialect.h"
-#include "circt/Dialect/Comb/CombDialect.h"
-#include "circt/Dialect/Seq/SeqDialect.h"
+// Register every CIRCT dialect so any input MLIR (llhd, firrtl, sv, moore,
+// hw, comb, seq, etc.) parses without "Dialect `foo' not found" errors.
+#include "circt/InitAllDialects.h"
 
 // Temporarily commenting out StableHLO includes due to compatibility issues
 // #include "stablehlo/dialect/Register.h"
@@ -43,11 +42,7 @@ int main(int argc, char** argv) {
     // Register dialects
     mlir::DialectRegistry dialectRegistry;
     mlir::registerAllDialects(dialectRegistry);
-    
-    // Register CIRCT dialects (now with aligned LLVM versions)
-    dialectRegistry.insert<circt::hw::HWDialect>();
-    dialectRegistry.insert<circt::comb::CombDialect>();
-    dialectRegistry.insert<circt::seq::SeqDialect>();
+    circt::registerAllDialects(dialectRegistry);
     
     // Temporarily commenting out StableHLO dialect registration
     // mlir::stablehlo::registerAllDialects(dialectRegistry);

@@ -51,6 +51,16 @@ get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 set(CIRCT_SOURCE_DIR "/work/global/aspen/circt" CACHE PATH "Path to CIRCT source tree")
 set(CIRCT_BUILD_DIR "/work/global/aspen/circt/build" CACHE PATH "Path to CIRCT build directory")
 
+# Use CIRCTConfig.cmake so we get the CIRCT_DIALECT_LIBS global property
+# (lists every CIRCT dialect library). CIRCT_DIR may be overridden on the
+# cmake command line; otherwise fall back to the in-tree build.
+if (NOT CIRCT_DIR)
+    set(CIRCT_DIR "${CIRCT_BUILD_DIR}/lib/cmake/circt" CACHE PATH "CIRCTConfig.cmake dir" FORCE)
+endif ()
+find_package(CIRCT REQUIRED CONFIG)
+message(STATUS "Found CIRCT ${CIRCT_PACKAGE_VERSION}")
+message(STATUS "Using CIRCTConfig.cmake in: ${CIRCT_DIR}")
+
 # Add CIRCT include directories
 include_directories(${CIRCT_SOURCE_DIR}/include)
 include_directories(${CIRCT_BUILD_DIR}/include)
@@ -60,13 +70,11 @@ link_directories(${CIRCT_BUILD_DIR}/lib)
 
 set(OPT_LIBS ${dialect_libs} ${conversion_libs} MLIROptLib MLIRMlirOptMain)
 
-# Add CIRCT libraries (compatible with aligned LLVM)
-set(CIRCT_LIBS
-    CIRCTHW
-    CIRCTComb
-    CIRCTSeq
-    CIRCTSupport
-)
+# Link every CIRCT dialect so egg-opt can parse any CIRCT-flavored MLIR
+# (llhd, firrtl, sv, moore, hw, comb, seq, ...). CIRCT_DIALECT_LIBS is
+# populated by CIRCTConfig.cmake.
+get_property(circt_dialect_libs GLOBAL PROPERTY CIRCT_DIALECT_LIBS)
+set(CIRCT_LIBS ${circt_dialect_libs} CIRCTSupport)
 
 add_llvm_executable(egg-opt 
     src/egg-opt.cpp 
