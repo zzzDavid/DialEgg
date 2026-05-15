@@ -10,6 +10,7 @@
 (sort AttrDict (Map String Attr))
 (sort AttrVec (Vec Attr))
 (datatype AttrPair (NamedAttr String Attr) (ValueAttr Attr))
+(sort AttrPairVec (Vec AttrPair))
 
 ;; Op
 ;; Usage:

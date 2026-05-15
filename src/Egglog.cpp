@@ -74,6 +74,8 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
     bool hasVariadicOperands = false;
     bool usesOpVec = false;
     size_t minOperands = 0;
+    bool hasVariadicAttributes = false;
+    bool usesAttrPairVec = false;
     for (std::string_view arg: args) {
         if (arg == "Op") {
             if (!hasVariadicOperands) {
@@ -91,6 +93,12 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
                 minOperands++;
             }
         } else if (arg == "AttrPair") {
+            nAttributes++;
+        } else if (arg == "AttrPairVec") {
+            // A single AttrPairVec slot collects all NamedAttributes of the op.
+            // It still occupies one trailing token, so nAttributes++.
+            hasVariadicAttributes = true;
+            usesAttrPairVec = true;
             nAttributes++;
         } else if (arg == "Region") {
             nRegions++;
@@ -113,6 +121,8 @@ EgglogOpDef EgglogOpDef::parseOpFunction(const std::string& opStr) {
             .hasVariadicOperands = hasVariadicOperands,
             .minOperands = minOperands,
             .usesOpVec = usesOpVec,
+            .hasVariadicAttributes = hasVariadicAttributes,
+            .usesAttrPairVec = usesAttrPairVec,
     };
 }
 
@@ -954,9 +964,35 @@ mlir::Operation* Egglog::parseOperation(std::string_view newOpStr, mlir::OpBuild
 
     // attr
     std::vector<mlir::NamedAttribute> attributes;
-    for (size_t i = 0; i < egglogOpDef.nAttributes; i++, index++) {
-        mlir::NamedAttribute attr = parseNamedAttribute(split[index + 1]);
-        attributes.push_back(attr);
+    if (egglogOpDef.hasVariadicAttributes && egglogOpDef.usesAttrPairVec) {
+        // The single AttrPairVec slot holds a (vec-push ... (NamedAttr ...)) chain.
+        // Flatten it the same way OpVec operands are flattened.
+        std::string_view attrVecToken = split[index + 1];
+        std::function<void(std::string_view)> flattenAttrVec = [&](std::string_view vecExpr) {
+            if (vecExpr == "AttrPairVec") return;  // bare placeholder
+            std::vector<std::string_view> vecSplit = splitExpression(vecExpr);
+            std::string_view head = vecSplit[0];
+            if (head == "vec-of") {
+                for (size_t vi = 1; vi < vecSplit.size(); vi++) flattenAttrVec(vecSplit[vi]);
+            } else if (head == "vec-push") {
+                flattenAttrVec(vecSplit[1]);
+                attributes.push_back(parseNamedAttribute(vecSplit[2]));
+            } else if (head == "vec-empty") {
+                return;
+            } else if (head == "AttrPairVec") {
+                for (size_t vi = 1; vi < vecSplit.size(); vi++) flattenAttrVec(vecSplit[vi]);
+            } else {
+                // Treat as a single NamedAttr expression
+                attributes.push_back(parseNamedAttribute(vecExpr));
+            }
+        };
+        flattenAttrVec(attrVecToken);
+        index++; // consumed AttrPairVec token
+    } else {
+        for (size_t i = 0; i < egglogOpDef.nAttributes; i++, index++) {
+            mlir::NamedAttribute attr = parseNamedAttribute(split[index + 1]);
+            attributes.push_back(attr);
+        }
     }
 
     // <region1> <region2> ... <regionR>
@@ -971,6 +1007,24 @@ mlir::Operation* Egglog::parseOperation(std::string_view newOpStr, mlir::OpBuild
     for (size_t i = 0; i < egglogOpDef.nResults; i++, index++) {
         mlir::Type type = parseType(split[index + 1]);
         types.push_back(type);
+    }
+
+    // Repair clock-operand type on seq.firreg.
+    // Some rewrites may bypass or elide the seq.to_clock cast, leaving the
+    // extracted seq.firreg with an i1 clock operand. The verifier requires
+    // a !seq.clock-typed clock, so re-insert a seq.to_clock cast.
+    if (mlirOpName == "seq.firreg" && operands.size() >= 2) {
+        mlir::Value clock = operands[1];
+        if (clock.getType().isInteger(1)) {
+            mlir::Type clockType = mlir::parseType("!seq.clock", &context);
+            if (clockType) {
+                mlir::OperationState castState(mlir::UnknownLoc::get(&context), "seq.to_clock");
+                castState.addOperands({clock});
+                castState.addTypes({clockType});
+                mlir::Operation* castOp = builder.create(castState);
+                operands[1] = castOp->getResult(0);
+            }
+        }
     }
 
     // Create the operation
@@ -1129,9 +1183,38 @@ EggifiedOp* Egglog::eggifyOperation(mlir::Operation* op) {
     }
 
     // <attr1> <attr2> ... <attrM>
-    llvm::ArrayRef<mlir::NamedAttribute> attrs = op->getAttrs();
-    for (size_t i = 0; i < egglogOpDef.nAttributes; i++) {
-        ss << " " << eggifyNamedAttribute(attrs[i]);
+    llvm::ArrayRef<mlir::NamedAttribute> rawAttrs = op->getAttrs();
+    if (egglogOpDef.hasVariadicAttributes && egglogOpDef.usesAttrPairVec) {
+        // Pack ALL named attributes into a single (vec-push ... (NamedAttr ...))
+        // chain so attribute payloads survive eqsat + extraction.
+        std::string acc = "(vec-empty)";
+        for (const mlir::NamedAttribute& a : rawAttrs) {
+            acc = "(vec-push " + acc + " " + eggifyNamedAttribute(a) + ")";
+        }
+        ss << " " << acc;
+    } else {
+        // For ops with a fixed AttrPair slot count, filter out discardable
+        // attrs whose dialect prefix differs from the op's dialect (e.g.
+        // sv.namehint on a hw.constant). Without this, an alphabetical
+        // ordering of MLIR attrs sometimes pushes the inherent attr out of
+        // slot 0 and the required attribute is silently dropped on the
+        // reconstruct side (verifier fails with op-requires-attribute X).
+        llvm::SmallVector<mlir::NamedAttribute, 4> attrs;
+        llvm::StringRef opDialect = op->getDialect()
+                                        ? op->getDialect()->getNamespace()
+                                        : llvm::StringRef();
+        for (const mlir::NamedAttribute& a : rawAttrs) {
+            llvm::StringRef n = a.getName().strref();
+            size_t dot = n.find('.');
+            if (dot != llvm::StringRef::npos) {
+                llvm::StringRef prefix = n.substr(0, dot);
+                if (prefix != opDialect) continue;  // discardable cross-dialect attr
+            }
+            attrs.push_back(a);
+        }
+        for (size_t i = 0; i < egglogOpDef.nAttributes && i < attrs.size(); i++) {
+            ss << " " << eggifyNamedAttribute(attrs[i]);
+        }
     }
 
     // <region1> <region2> ... <regionR>

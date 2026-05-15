@@ -51,6 +51,12 @@ struct EgglogOpDef {
     // If true, the variadic tail is encoded as a single OpVec argument.
     bool usesOpVec = false;
 
+    // Variadic attribute support
+    // If true, the operation accepts all of its NamedAttributes packaged
+    // into a single AttrPairVec slot instead of N fixed AttrPair slots.
+    bool hasVariadicAttributes = false;
+    bool usesAttrPairVec = false;
+
     std::string egglogName() const {
         return dialect + "_" + name + (version.empty() ? "" : "_" + version);
     }
