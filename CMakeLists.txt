@@ -82,6 +82,7 @@ add_llvm_executable(egg-opt
     src/EggifyOnlyPass.cpp 
     src/ReconstructFromExtractionPass.cpp 
     src/Egglog.cpp
+    src/LowerLoopCarryProcessesPass.cpp
 )
 llvm_update_compile_flags(egg-opt)
 target_link_libraries(egg-opt PRIVATE ${OPT_LIBS} ${CIRCT_LIBS})

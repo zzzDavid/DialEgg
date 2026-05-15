@@ -22,6 +22,7 @@
 #include "EggifyPass.h"
 #include "EggifyOnlyPass.h"
 #include "ReconstructFromExtractionPass.h"
+#include "LowerLoopCarryProcessesPass.h"
 #include "EgglogCustomDefs.h"
 
 #define DEBUG_TYPE "dialegg"
@@ -55,6 +56,7 @@ int main(int argc, char** argv) {
     // mlir::stablehlo::registerOptimizationPasses();
     // mlir::stablehlo::registerStablehloLinalgTransformsPasses();
     mlir::PassRegistration<EggifyPass>();
+    registerLowerLoopCarryProcessesPass();
 
     std::map<std::string, AttrStringifyFunction, std::less<>> attrStringifiers = {
             {mlir::arith::FastMathFlagsAttr::name.str(), stringifyFastMathFlagsAttr}};
