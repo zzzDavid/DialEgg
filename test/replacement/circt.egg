@@ -33,8 +33,23 @@
 
 ;;;; seq dialect ;;;;
 (function seq_to_clock (Op Type) Op)
-(function seq_firreg (Op OpVec AttrPair Type) Op)
+(function seq_firreg (Op OpVec AttrPairVec Type) Op)
 (function seq_clock_inv (Op Type) Op)
+
+;;;; llhd dialect ;;;;
+;; First-class declarations for the LLHD subset that CIRCT emits when
+;; lowering procedural Verilog (`always` blocks with signal reads/drives).
+;; llhd.process and llhd.wait still fall back to OpaqueOp because they
+;; carry regions and variadic results that need richer encoding.
+(function llhd_constant_time (AttrPair Type) Op)
+(function llhd_sig (Op AttrPair Type) Op)
+(function llhd_prb (Op Type) Op)
+(function llhd_drv (Op Op Op Op) Op)
+;; llhd.process / llhd.wait stay as OpaqueOp: they carry regions with
+;; block arguments + successor edges (cf.br, cf.cond_br) that the egglog
+;; region encoding doesn't model. Treating them as opaque keeps the
+;; original MLIR op in place during reconstruction so the body survives
+;; round-trip losslessly.
 
 ;;;; RootNode for extraction ;;;;
 (datatype Root
